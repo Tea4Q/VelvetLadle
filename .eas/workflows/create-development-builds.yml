@@ -1,0 +1,34 @@
+name: Publish preview updates
+
+on:
+  push:
+    branches: ['*']
+  pull_request:
+    branches: ['*']
+
+jobs:
+  publish_preview_update:
+    name: Publish Preview Update
+    type: update
+    params:
+      branch: $github.head_ref || $github.ref_name
+      platform: web
+      profile: preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Publish preview updates
+        run: npm run publish-preview-Updates

@@ -1,0 +1,25 @@
+name: Create Production Builds
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  build_development_android:
+  name: Build Development Android
+    type: build # This job type creates a production build for Android
+    params:
+      platform: android
+      profile: development
+  ios_device_developemnet_build:
+  name: iOS Device Development Build
+    type: build # This job type creates a production build for iOS
+    params:
+      platform: ios
+      profile: development
+  ios_simulator_development_build:
+  name: iOS Simulator Development Builds
+    type: build # This job type creates a production build for iOS Simulator
+    params:
+      platform: ios
+      profile: development
