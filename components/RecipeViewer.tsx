@@ -73,26 +73,32 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 		<ScrollView style={styles.container} contentContainerStyle={styles.content}>
 			{/* Header */}
 			<View style={styles.header}>
-				{onBack && (
+			
+					{onBack && (
+						<Button
+							label="Back"
+							onPress={onBack}
+							theme="outline"
+							size="sm"
+						/>
+					)}
+			
+		
 					<Button
-						label="← Back"
-						onPress={onBack}
-					/>
-				)}
-				<View style={styles.headerRight}>
-					<Button
-						label={isFavorited ? "⭐ Favorited" : "☆ Add to Favorites"}
+						label={isFavorited ? "⭐" : "☆"}
 						theme={isFavorited ? "secondary" : "outline"}
 						onPress={handleToggleFavorite}
 						disabled={loading}
+						size="sm"
 					/>
 					{onEdit && (
 						<Button
-							label="Edit"
+							label="✏️"
 							onPress={() => onEdit(recipe)}
+							theme="outline"
+							size="sm"
 						/>
 					)}
-				</View>
 			</View>
 
 			{/* Recipe Title */}
@@ -298,14 +304,16 @@ const styles = StyleSheet.create({
 	},
 	header: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
+		justifyContent: 'space-evenly',
 		alignItems: 'center',
 		marginBottom: 20,
+		minWidth: 60,
+		paddingHorizontal: 5, // Add padding to prevent buttons from touching edges
+		// minHeight: 36, // Reduced from 44 to match small button height
+		flexWrap: 'wrap', // Allow wrapping on very small screens
+		gap: 8, // Reduced gap for smaller buttons
 	},
-	headerRight: {
-		flexDirection: 'row',
-		gap: 10,
-	},
+	
 	title: {
 		fontSize: 28,
 		fontWeight: 'bold',
@@ -347,7 +355,9 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: 10,
+		justifyContent: 'center',
 	},
+
 	infoItem: {
 		backgroundColor: '#faf4eb',
 		borderRadius: 8,
@@ -429,6 +439,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: 10,
+		justifyContent: 'center',
 	},
 	nutritionItem: {
 		backgroundColor: '#faf4eb',
