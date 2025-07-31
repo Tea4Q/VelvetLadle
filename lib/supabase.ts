@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Replace these with your actual Supabase project credentials
-const supabaseUrl = 'https://dtquebzsiqhwylyfsszk.supabase.co'; // e.g., 'https://your-project.supabase.co'
-const supabaseKey =
-	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cXVlYnpzaXFod3lseWZzc3prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MzU4NjYsImV4cCI6MjA2OTQxMTg2Nn0.2RI3NyRc3Lo_tXSMwNj2vlxXlBBkCm3mm5p-I8rqVZ0'; // Your public anon key
+// Use environment variables for security
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project-id.supabase.co';
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key-here';
 
 // Check if Supabase credentials are configured
 const isSupabaseConfigured = !!supabaseUrl && !!supabaseKey;

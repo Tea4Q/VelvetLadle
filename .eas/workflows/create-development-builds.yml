@@ -1,34 +1,30 @@
-name: Publish preview updates
-
-on:
-  push:
-    branches: ['*']
-  pull_request:
-    branches: ['*']
-
-jobs:
-  publish_preview_update:
-    name: Publish Preview Update
-    type: update
-    params:
-      branch: $github.head_ref || $github.ref_name
-      platform: web
-      profile: preview
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build project
-        run: npm run build
-
-      - name: Publish preview updates
-        run: npm run publish-preview-Updates
+build:
+  name: Create development build
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/setup_node:
+        node_version: 18.x
+    - eas/cache:
+        cache_key_prefix: v1-dependencies
+        cache_paths: |
+          node_modules
+          ~/.npm
+          ~/.cache/yarn
+    - run:
+        name: Install dependencies
+        command: npm ci
+    - run:
+        name: Check TypeScript
+        command: npx tsc --noEmit
+    - run:
+        name: Run linting
+        command: npm run lint --if-present
+    - run:
+        name: Run tests
+        command: npm test -- --watchAll=false --passWithNoTests
+    - eas/build:
+        platform: all
+        profile: development
+        message: "Development build from workflow"

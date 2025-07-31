@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Linking, Alert, Image } from 'react-native';
 import { Recipe } from '../lib/supabase';
 import { FavoritesService } from '../services/FavoritesService';
+import IngredientList from './IngredientList';
 
 import Button from './button';
 
@@ -97,6 +98,20 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 			{/* Recipe Title */}
 			<Text style={styles.title}>{recipe.title}</Text>
 
+			{/* Recipe Image */}
+			{recipe.image_url && (
+				<View style={styles.imageContainer}>
+					<Image
+						source={{ uri: recipe.image_url }}
+						style={styles.recipeImage}
+						resizeMode="cover"
+						onError={(error) => {
+							console.log('Recipe image load error:', error.nativeEvent.error);
+						}}
+					/>
+				</View>
+			)}
+
 			{/* Recipe Info */}
 			<View style={styles.infoSection}>
 				{recipe.description && (
@@ -144,15 +159,11 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 			</View>
 
 			{/* Ingredients */}
-			<View style={styles.section}>
-				<Text style={styles.sectionTitle}>Ingredients ({recipe.ingredients.length})</Text>
-				{recipe.ingredients.map((ingredient, index) => (
-					<View key={index} style={styles.listItem}>
-						<Text style={styles.bullet}>•</Text>
-						<Text style={styles.listText}>{ingredient}</Text>
-					</View>
-				))}
-			</View>
+			<IngredientList 
+				ingredients={recipe.ingredients}
+				servings={recipe.servings}
+				originalServings={recipe.servings}
+			/>
 
 			{/* Directions */}
 			<View style={styles.section}>
@@ -167,17 +178,81 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 				))}
 			</View>
 
-			{/* Nutritional Info */}
-			{recipe.nutritional_info && (
+			{/* Nutritional Information */}
+			{recipe.nutritional_info && Object.keys(recipe.nutritional_info).some(key => recipe.nutritional_info![key as keyof typeof recipe.nutritional_info]) && (
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Nutritional Information</Text>
+					<Text style={styles.sectionTitle}>🥗 Nutritional Information</Text>
+					<Text style={styles.nutritionDisclaimer}>Per serving • Approximate values</Text>
+					
 					<View style={styles.nutritionGrid}>
-						{Object.entries(recipe.nutritional_info).map(([key, value]) => (
-							<View key={key} style={styles.nutritionItem}>
-								<Text style={styles.nutritionLabel}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</Text>
-								<Text style={styles.nutritionValue}>{value}</Text>
+						{recipe.nutritional_info.calories && (
+							<View style={[styles.nutritionItem, styles.caloriesItem]}>
+								<Text style={styles.nutritionIcon}>🔥</Text>
+								<Text style={styles.nutritionLabel}>Calories</Text>
+								<Text style={[styles.nutritionValue, styles.caloriesValue]}>{recipe.nutritional_info.calories}</Text>
+								<Text style={styles.nutritionUnit}>kcal</Text>
 							</View>
-						))}
+						)}
+						
+						{recipe.nutritional_info.protein && (
+							<View style={styles.nutritionItem}>
+								<Text style={styles.nutritionIcon}>🥩</Text>
+								<Text style={styles.nutritionLabel}>Protein</Text>
+								<Text style={styles.nutritionValue}>{recipe.nutritional_info.protein}</Text>
+							</View>
+						)}
+						
+						{recipe.nutritional_info.carbs && (
+							<View style={styles.nutritionItem}>
+								<Text style={styles.nutritionIcon}>🍞</Text>
+								<Text style={styles.nutritionLabel}>Carbs</Text>
+								<Text style={styles.nutritionValue}>{recipe.nutritional_info.carbs}</Text>
+							</View>
+						)}
+						
+						{recipe.nutritional_info.fat && (
+							<View style={styles.nutritionItem}>
+								<Text style={styles.nutritionIcon}>🥑</Text>
+								<Text style={styles.nutritionLabel}>Fat</Text>
+								<Text style={styles.nutritionValue}>{recipe.nutritional_info.fat}</Text>
+							</View>
+						)}
+						
+						{recipe.nutritional_info.fiber && (
+							<View style={styles.nutritionItem}>
+								<Text style={styles.nutritionIcon}>🌾</Text>
+								<Text style={styles.nutritionLabel}>Fiber</Text>
+								<Text style={styles.nutritionValue}>{recipe.nutritional_info.fiber}</Text>
+							</View>
+						)}
+						
+						{recipe.nutritional_info.sugar && (
+							<View style={styles.nutritionItem}>
+								<Text style={styles.nutritionIcon}>🍯</Text>
+								<Text style={styles.nutritionLabel}>Sugar</Text>
+								<Text style={styles.nutritionValue}>{recipe.nutritional_info.sugar}</Text>
+							</View>
+						)}
+					</View>
+					
+					{/* Nutritional Notes */}
+					<View style={styles.nutritionNotes}>
+						<Text style={styles.notesTitle}>💡 Nutrition Tips</Text>
+						{recipe.nutritional_info.calories && (
+							<Text style={styles.noteText}>
+								• This recipe provides {Math.round((recipe.nutritional_info.calories / 2000) * 100)}% of daily calories (based on 2000 cal/day)
+							</Text>
+						)}
+						{recipe.nutritional_info.protein && (
+							<Text style={styles.noteText}>
+								• Good source of protein for muscle health and satiety
+							</Text>
+						)}
+						{recipe.nutritional_info.fiber && (
+							<Text style={styles.noteText}>
+								• Contains fiber for digestive health
+							</Text>
+						)}
 					</View>
 				</View>
 			)}
@@ -237,6 +312,21 @@ const styles = StyleSheet.create({
 		color: '#00205B',
 		marginBottom: 20,
 		textAlign: 'center',
+	},
+	imageContainer: {
+		marginBottom: 20,
+		borderRadius: 15,
+		overflow: 'hidden',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.3,
+		shadowRadius: 8,
+		elevation: 6,
+	},
+	recipeImage: {
+		width: '100%',
+		height: 250,
+		backgroundColor: '#f0f0f0',
 	},
 	infoSection: {
 		backgroundColor: '#fff',
@@ -342,23 +432,83 @@ const styles = StyleSheet.create({
 	},
 	nutritionItem: {
 		backgroundColor: '#faf4eb',
-		borderRadius: 8,
-		padding: 10,
-		minWidth: '45%',
+		borderRadius: 12,
+		padding: 15,
+		minWidth: '30%',
+		maxWidth: '48%',
 		alignItems: 'center',
+		borderWidth: 1,
+		borderColor: '#e8dcc0',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+		elevation: 3,
+	},
+	caloriesItem: {
+		backgroundColor: '#fff5f5',
+		borderColor: '#fed7d7',
+		minWidth: '48%',
+	},
+	nutritionIcon: {
+		fontSize: 24,
+		marginBottom: 8,
 	},
 	nutritionLabel: {
 		fontSize: 12,
 		color: '#00205B',
-		opacity: 0.7,
+		opacity: 0.8,
 		marginBottom: 5,
 		textAlign: 'center',
+		fontWeight: '600',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5,
 	},
 	nutritionValue: {
-		fontSize: 14,
+		fontSize: 18,
 		color: '#00205B',
 		fontWeight: 'bold',
 		textAlign: 'center',
+	},
+	caloriesValue: {
+		fontSize: 22,
+		color: '#d53f8c',
+	},
+	nutritionUnit: {
+		fontSize: 10,
+		color: '#00205B',
+		opacity: 0.6,
+		marginTop: 2,
+		textAlign: 'center',
+	},
+	nutritionDisclaimer: {
+		fontSize: 12,
+		color: '#00205B',
+		opacity: 0.6,
+		textAlign: 'center',
+		marginBottom: 15,
+		fontStyle: 'italic',
+	},
+	nutritionNotes: {
+		backgroundColor: '#f0f8ff',
+		borderRadius: 8,
+		padding: 15,
+		marginTop: 15,
+		borderWidth: 1,
+		borderColor: '#bee3f8',
+	},
+	notesTitle: {
+		fontSize: 14,
+		fontWeight: 'bold',
+		color: '#00205B',
+		marginBottom: 8,
+	},
+	noteText: {
+		fontSize: 12,
+		color: '#00205B',
+		opacity: 0.8,
+		lineHeight: 16,
+		marginBottom: 4,
 	},
 	sourceText: {
 		fontSize: 16,

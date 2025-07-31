@@ -5,7 +5,7 @@ export class WebScrapingAPIService {
   private static readonly SPOONACULAR_API_KEY = process.env.EXPO_PUBLIC_SPOONACULAR_KEY;
 
   /**
-   * Extract recipe using ScrapingBee API
+   * Extract recipe using ScrapingBee API with improved timeout settings
    */
   static async extractWithScrapingBee(url: string): Promise<string | null> {
     if (!this.SCRAPINGBEE_API_KEY) {
@@ -18,15 +18,39 @@ export class WebScrapingAPIService {
         `api_key=${this.SCRAPINGBEE_API_KEY}&` +
         `url=${encodeURIComponent(url)}&` +
         `render_js=true&` +
-        `premium_proxy=true`;
+        `premium_proxy=true&` +
+        `wait=5000&` +                    // Wait 5 seconds for page to load
+        `wait_for_selector=body&` +       // Wait for body element
+        `timeout=30000`;                  // 30 second total timeout
 
-      const response = await fetch(apiUrl);
+      console.log('ScrapingBee: Extracting recipe from:', url);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 second client timeout
+
+      const response = await fetch(apiUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'VelvetLadle Recipe App 1.0'
+        }
+      });
+
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        return await response.text();
+        const html = await response.text();
+        console.log('ScrapingBee: Successfully extracted HTML (', html.length, 'characters)');
+        return html;
+      } else {
+        console.error('ScrapingBee API error:', response.status, response.statusText);
+        return null;
       }
-      return null;
     } catch (error) {
-      console.error('ScrapingBee API error:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('ScrapingBee request timed out after 35 seconds');
+      } else {
+        console.error('ScrapingBee API error:', error);
+      }
       return null;
     }
   }

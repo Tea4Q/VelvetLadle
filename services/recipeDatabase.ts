@@ -43,6 +43,7 @@ export class RecipeDatabase {
       }
 
       console.log('Recipe saved successfully:', data);
+      console.log('🖼️ Saved image URL:', data?.image_url);
       return { success: true, data };
     } catch (error) {
       console.error('Unexpected error saving recipe:', error);
@@ -151,6 +152,43 @@ export class RecipeDatabase {
     } catch (error) {
       console.error('Unexpected error deleting recipe:', error);
       return { success: false, error: 'An unexpected error occurred while deleting the recipe' };
+    }
+  }
+
+  static async getRecentRecipes(days: number = 7): Promise<Recipe[]> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        // Demo storage: filter by creation date
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        
+        return allRecipes.filter(recipe => {
+          if (!recipe.created_at) return false;
+          const recipeDate = new Date(recipe.created_at);
+          return recipeDate >= cutoffDate;
+        });
+      }
+
+      // Supabase: query recent recipes
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .gte('created_at', cutoffDate.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching recent recipes:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error fetching recent recipes:', error);
+      return [];
     }
   }
 }

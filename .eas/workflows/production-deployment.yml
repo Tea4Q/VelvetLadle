@@ -1,0 +1,112 @@
+build_and_submit_production:
+  name: Build and Submit to App Stores
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/setup_node:
+        node_version: 18.x
+    - eas/cache:
+        cache_key_prefix: v1-production-submit
+        cache_paths: |
+          node_modules
+          ~/.npm
+    - run:
+        name: Install dependencies
+        command: npm ci
+    - run:
+        name: Check TypeScript
+        command: npx tsc --noEmit
+    - run:
+        name: Run full test suite
+        command: npm test -- --watchAll=false --coverage --verbose
+    - run:
+        name: Run linting with strict rules
+        command: npm run lint --if-present
+    - run:
+        name: Validate app configuration
+        command: npx expo config --type=public
+    - run:
+        name: Check for security vulnerabilities
+        command: npm audit --audit-level=moderate
+    - eas/build:
+        platform: all
+        profile: production
+        message: "Production build for app store submission"
+    - eas/submit:
+        platform: all
+        profile: production
+
+build_production_with_metadata:
+  name: Build Production with Store Metadata
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/setup_node:
+        node_version: 18.x
+    - eas/cache:
+        cache_key_prefix: v1-production-metadata
+        cache_paths: |
+          node_modules
+          ~/.npm
+    - run:
+        name: Install dependencies
+        command: npm ci
+    - run:
+        name: Generate app icons
+        command: npx expo export:embed --platform=all
+    - run:
+        name: Validate assets
+        command: |
+          echo "Validating app icons and splash screens..."
+          ls -la assets/images/
+    - run:
+        name: Check bundle size
+        command: |
+          echo "Checking bundle size..."
+          npx expo export --platform=all --output-dir=dist-check
+          du -sh dist-check/
+          rm -rf dist-check/
+    - run:
+        name: Run comprehensive tests
+        command: npm test -- --watchAll=false --coverage --verbose
+    - eas/build:
+        platform: all
+        profile: production
+        message: "Production build with validated metadata"
+
+release_candidate_build:
+  name: Release Candidate Build
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/setup_node:
+        node_version: 18.x
+    - eas/cache:
+        cache_key_prefix: v1-release-candidate
+        cache_paths: |
+          node_modules
+          ~/.npm
+    - run:
+        name: Install dependencies
+        command: npm ci
+    - run:
+        name: Run TypeScript strict check
+        command: npx tsc --noEmit --strict
+    - run:
+        name: Run all tests with coverage
+        command: npm test -- --watchAll=false --coverage --verbose --collectCoverageFrom="**/*.{ts,tsx}" --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80,"statements":80}}'
+    - run:
+        name: Performance check
+        command: |
+          echo "Running performance checks..."
+          npm run build --if-present
+    - run:
+        name: Security audit
+        command: npm audit --audit-level=moderate
+    - eas/build:
+        platform: all
+        profile: production
+        message: "Release candidate build - ready for store submission"

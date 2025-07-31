@@ -4,7 +4,7 @@
     "slug": "VelvetLadle",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/assets/images/favicon_velveltLadle_large_128x128.png",
+    "icon": "./assets/images/favicon_velveltLadle_large_128x128.png",
     "scheme": "velvetladle",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/assets/images/Velvet_Ladle_Splash_Android_Large_2400x1080.png",
+        "foregroundImage": "./assets/images/Velvet_Ladle_Splash_Android_Large_2400x1080.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

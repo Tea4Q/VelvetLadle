@@ -1,5 +1,5 @@
-build_production_android:
-  name: Build Production Android
+build_android:
+  name: Create Android development build
   steps:
     - eas/checkout
     - eas/setup_expo:
@@ -7,7 +7,7 @@ build_production_android:
     - eas/setup_node:
         node_version: 18.x
     - eas/cache:
-        cache_key_prefix: v1-production-android
+        cache_key_prefix: v1-android-dependencies
         cache_paths: |
           node_modules
           ~/.npm
@@ -21,16 +21,13 @@ build_production_android:
     - run:
         name: Run linting
         command: npm run lint --if-present
-    - run:
-        name: Run tests
-        command: npm test -- --watchAll=false --coverage
     - eas/build:
         platform: android
-        profile: production
-        message: "Production Android build"
+        profile: development
+        message: "Android development build"
 
-build_production_ios:
-  name: Build Production iOS
+build_ios:
+  name: Create iOS development build
   steps:
     - eas/checkout
     - eas/setup_expo:
@@ -38,7 +35,7 @@ build_production_ios:
     - eas/setup_node:
         node_version: 18.x
     - eas/cache:
-        cache_key_prefix: v1-production-ios
+        cache_key_prefix: v1-ios-dependencies
         cache_paths: |
           node_modules
           ~/.npm
@@ -52,16 +49,13 @@ build_production_ios:
     - run:
         name: Run linting
         command: npm run lint --if-present
-    - run:
-        name: Run tests
-        command: npm test -- --watchAll=false --coverage
     - eas/build:
         platform: ios
-        profile: production
-        message: "Production iOS build"
+        profile: development
+        message: "iOS development build"
 
-build_production_all:
-  name: Build Production All Platforms
+preview_build:
+  name: Create preview build
   steps:
     - eas/checkout
     - eas/setup_expo:
@@ -69,7 +63,7 @@ build_production_all:
     - eas/setup_node:
         node_version: 18.x
     - eas/cache:
-        cache_key_prefix: v1-production-all
+        cache_key_prefix: v1-preview-dependencies
         cache_paths: |
           node_modules
           ~/.npm
@@ -80,15 +74,9 @@ build_production_all:
         name: Check TypeScript
         command: npx tsc --noEmit
     - run:
-        name: Run linting
-        command: npm run lint --if-present
-    - run:
         name: Run tests
-        command: npm test -- --watchAll=false --coverage
-    - run:
-        name: Validate app configuration
-        command: npx expo config --type=public
+        command: npm test -- --watchAll=false --passWithNoTests
     - eas/build:
         platform: all
-        profile: production
-        message: "Production build for app store submission"
+        profile: preview
+        message: "Preview build for testing"

@@ -121,14 +121,14 @@ export class FavoritesService {
             onConflict: 'url',
             ignoreDuplicates: false 
           });
-        console.log('✅ URL added to favorites in database');
+        console.log('✅ Website added to favorites in database');
       } else {
         await this.addToLocalFavorites(favorite);
-        console.log('✅ URL added to local favorites');
+        console.log('✅ Website added to local favorites');
       }
     } catch (error) {
-      console.error('❌ Error adding URL to favorites:', error);
-      throw new Error('Failed to add URL to favorites');
+      console.error('❌ Error adding website to favorites:', error);
+      throw new Error('Failed to add website to favorites');
     }
   }
 
@@ -142,14 +142,14 @@ export class FavoritesService {
           .from('favorites')
           .delete()
           .eq('url', url);
-        console.log('✅ URL removed from favorites in database');
+        console.log('✅ Website removed from favorites in database');
       } else {
         await this.removeFromLocalFavorites('url', undefined, url);
-        console.log('✅ URL removed from local favorites');
+        console.log('✅ Website removed from local favorites');
       }
     } catch (error) {
-      console.error('❌ Error removing URL from favorites:', error);
-      throw new Error('Failed to remove URL from favorites');
+      console.error('❌ Error removing Website from favorites:', error);
+      throw new Error('Failed to remove Website from favorites');
     }
   }
 

@@ -1,68 +1,92 @@
-name: Deploy to production
+fingerprint_check:
+  name: Check app fingerprint
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/fingerprint
 
-on:
-  push:
-    branches: ['main']
+build_or_update_android:
+  name: Build or Update Android
+  needs: [fingerprint_check]
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/setup_node:
+        node_version: 18.x
+    - eas/cache:
+        cache_key_prefix: v1-deploy-android
+        cache_paths: |
+          node_modules
+          ~/.npm
+          ~/.gradle/caches
+    - run:
+        name: Install dependencies
+        command: npm ci
+    - run:
+        name: Check TypeScript
+        command: npx tsc --noEmit
+    - run:
+        name: Run tests
+        command: npm test -- --watchAll=false --passWithNoTests
+    - eas/build_or_update:
+        platform: android
+        profile: production
+        channel: production
+        message: "Production deployment for Android"
 
-jobs:
-  fingerprint:
-    name: Fingerprint
-    type: fingerprint
-  get_android_build:
-    name: Check for existing android build
-    needs: [fingerprint]
-    type: get-build
-    params:
-      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
-      profile: production
-  get_ios_build:
-    name: Check for existing ios build
-    needs: [fingerprint]
-    type: get-build
-    params:
-      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
-      profile: production
-  build_android:
-    name: Build Android
-    needs: [get_android_build]
-    if: ${{ !needs.get_android_build.outputs.build_id }}
-    type: build
-    params:
-      platform: android
-      profile: production
-  build_ios:
-    name: Build iOS
-    needs: [get_ios_build]
-    if: ${{ !needs.get_ios_build.outputs.build_id }}
-    type: build
-    params:
-      platform: ios
-      profile: production
-  submit_android_build:
-    name: Submit Android Build
-    needs: [build_android]
-    type: submit
-    params:
-      build_id: ${{ needs.build_android.outputs.build_id }}
-  submit_ios_build:
-    name: Submit iOS Build
-    needs: [build_ios]
-    type: submit
-    params:
-      build_id: ${{ needs.build_ios.outputs.build_id }}
-  publish_android_update:
-    name: Publish Android update
-    needs: [get_android_build]
-    if: ${{ needs.get_android_build.outputs.build_id }}
-    type: update
-    params:
-      branch: production
-      platform: android
-  publish_ios_update:
-    name: Publish iOS update
-    needs: [get_ios_build]
-    if: ${{ needs.get_ios_build.outputs.build_id }}
-    type: update
-    params:
-      branch: production
-      platform: ios
+build_or_update_ios:
+  name: Build or Update iOS  
+  needs: [fingerprint_check]
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/setup_node:
+        node_version: 18.x
+    - eas/cache:
+        cache_key_prefix: v1-deploy-ios
+        cache_paths: |
+          node_modules
+          ~/.npm
+          ~/Library/Caches/CocoaPods
+    - run:
+        name: Install dependencies
+        command: npm ci
+    - run:
+        name: Check TypeScript
+        command: npx tsc --noEmit
+    - run:
+        name: Run tests
+        command: npm test -- --watchAll=false --passWithNoTests
+    - eas/build_or_update:
+        platform: ios
+        profile: production
+        channel: production
+        message: "Production deployment for iOS"
+
+deploy_production:
+  name: Deploy to Production
+  needs: [build_or_update_android, build_or_update_ios]
+  steps:
+    - eas/checkout
+    - eas/setup_expo:
+        expo_version: latest
+    - eas/setup_node:
+        node_version: 18.x
+    - run:
+        name: Install dependencies
+        command: npm ci
+    - run:
+        name: Validate production environment
+        command: |
+          echo "Validating production environment..."
+          npx expo config --type=public
+    - run:
+        name: Run comprehensive tests
+        command: npm test -- --watchAll=false --coverage
+    - eas/update:
+        channel: production
+        platform: all
+        message: "Production update deployment"

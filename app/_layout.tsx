@@ -8,18 +8,29 @@ export default function RootLayout() {
 		<ThemeProvider>
 			<AuthProvider>
 				<StatusBar style='light' />
-				<Stack>
+				<Stack
+					screenOptions={{
+						headerShown: false,
+					}}
+				>
 					<Stack.Screen
-						name='(tabs)'
+						name='(auth)'
 						options={{
-							headerShown: false, // Hide the header for the tabs layout
+							headerShown: false,
 						}}
 					/>
 					<Stack.Screen
-						name='not-found'
+						name='(tabs)'
+						options={{
+							headerShown: false,
+						}}
+					/>
+					<Stack.Screen
+						name='+not-found'
 						options={{
 							title: 'Not Found',
-							headerLeft: () => null, // Hide the back button
+							headerShown: true,
+							headerLeft: () => null,
 						}}
 					/>
 				</Stack>

@@ -2,17 +2,17 @@ import { View, Pressable, StyleSheet, Text } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 type Props = {
-     label: string;
+	icon: keyof typeof FontAwesome.glyphMap;
+	label: string;
 	onPress: () => void;
-	
 };
 
-export default function CircleButton({ onPress, label }: Props) {
+export default function CircleButton({ onPress, label, icon }: Props) {
 	return (
 		<View style={styles.circleButtonContainer}>
 			<Pressable style={styles.circleButton} onPress={onPress}>
-                    <FontAwesome name='globe' size={38} color='#00205B' />
-                    <Text style={[styles.circleButtonLabel]}>{label}</Text>
+				<FontAwesome name={icon} size={24} color="#00205B" />
+				<Text style={[styles.circleButtonLabel]}>{label}</Text>
 			</Pressable>
 		</View>
 	);

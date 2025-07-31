@@ -86,7 +86,7 @@ export default function TabsLayout() {
 							iconLibrary="FontAwesome6"
 						/>
 					),
-					tabBarLabel: 'Home',
+					tabBarLabel: 'Dashboard',
 				}}
 			/>
 			<Tabs.Screen
