@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import RecipeList from '../../components/RecipeList';
 import RecipeViewer from '../../components/RecipeViewer';
+import ManualRecipeModal from '../../components/ManualRecipeModal';
 import { Recipe } from '../../lib/supabase';
 import { useColors } from '../../contexts/ThemeContext';
 
 export default function RecipesScreen() {
 	const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+	const [showEditModal, setShowEditModal] = useState(false);
+	const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+	const [refreshKey, setRefreshKey] = useState(0);
 	const colors = useColors();
 
 	const handleRecipeSelect = (recipe: Recipe) => {
@@ -18,8 +22,22 @@ export default function RecipesScreen() {
 	};
 
 	const handleEdit = (recipe: Recipe) => {
-		// TODO: Implement edit functionality
-		console.log('Edit recipe:', recipe.title);
+		setEditingRecipe(recipe);
+		setShowEditModal(true);
+	};
+
+	const handleEditModalClose = () => {
+		setShowEditModal(false);
+		setEditingRecipe(null);
+	};
+
+	const handleRecipeUpdated = () => {
+		// Refresh the recipe list by incrementing the refresh key
+		setRefreshKey(prev => prev + 1);
+		// If we're viewing the edited recipe, update the selected recipe
+		if (selectedRecipe && editingRecipe && selectedRecipe.id === editingRecipe.id) {
+			setSelectedRecipe(null);
+		}
 	};
 
 	return (
@@ -32,9 +50,17 @@ export default function RecipesScreen() {
 				/>
 			) : (
 				<RecipeList
+					key={refreshKey} // This will trigger a refresh when the key changes
 					onRecipeSelect={handleRecipeSelect}
 				/>
 			)}
+			
+			<ManualRecipeModal
+				visible={showEditModal}
+				onClose={handleEditModalClose}
+				editingRecipe={editingRecipe}
+				onRecipeUpdated={handleRecipeUpdated}
+			/>
 		</View>
 	);
 }

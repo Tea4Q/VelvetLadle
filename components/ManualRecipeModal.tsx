@@ -8,14 +8,31 @@ type Props = {
 	visible: boolean;
 	onClose: () => void;
 	initialUrl?: string;
+	editingRecipe?: Recipe | null;
+	onRecipeUpdated?: () => void;
+	onRecipeSelect?: (recipe: Recipe) => void;
 };
 
-export default function ManualRecipeModal({ visible, onClose, initialUrl }: Props) {
+export default function ManualRecipeModal({ visible, onClose, initialUrl, editingRecipe, onRecipeUpdated, onRecipeSelect }: Props) {
 	const [title, setTitle] = useState('');
 	const [ingredients, setIngredients] = useState('');
 	const [directions, setDirections] = useState('');
 	const [servings, setServings] = useState('');
 	const [isSaving, setIsSaving] = useState(false);
+
+	const isEditing = !!editingRecipe;
+
+	// Populate form when editing
+	React.useEffect(() => {
+		if (editingRecipe) {
+			setTitle(editingRecipe.title || '');
+			setIngredients(editingRecipe.ingredients ? editingRecipe.ingredients.join('\n') : '');
+			setDirections(editingRecipe.directions ? editingRecipe.directions.join('\n') : '');
+			setServings(editingRecipe.servings ? editingRecipe.servings.toString() : '');
+		} else {
+			resetForm();
+		}
+	}, [editingRecipe, visible]);
 
 	const resetForm = () => {
 		setTitle('');
@@ -48,27 +65,61 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl }: Prop
 				ingredients: ingredients.split('\n').map(ing => ing.trim()).filter(ing => ing.length > 0),
 				directions: directions.split('\n').map(dir => dir.trim()).filter(dir => dir.length > 0),
 				servings: servings.trim() ? parseInt(servings.trim()) : undefined,
-				web_address: initialUrl || 'manually-entered',
-				description: 'Manually entered recipe'
+				web_address: initialUrl || editingRecipe?.web_address || 'manually-entered',
+				description: editingRecipe?.description || 'Manually entered recipe'
 			};
 
-			const result = await RecipeDatabase.saveRecipe(recipe);
+			let result;
+			if (isEditing && editingRecipe?.id) {
+				// Update existing recipe
+				result = await RecipeDatabase.updateRecipe(editingRecipe.id, recipe);
+			} else {
+				// Create new recipe
+				result = await RecipeDatabase.saveRecipe(recipe);
+			}
 
 			if (result.success) {
 				const storageType = isSupabaseConfigured ? 'Supabase database' : 'demo storage (temporary)';
 				const setupNote = isSupabaseConfigured ? '' : '\n\n💡 Set up Supabase for permanent storage';
+				const actionText = isEditing ? 'updated' : 'saved';
+				
+				const buttons = [
+					{ 
+						text: 'OK', 
+						onPress: () => { 
+							resetForm(); 
+							onClose(); 
+							if (onRecipeUpdated) onRecipeUpdated();
+						} 
+					}
+				];
+
+				// Add "View Recipe" button if onRecipeSelect is provided and we have the saved recipe
+				if (onRecipeSelect && result.data) {
+					buttons.push({
+						text: 'View Recipe',
+						onPress: () => {
+							resetForm();
+							onClose();
+							if (onRecipeUpdated) onRecipeUpdated();
+							if (result.data) {
+								onRecipeSelect(result.data);
+							}
+						}
+					});
+				}
 				
 				Alert.alert(
-					'Recipe Saved!',
-					`Successfully saved "${recipe.title}" to ${storageType} with ${recipe.ingredients.length} ingredients and ${recipe.directions.length} steps.${setupNote}`,
-					[{ text: 'OK', onPress: () => { resetForm(); onClose(); } }]
+					`Recipe ${isEditing ? 'Updated' : 'Saved'}!`,
+					`Successfully ${actionText} "${recipe.title}" to ${storageType} with ${recipe.ingredients.length} ingredients and ${recipe.directions.length} steps.${setupNote}`,
+					buttons
 				);
 			} else {
-				Alert.alert('Save Failed', `Could not save the recipe: ${result.error}`);
+				Alert.alert(`${isEditing ? 'Update' : 'Save'} Failed`, `Could not ${isEditing ? 'update' : 'save'} the recipe: ${result.error}`);
 			}
 		} catch (error) {
-			console.error('Error saving manual recipe:', error);
-			Alert.alert('Error', 'An unexpected error occurred while saving the recipe.');
+			console.error(`Error ${isEditing ? 'updating' : 'saving'} manual recipe:`, error);
+			Alert.alert('Error', `An unexpected error occurred while ${isEditing ? 'updating' : 'saving'} the recipe.`);
 		} finally {
 			setIsSaving(false);
 		}
@@ -89,8 +140,8 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl }: Prop
 			<View style={styles.modalOverlay}>
 				<View style={styles.modalContent}>
 					<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-						<Text style={styles.modalTitle}>Add Recipe Manually</Text>
-						<Text style={styles.subtitle}>Enter recipe details below</Text>
+						<Text style={styles.modalTitle}>{isEditing ? 'Edit Recipe' : 'Add Recipe Manually'}</Text>
+						<Text style={styles.subtitle}>{isEditing ? 'Update recipe details below' : 'Enter recipe details below'}</Text>
 
 						<Text style={styles.label}>Recipe Title *</Text>
 						<TextInput
@@ -99,6 +150,8 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl }: Prop
 							value={title}
 							onChangeText={setTitle}
 							multiline={false}
+							spellCheck={true}
+							autoCorrect={true}
 						/>
 
 						<Text style={styles.label}>Ingredients * (one per line)</Text>
@@ -110,6 +163,8 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl }: Prop
 							multiline={true}
 							numberOfLines={6}
 							textAlignVertical="top"
+							spellCheck={true}
+							autoCorrect={true}
 						/>
 
 						<Text style={styles.label}>Directions * (one step per line)</Text>
@@ -121,6 +176,8 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl }: Prop
 							multiline={true}
 							numberOfLines={6}
 							textAlignVertical="top"
+							spellCheck={true}
+							autoCorrect={true}
 						/>
 
 						<Text style={styles.label}>Servings (optional)</Text>
@@ -131,11 +188,13 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl }: Prop
 							onChangeText={setServings}
 							keyboardType="numeric"
 							multiline={false}
+							spellCheck={false}
+							autoCorrect={false}
 						/>
 
 						<View style={styles.buttonContainer}>
 							<Button
-								label={isSaving ? 'Saving...' : 'Save Recipe'}
+								label={isSaving ? (isEditing ? 'Updating...' : 'Saving...') : (isEditing ? 'Update Recipe' : 'Save Recipe')}
 								theme="primary"
 								onPress={handleSave}
 							/>

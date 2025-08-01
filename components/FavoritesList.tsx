@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Share } from 'react-native';
 import { FavoritesService } from '../services/FavoritesService';
 import { Favorite, Recipe } from '../lib/supabase';
@@ -8,9 +8,10 @@ import Button from './button';
 type Props = {
   onRecipeSelect?: (recipe: Recipe) => void;
   onUrlOpen?: (url: string) => void;
+  refreshTrigger?: number;
 };
 
-export default function FavoritesList({ onRecipeSelect, onUrlOpen }: Props) {
+export default function FavoritesList({ onRecipeSelect, onUrlOpen, refreshTrigger }: Props) {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [favoriteRecipes, setFavoriteRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +25,7 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen }: Props) {
   const typography = useTypography();
   const elevation = useElevation();
 
-  const loadFavorites = async () => {
+  const loadFavorites = useCallback(async () => {
     try {
       console.log('Loading favorites...');
       const [allFavorites, recipes] = await Promise.all([
@@ -42,12 +43,12 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen }: Props) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadFavorites();
-  };
+  }, [loadFavorites]);
 
   const handleRemoveFavorite = async (favorite: Favorite) => {
     Alert.alert(
@@ -111,7 +112,14 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen }: Props) {
 
   useEffect(() => {
     loadFavorites();
-  }, []);
+  }, [loadFavorites]);
+
+  // Handle refresh trigger from parent
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      handleRefresh();
+    }
+  }, [refreshTrigger, handleRefresh]);
 
   const getDisplayData = () => {
     switch (activeTab) {

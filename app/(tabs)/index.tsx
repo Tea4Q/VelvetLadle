@@ -1,32 +1,26 @@
-import Button from '@/components/button';
-import UrlActionModal from '@/components/UrlActionModal';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
 import { FavoritesService } from '@/services/FavoritesService';
 import { RecipeDatabase } from '@/services/recipeDatabase';
+import { formatTimeAgo } from '@/utils/timeFormatter';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+
 import {
-	Alert,
 	Pressable,
 	ScrollView,
 	StyleSheet,
 	Text,
-	TextInput,
 	View,
 } from 'react-native';
 
 export default function Index() {
-	const [selectedOption, setSelectedOption] = useState<
-		'web' | 'ocr' | undefined
-	>(undefined);
-	const [showAppOptions, setShowAppOptions] = useState<boolean>(false);
-	const [webUrl, setWebUrl] = useState<string>('');
-	const [showUrlModal, setShowUrlModal] = useState<boolean>(false);
-	const [processedUrl, setProcessedUrl] = useState<string>('');
 	const [recipeCount, setRecipeCount] = useState<number>(0);
 	const [favoriteCount, setFavoriteCount] = useState<number>(0);
 	const [recentCount, setRecentCount] = useState<number>(0);
+	const [lastRecipeTime, setLastRecipeTime] = useState<string>('');
 
 	const colors = useColors();
 	const radius = useRadius();
@@ -62,93 +56,46 @@ export default function Index() {
 		}
 	};
 
+	const loadLastRecipeTime = async () => {
+		try {
+			const mostRecent = await RecipeDatabase.getMostRecentRecipe();
+			if (mostRecent && mostRecent.created_at) {
+				const timeAgo = formatTimeAgo(mostRecent.created_at);
+				setLastRecipeTime(timeAgo);
+			} else {
+				setLastRecipeTime('');
+			}
+		} catch (error) {
+			console.error('Error loading last recipe time:', error);
+			setLastRecipeTime('');
+		}
+	};
+
 	useEffect(() => {
 		loadRecipeCount();
 		loadFavoriteCount();
 		loadRecentCount();
+		loadLastRecipeTime();
 	}, []);
 
-	const handleWebPageOption = () => {
-		setSelectedOption('web');
-		setShowAppOptions(true);
-	};
-
-	const handleOCROption = () => {
-		setSelectedOption('ocr');
-		Alert.alert(
-			'OCR Feature',
-			'OCR scanning will be implemented soon. This will allow you to scan images and extract text from recipes.',
-			[{ text: 'OK' }]
-		);
-		setShowAppOptions(true);
-	};
-
-	const handleWebUrlSubmit = () => {
-		if (!webUrl.trim()) {
-			console.log('Empty URL - showing error alert');
-			Alert.alert('Error', 'Please enter a valid URL');
-			return;
-		}
-
-		// Basic URL validation
-		let url = webUrl.trim();
-
-		// Add protocol if missing
-		if (!url.startsWith('http://') && !url.startsWith('https://')) {
-			url = 'https://' + url;
-		}
-
-		// Use external modal
-		setProcessedUrl(url);
-		setShowUrlModal(true);
-	};
-
-	const closeModal = () => {
-		console.log('Modal closed');
-		setShowUrlModal(false);
-		// Refresh recipe count when modal closes (in case a recipe was added)
-		loadRecipeCount();
-		loadFavoriteCount();
-		loadRecentCount();
-	};
-
-	const QuickActionCard = ({
-		icon,
-		title,
-		subtitle,
-		onPress,
-		theme = 'primary',
-	}: {
-		icon: string;
-		title: string;
-		subtitle: string;
-		onPress: () => void;
-		theme?: 'primary' | 'secondary';
-	}) => (
-		<Pressable
-			style={[
-				styles.quickActionCard,
-				{
-					backgroundColor: theme === 'primary' ? colors.primary : colors.accent,
-					borderRadius: radius.md,
-				},
-			]}
-			onPress={onPress}
-		>
-			<FontAwesome6
-				name={icon as any}
-				size={32}
-				color={colors.textInverse}
-				style={styles.quickActionIcon}
-			/>
-			<Text style={[styles.quickActionTitle, { color: colors.textInverse }]}>
-				{title}
-			</Text>
-			<Text style={[styles.quickActionSubtitle, { color: colors.textInverse }]}>
-				{subtitle}
-			</Text>
-		</Pressable>
+	// Refresh data when screen comes into focus (e.g., returning from adding a recipe)
+	useFocusEffect(
+		useCallback(() => {
+			loadRecipeCount();
+			loadFavoriteCount();
+			loadRecentCount();
+			loadLastRecipeTime();
+		}, [])
 	);
+
+	// Navigation handlers for stats cards
+	const handleNavigateToRecipes = () => {
+		router.push('/(tabs)/recipes');
+	};
+
+	const handleNavigateToFavorites = () => {
+		router.push('/(tabs)/favorites');
+	};
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -163,7 +110,7 @@ export default function Index() {
 							Welcome back, {user?.name || 'Chef'}! 👨‍🍳
 						</Text>
 						<Text style={[styles.welcomeSubtext, { color: colors.textLight }]}>
-							What&apos;s cooking today?
+							These are the recipes you captured so far!
 						</Text>
 					</View>
 					<Pressable
@@ -178,117 +125,108 @@ export default function Index() {
 
 				{/* Stats Cards */}
 				<View style={styles.statsContainer}>
-					<View
-						style={[
+					<Pressable
+						style={({ pressed }) => [
 							styles.statCard,
-							{ backgroundColor: colors.surface, borderRadius: radius.md },
+							{ 
+								backgroundColor: colors.surface, 
+								borderRadius: radius.md,
+								opacity: pressed ? 0.8 : 1,
+								transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+							},
 						]}
+						onPress={handleNavigateToRecipes}
 					>
-						<FontAwesome6 name='book' size={24} color={colors.primary} />
+						<FontAwesome6 name='bread-slice' size={24} color={colors.primary} />
 						<Text style={[styles.statNumber, { color: colors.primary }]}>
 							{recipeCount}
 						</Text>
 						<Text style={[styles.statLabel, { color: colors.textLight }]}>
 							Recipe{recipeCount !== 1 ? 's' : ''}
 						</Text>
-					</View>
-					<View
-						style={[
+					</Pressable>
+					<Pressable
+						style={({ pressed }) => [
 							styles.statCard,
-							{ backgroundColor: colors.surface, borderRadius: radius.md },
+							{ 
+								backgroundColor: colors.surface, 
+								borderRadius: radius.md,
+								opacity: pressed ? 0.8 : 1,
+								transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+							},
 						]}
+						onPress={handleNavigateToFavorites}
 					>
-						<FontAwesome6 name='star' size={24} color={colors.accent} />
-						<Text style={[styles.statNumber, { color: colors.accent }]}>
+						<FontAwesome6 name='star' size={24} color={colors.primary} />
+						<Text style={[styles.statNumber, { color: colors.primary }]}>
 							{favoriteCount}
 						</Text>
-						<Text style={[styles.statLabel, { color: colors.textLight }]}>
+						<Text style={[styles.statLabel, { color: colors.primary }]}>
 							Favorites{favoriteCount !== 1 ? 's' : ''}
 						</Text>
-					</View>
-					<View
-						style={[
+					</Pressable>
+					<Pressable
+						style={({ pressed }) => [
 							styles.statCard,
-							{ backgroundColor: colors.surface, borderRadius: radius.md },
+							{ 
+								backgroundColor: colors.surface, 
+								borderRadius: radius.md,
+								opacity: pressed ? 0.8 : 1,
+								transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+							},
 						]}
+						onPress={handleNavigateToRecipes}
 					>
-						<FontAwesome6 name='clock' size={24} color={colors.accentLight} />
-						<Text style={[styles.statNumber, { color: colors.accentLight }]}>
+						<FontAwesome6
+							name='cake-candles'
+							size={24}
+							color={colors.primary}
+						/>
+						<Text style={[styles.statNumber, { color: colors.primary }]}>
 							{recentCount}
 						</Text>
 						<Text style={[styles.statLabel, { color: colors.textLight }]}>
 							Recent{recentCount !== 1 ? 's' : ''}
 						</Text>
-					</View>
+					</Pressable>
 				</View>
 
-				{/* Quick Actions */}
-				<View style={styles.quickActionsSection}>
-					<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-						Quick Actions
-					</Text>
-					<View style={styles.quickActionsGrid}>
-						<QuickActionCard
-							icon='globe'
-							title='Add Recipe'
-							subtitle='From website URL'
-							onPress={handleWebPageOption}
-							theme='primary'
-						/>
-						<QuickActionCard
-							icon='camera'
-							title='Scan Recipe'
-							subtitle='OCR from image'
-							onPress={handleOCROption}
-							theme='secondary'
-						/>
-					</View>
-				</View>
-
-				{/* URL Input Section (when web option selected) */}
-				{showAppOptions && selectedOption === 'web' && (
-					<View
-						style={[
-							styles.urlInputSection,
-							{ backgroundColor: colors.surface, borderRadius: radius.lg },
+				{/* Quick Actions Link */}
+				<View style={styles.quickActionsLinkSection}>
+					<Pressable
+						style={({ pressed }) => [
+							styles.quickActionsLinkCard,
+							{
+								backgroundColor: colors.accent,
+								borderRadius: radius.lg,
+								opacity: pressed ? 0.9 : 1,
+								transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+							},
 						]}
+						onPress={() => router.push('/(tabs)/add')}
 					>
-						<Text
-							style={[styles.inputSectionTitle, { color: colors.textPrimary }]}
-						>
-							🌐 Enter Recipe Website URL
-						</Text>
-						<View style={styles.urlInputContainer}>
-							<TextInput
-								style={[
-									styles.modernTextInput,
-									{
-										backgroundColor: colors.background,
-										borderColor: colors.border,
-										color: colors.textPrimary,
-									},
-								]}
-								placeholder='https://example.com/recipe'
-								placeholderTextColor={colors.textLight}
-								value={webUrl}
-								onChangeText={setWebUrl}
-								autoCapitalize='none'
-								keyboardType='url'
-							/>
-							<View style={styles.urlInputButtons}>
-								<Button
-									label='Add Recipe'
-									theme='primary'
-									onPress={handleWebUrlSubmit}
-								/>
-								<Button
-									label='Cancel'
-									onPress={() => setShowAppOptions(false)}
-								/>
-							</View>
+						<FontAwesome6
+							name='plus-circle'
+							size={32}
+							color={colors.textInverse}
+							style={styles.quickActionsLinkIcon}
+						/>
+						<View style={styles.quickActionsLinkContent}>
+							<Text style={[styles.quickActionsLinkTitle, { color: colors.textInverse }]}>
+								What&apos;s cooking today?
+							</Text>
+							<Text style={[styles.quickActionsLinkSubtitle, { color: colors.textInverse }]}>
+								Add a new recipe from web or image
+							</Text>
 						</View>
-					</View>
-				)}
+						<FontAwesome6
+							name='chevron-right'
+							size={20}
+							color={colors.textInverse}
+							style={styles.quickActionsLinkArrow}
+						/>
+					</Pressable>
+				</View>
 
 				{/* Recent Activity */}
 				<View style={styles.recentSection}>
@@ -303,19 +241,13 @@ export default function Index() {
 					>
 						<FontAwesome6 name='clock' size={16} color={colors.textLight} />
 						<Text style={[styles.recentText, { color: colors.textLight }]}>
-							{recipeCount > 0
-								? `Last recipe added 2 hours ago`
+							{recipeCount > 0 && lastRecipeTime
+								? `Last recipe added ${lastRecipeTime}`
 								: 'No recipes yet - add your first one!'}
 						</Text>
 					</View>
 				</View>
 			</ScrollView>
-
-			<UrlActionModal
-				visible={showUrlModal}
-				url={processedUrl}
-				onClose={closeModal}
-			/>
 		</View>
 	);
 }
@@ -405,6 +337,33 @@ const styles = StyleSheet.create({
 	statLabel: {
 		fontSize: 12,
 		textAlign: 'center',
+	},
+	quickActionsLinkSection: {
+		marginBottom: 32,
+	},
+	quickActionsLinkCard: {
+		flexDirection: 'row',
+		padding: 24,
+		alignItems: 'center',
+		gap: 16,
+	},
+	quickActionsLinkIcon: {
+		marginRight: 4,
+	},
+	quickActionsLinkContent: {
+		flex: 1,
+	},
+	quickActionsLinkTitle: {
+		fontSize: 18,
+		fontWeight: 'bold',
+		marginBottom: 4,
+	},
+	quickActionsLinkSubtitle: {
+		fontSize: 14,
+		opacity: 0.9,
+	},
+	quickActionsLinkArrow: {
+		marginLeft: 8,
 	},
 	quickActionsSection: {
 		marginBottom: 32,

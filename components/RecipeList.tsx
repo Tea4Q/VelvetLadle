@@ -47,31 +47,10 @@ export default function RecipeList({ onRecipeSelect }: Props) {
 
 	const loadRecipes = async () => {
 		try {
-			console.log('Loading recipes...');
 			const recipes = await RecipeDatabase.getAllRecipes();
 
 			// Clean and validate recipes
 			const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
-
-			// Debug log all recipes with their IDs and titles
-			console.log('📋 Recipe details:');
-			recipes.forEach((recipe, index) => {
-				console.log(
-					`${index + 1}. ID: ${recipe.id} | Title: "${
-						recipe.title
-					}" | Ingredients: ${recipe.ingredients?.length || 0}`
-				);
-				if (recipe.nutritional_info) {
-					console.log(`  🍎 Nutritional info:`, recipe.nutritional_info);
-				} else {
-					console.log(`  ❌ No nutritional info`);
-				}
-			});
-
-			console.log(
-				`Loaded ${cleanRecipes.length} valid recipes (${recipes.length} total):`,
-				cleanRecipes.map((r) => RecipeValidation.getSafeTitle(r))
-			);
 
 			setAllRecipes(cleanRecipes);
 			setFilteredRecipes(cleanRecipes);
@@ -375,45 +354,6 @@ export default function RecipeList({ onRecipeSelect }: Props) {
 				console.error('❌ Image cleanup failed:', error);
 			}
 		};
-		
-		// Add function to fix missing nutritional information
-		(window as any).debugAddNutritionalInfo = async () => {
-			try {
-				console.log('🍎 Adding test nutritional information...');
-				const recipes = await RecipeDatabase.getAllRecipes();
-				let updatedCount = 0;
-				
-				for (const recipe of recipes) {
-					if (recipe.id && (!recipe.nutritional_info || Object.keys(recipe.nutritional_info).length === 0)) {
-						console.log(`Adding test nutritional info for recipe: "${recipe.title}"`);
-						
-						// Add some sample nutritional information
-						const testNutritionalInfo = {
-							calories: Math.floor(Math.random() * 400) + 200, // 200-600 calories
-							protein: Math.floor(Math.random() * 30) + 10 + 'g', // 10-40g protein
-							carbs: Math.floor(Math.random() * 50) + 20 + 'g', // 20-70g carbs
-							fat: Math.floor(Math.random() * 20) + 5 + 'g', // 5-25g fat
-							fiber: Math.floor(Math.random() * 10) + 2 + 'g', // 2-12g fiber
-							sugar: Math.floor(Math.random() * 15) + 5 + 'g', // 5-20g sugar
-						};
-						
-						await RecipeDatabase.updateRecipe(recipe.id, {
-							...recipe,
-							nutritional_info: testNutritionalInfo
-						});
-						
-						console.log(`✅ Updated recipe "${recipe.title}" with nutritional info:`, testNutritionalInfo);
-						updatedCount++;
-					}
-				}
-				
-				console.log(`🎉 Nutritional info added to ${updatedCount} recipes. Reloading...`);
-				await loadRecipes();
-			} catch (error) {
-				console.error('❌ Nutritional info addition failed:', error);
-			}
-		};
-		
 	}, []);
 
 	const availableIngredients =

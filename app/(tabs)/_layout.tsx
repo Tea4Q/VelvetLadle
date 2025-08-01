@@ -3,6 +3,10 @@ import { Tabs } from 'expo-router';
 import { useColors } from '../../contexts/ThemeContext';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+
+
 
 interface TabIconProps {
 	focused: boolean;
@@ -15,7 +19,7 @@ interface TabIconProps {
 function TabIcon({ focused, color, iconName, iconLibrary, size = 24 }: TabIconProps) {
 	const iconSize = focused ? size + 4 : size;
 	const IconComponent = iconLibrary === 'FontAwesome6' ? FontAwesome6 : Ionicons;
-	
+
 	return (
 		<View style={{ 
 			alignItems: 'center',
@@ -49,6 +53,7 @@ function TabIcon({ focused, color, iconName, iconLibrary, size = 24 }: TabIconPr
 
 export default function TabsLayout() {
 	const colors = useColors();
+	const insets = useSafeAreaInsets();
 	
 	return (
 		<Tabs
@@ -58,19 +63,24 @@ export default function TabsLayout() {
 				headerStyle: { backgroundColor: colors.primary },
 				headerTintColor: colors.textInverse,
 				headerShadowVisible: false,
-				tabBarStyle: { 
+				tabBarStyle: {
 					backgroundColor: colors.primary,
 					borderTopColor: colors.primaryLight,
-					paddingBottom: 5,
-					height: 65,
+					paddingBottom: Math.max(insets.bottom, 8),
+					paddingTop: 8,
+					height: 80 + Math.max(insets.bottom - 8, 0),
+					position: 'absolute',
+					bottom: 0,
 				},
 				tabBarLabelStyle: {
-					fontSize: 12,
+					fontSize: 11,
 					fontWeight: '600',
-					marginTop: 2,
+					marginTop: 4,
+					marginBottom: 2,
 				},
 				tabBarItemStyle: {
-					paddingVertical: 5,
+					paddingVertical: 4,
+					paddingHorizontal: 2,
 				},
 			}}
 		>
@@ -82,26 +92,26 @@ export default function TabsLayout() {
 						<TabIcon
 							focused={focused}
 							color={color}
-							iconName="kitchen-set"
-							iconLibrary="FontAwesome6"
+							iconName='bowl-food'
+							iconLibrary='FontAwesome6'
 						/>
 					),
 					tabBarLabel: 'Dashboard',
 				}}
 			/>
 			<Tabs.Screen
-				name='about'
+				name='add'
 				options={{
-					headerTitle: 'About Velvet Ladle',
+					headerTitle: 'Add Recipe',
 					tabBarIcon: ({ focused, color }) => (
 						<TabIcon
 							focused={focused}
 							color={color}
-							iconName="circle-info"
-							iconLibrary="FontAwesome6"
+							iconName='plus-circle'
+							iconLibrary='FontAwesome6'
 						/>
 					),
-					tabBarLabel: 'About',
+					tabBarLabel: 'Add',
 				}}
 			/>
 			<Tabs.Screen
@@ -112,8 +122,8 @@ export default function TabsLayout() {
 						<TabIcon
 							focused={focused}
 							color={color}
-							iconName="utensils"
-							iconLibrary="FontAwesome6"
+							iconName='utensils'
+							iconLibrary='FontAwesome6'
 						/>
 					),
 					tabBarLabel: 'Recipes',
@@ -128,13 +138,12 @@ export default function TabsLayout() {
 							focused={focused}
 							color={color}
 							iconName={focused ? 'star' : 'star-outline'}
-							iconLibrary="Ionicons"
+							iconLibrary='Ionicons'
 						/>
 					),
 					tabBarLabel: 'Favorites',
 				}}
 			/>
-
 		</Tabs>
 	);
 }

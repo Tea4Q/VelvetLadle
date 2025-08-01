@@ -71,7 +71,14 @@ export default function Button({ label, theme = 'primary', size = 'md', icon, on
 
 	return (
 		<Pressable
-			style={[
+			onPress={disabled ? undefined : onPress}
+			disabled={disabled}
+			hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+			android_ripple={!disabled ? { 
+				color: themeStyles.textColor === colors.textInverse ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+				borderless: false 
+			} : undefined}
+			style={({ pressed }) => [
 				styles.button,
 				{
 					backgroundColor: themeStyles.backgroundColor,
@@ -80,12 +87,11 @@ export default function Button({ label, theme = 'primary', size = 'md', icon, on
 					height: sizeStyles.height,
 					paddingHorizontal: sizeStyles.paddingHorizontal,
 					borderRadius: radius.lg,
-					opacity: disabled ? 0.6 : 1,
+					opacity: disabled ? 0.6 : pressed ? 0.8 : 1,
+					transform: pressed && !disabled ? [{ scale: 0.98 }] : [{ scale: 1 }],
 				},
 				!disabled && elevation.md,
 			]}
-			onPress={disabled ? undefined : onPress}
-			disabled={disabled}
 		>
 			{icon && (
 				<FontAwesome

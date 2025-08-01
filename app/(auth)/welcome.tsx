@@ -2,9 +2,9 @@ import Button from '@/components/button';
 import ImageViewer from '@/components/imageViewer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColors } from '@/contexts/ThemeContext';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, KeyboardAvoidingView } from 'react-native';
 
-const placeHolderImage = require('../../assets/images/splashIllustration.png');
+const placeHolderImage = require('../../assets/images/veveltLifeSplashImage.png');
 
 export default function WelcomeScreen() {
 	const colors = useColors();
@@ -12,11 +12,17 @@ export default function WelcomeScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScrollView contentContainerStyle={styles.authContainer}>
-				{/* Logo/Brand Section */}
-				<View style={styles.brandSection}>
-					<ImageViewer imgSource={placeHolderImage} />
-					<Text style={[styles.brandTitle, { color: colors.primary }]}>
+			<KeyboardAvoidingView
+				style={{ flex: 1 }}
+				behavior='padding'
+			>
+				{/* Main Content */}
+
+				<ScrollView contentContainerStyle={styles.authContainer}>
+					{/* Logo/Brand Section */}
+					<View style={styles.brandSection}>
+						<ImageViewer imgSource={placeHolderImage} />
+						<Text style={[styles.brandTitle, { color: colors.primary }]}>
 						Welcome to Velvet Ladle
 					</Text>
 					<Text style={[styles.brandSubtitle, { color: colors.textLight }]}>
@@ -68,7 +74,8 @@ export default function WelcomeScreen() {
 						</Text>
 					</View>
 				</View>
-			</ScrollView>
+				</ScrollView>
+			</KeyboardAvoidingView>
 		</View>
 	);
 }
@@ -85,6 +92,7 @@ const styles = StyleSheet.create({
 	brandSection: {
 		alignItems: 'center',
 		marginBottom: 48,
+		marginTop: 24
 	},
 	brandTitle: {
 		fontSize: 28,

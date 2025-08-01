@@ -101,10 +101,8 @@ export class RecipeDatabase {
   static async updateRecipe(id: number, updates: Partial<Recipe>): Promise<{ success: boolean; data?: Recipe; error?: string }> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        return { 
-          success: false, 
-          error: 'Supabase is not configured. Please set up your Supabase credentials.' 
-        };
+        console.log('Using demo storage for recipe update:', id);
+        return await DemoStorage.updateRecipe(id, updates);
       }
 
       const { data, error } = await supabase
@@ -189,6 +187,40 @@ export class RecipeDatabase {
     } catch (error) {
       console.error('Unexpected error fetching recent recipes:', error);
       return [];
+    }
+  }
+
+  static async getMostRecentRecipe(): Promise<Recipe | null> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        // Demo storage: get all recipes and sort by creation date
+        const allRecipes = await DemoStorage.getAllRecipes();
+        if (allRecipes.length === 0) return null;
+        
+        return allRecipes.sort((a, b) => {
+          const dateA = new Date(a.created_at || 0);
+          const dateB = new Date(b.created_at || 0);
+          return dateB.getTime() - dateA.getTime();
+        })[0];
+      }
+
+      // Supabase: query most recent recipe
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error fetching most recent recipe:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Unexpected error fetching most recent recipe:', error);
+      return null;
     }
   }
 }

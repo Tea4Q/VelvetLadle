@@ -229,6 +229,27 @@ const recentRecipes = await RecipeDatabase.getRecentRecipes(7); // Last 7 days
 
 ## 🚀 **Future Enhancements**
 
+### **✅ Recently Implemented (August 2025)**
+- **✅ Recipe Navigation**: Added "View Recipe" functionality to URL processing and manual entry modals
+- **✅ Cross-Platform Alerts**: Replaced all `window.confirm/alert` with React Native `Alert.alert` for mobile compatibility
+- **✅ Edit Recipe Modal**: Full recipe editing capability with spell check and mobile-optimized UX
+- **✅ Manual Recipe Entry**: Complete manual recipe creation with ingredient and direction parsing
+- **✅ Mobile Button Responsiveness**: Enhanced touch targets with hitSlop and ripple effects
+- **✅ URL Input Workflow**: Streamlined 3-step to 1-step URL processing UX
+
+### **🚀 Next Priority Features**
+- **🔄 Add image when manually entering**: Image upload and attachment for manual recipes
+- **🔄 Recipe linking**: Connect recipes (e.g., main dish to sauce/gravy recipes)
+- **🔄 Nutritional information**: Manual entry and display of nutritional data
+- **🔄 Shopping list integration**: Add ingredients to customizable shopping lists
+- **🔄 Sale notifications**: Track when ingredients go on sale
+- **🔄 Meal planning**: Weekly/monthly meal planning interface
+- **🔄 Scheduling**: Recipe scheduling and calendar integration
+- **🔄 Photo-to-recipe**: Camera integration with OCR for recipe conversion
+- **🔄 Ingredient filtering**: Advanced filtering by available ingredients
+
+
+
 ### **🔐 Real Authentication**
 - **Firebase Auth**: Google, Apple, Facebook sign-in
 - **Email Verification**: Confirm email addresses
@@ -266,6 +287,10 @@ const recentRecipes = await RecipeDatabase.getRecentRecipes(7); // Last 7 days
 - [x] Statistics display
 - [x] Quick action cards
 - [x] Smart URL input interface
+- [x] **Recipe viewing navigation** (August 2025)
+- [x] **Cross-platform compatibility fixes** (August 2025)
+- [x] **Enhanced recipe editing** (August 2025)
+- [x] **Mobile UX optimizations** (August 2025)
 
 ### **🔄 Ready for Enhancement**
 - [ ] Real authentication provider integration

@@ -1,5 +1,32 @@
 # VelvetLadle Testing Checklist ✅
 
+## 🎯 **Recipe Navigation & Viewing (August 2025 Updates)**
+
+### **"View Recipe" Functionality**
+- [ ] **URL Processing**: Process a recipe from URL → Click "View Recipe" in success alert → Verify navigation to recipe view
+- [ ] **Manual Entry**: Create a manual recipe → Click "View Recipe" in success alert → Verify navigation to recipe view  
+- [ ] **Existing Recipe**: Process a URL for existing recipe → Click "View Recipe" → Verify shows correct existing recipe
+- [ ] **Add Screen Navigation**: From Add tab, create recipe and view → Verify navigates to Recipes tab
+
+### **Cross-Platform Alerts**
+- [ ] **Mobile Testing**: Verify no `window.confirm` errors on mobile devices
+- [ ] **Alert Consistency**: All alerts use React Native Alert.alert() format
+- [ ] **Button Actions**: Test all alert buttons ("OK", "View Recipe", "Cancel") work correctly
+- [ ] **Alert Content**: Verify alert messages are properly formatted and informative
+
+### **Enhanced Recipe Editing**
+- [ ] **Edit Mode**: Open recipe → Tap edit → Verify form pre-populated with existing data
+- [ ] **Spell Check**: Verify spell check enabled on title, ingredients, directions fields
+- [ ] **Validation**: Test form validation with empty/invalid inputs
+- [ ] **Save Updates**: Make changes → Save → Verify recipe updated in list
+- [ ] **Cancel Edit**: Open edit → Make changes → Cancel → Verify no changes saved
+
+### **Mobile UX Optimizations**
+- [ ] **Touch Targets**: Verify all buttons are easily tappable on mobile (44pt minimum)
+- [ ] **Button Feedback**: Test button press states and visual feedback
+- [ ] **Modal Responsiveness**: Test modal sizing on different screen sizes
+- [ ] **Keyboard Handling**: Test text input with on-screen keyboard
+
 ## 🔍 **Search & Filter System Testing**
 
 ### **Recipe Search**
@@ -61,6 +88,36 @@
 - [ ] In Favorites tab, tap 📤 next to any favorite
 - [ ] Verify share dialog opens correctly
 - [ ] Test sharing recipe vs URL favorites
+
+## 🌐 **URL Processing & Recipe Extraction Testing**
+
+### **URL Input & Validation**
+- [ ] **Empty URL**: Test submitting empty URL → Verify error alert
+- [ ] **Invalid URL**: Test malformed URLs → Verify validation error
+- [ ] **Auto-Protocol**: Test URL without https:// → Verify auto-addition of https://
+- [ ] **Various Domains**: Test different recipe sites (AllRecipes, Food Network, etc.)
+
+### **Recipe Detection & Extraction**
+- [ ] **Valid Recipe Page**: Test URL with recipe → Verify successful extraction
+- [ ] **Non-Recipe Page**: Test non-recipe URL → Verify "No Recipe Found" alert
+- [ ] **Complex Recipes**: Test recipes with many ingredients/steps → Verify complete extraction
+- [ ] **Missing Elements**: Test pages with partial recipe data → Verify graceful handling
+
+### **Duplicate Recipe Handling**
+- [ ] **First Time**: Process new recipe URL → Verify saves successfully
+- [ ] **Duplicate URL**: Process same URL again → Verify "Recipe Already Saved" alert
+- [ ] **View Existing**: From duplicate alert → Click "View Recipe" → Verify shows existing recipe
+
+### **Error Handling**
+- [ ] **Network Error**: Test with no internet → Verify network error alert
+- [ ] **CORS Issues**: Test blocked websites → Verify CORS error with alternatives
+- [ ] **Timeout**: Test slow-loading sites → Verify timeout handling
+- [ ] **Manual Fallback**: From error alerts → Click "Enter Manually" → Verify manual entry opens
+
+### **Processing States**
+- [ ] **Loading Indicator**: Verify spinner shows during processing
+- [ ] **Button Disabled**: Verify process button disabled during processing
+- [ ] **Cancel During Process**: Test closing modal during processing → Verify graceful cancellation
 
 ## 📱 **Navigation & UI Testing**
 

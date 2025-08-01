@@ -6,9 +6,10 @@ import {
 	Modal,
 	StyleSheet,
 	Text,
+	TextInput,
 	View,
 } from 'react-native';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { Recipe, isSupabaseConfigured } from '../lib/supabase';
 import { CorsProxyService } from '../services/corsProxyService';
 import { FavoritesService } from '../services/FavoritesService';
 import { RecipeDatabase } from '../services/recipeDatabase';
@@ -22,16 +23,55 @@ type Props = {
 	visible: boolean;
 	url: string;
 	onClose: () => void;
+	onRecipeSelect?: (recipe: Recipe) => void;
 };
 
-export default function UrlActionModal({ visible, url, onClose }: Props) {
+export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }: Props) {
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [showManualEntry, setShowManualEntry] = useState(false);
+	const [inputUrl, setInputUrl] = useState('');
+	const [isUrlInputMode, setIsUrlInputMode] = useState(false);
+
+	// Initialize URL input mode based on whether URL is provided
+	React.useEffect(() => {
+		if (visible) {
+			if (!url || url.trim() === '') {
+				setIsUrlInputMode(true);
+				setInputUrl('');
+			} else {
+				setIsUrlInputMode(false);
+				setInputUrl(url);
+			}
+		}
+	}, [visible, url]);
+
+	const handleUrlSubmit = () => {
+		if (!inputUrl.trim()) {
+			Alert.alert('Error', 'Please enter a valid URL');
+			return;
+		}
+
+		// Basic URL validation and formatting
+		let processedUrl = inputUrl.trim();
+		if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+			processedUrl = 'https://' + processedUrl;
+		}
+
+		// Update the URL and exit input mode
+		setInputUrl(processedUrl);
+		setIsUrlInputMode(false);
+	};
 
 	const addToFavorites = async () => {
+		const urlToUse = isUrlInputMode ? inputUrl : url;
+		if (!urlToUse || !urlToUse.trim()) {
+			Alert.alert('Error', 'Please enter a URL first');
+			return;
+		}
+
 		try {
 			// Extract domain name for title
-			const urlObj = new URL(url);
+			const urlObj = new URL(urlToUse);
 			const domain = urlObj.hostname.replace('www.', '');
 			const title = `Recipe from ${domain}`;
 
@@ -43,82 +83,52 @@ export default function UrlActionModal({ visible, url, onClose }: Props) {
 				['recipe-website']
 			);
 
-			// Use cross-platform dialog approach
-			if (typeof window !== 'undefined') {
-				// Web: Use window.alert
-				window.alert(
-					`Added to Favorites\n\n${title} has been added to your favorites!`
-				);
-			} else {
-				// Mobile: Use React Native Alert
-				Alert.alert(
-					'Added to Favorites',
-					`${title} has been added to your favorites!`,
-					[{ text: 'OK' }]
-				);
-			}
+			// Use React Native Alert
+			Alert.alert(
+				'Added to Favorites',
+				`${title} has been added to your favorites!`,
+				[{ text: 'OK' }]
+			);
 			onClose();
 		} catch (error) {
 			console.error('Error adding to favorites:', error);
 
-			// Use cross-platform dialog approach
-			if (typeof window !== 'undefined') {
-				// Web: Use window.alert
-				window.alert('Error\n\nFailed to add URL to favorites');
-			} else {
-				// Mobile: Use React Native Alert
-				Alert.alert('Error', 'Failed to add URL to favorites');
-			}
-		}
-	};
-
-	const openUrlInBrowser = () => {
-		console.log('Attempting to open URL:', url);
-		Linking.openURL(url)
+		// Use React Native Alert
+		Alert.alert('Error', 'Failed to add URL to favorites');
+	}
+};	const openUrlInBrowser = () => {
+		const urlToUse = isUrlInputMode ? inputUrl : (inputUrl || url);
+		console.log('Attempting to open URL:', urlToUse);
+		Linking.openURL(urlToUse)
 			.then(() => console.log('URL opened successfully'))
 			.catch((error) => {
 				console.error('Failed to open URL:', error);
 
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.alert
-					window.alert(
-						'Error\n\nCould not open URL. Please check the URL and try again.'
-					);
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert(
-						'Error',
-						'Could not open URL. Please check the URL and try again.'
-					);
-				}
+				// Use React Native Alert
+				Alert.alert(
+					'Error',
+					'Could not open URL. Please check the URL and try again.'
+				);
 			});
 		onClose();
 	};
 
 	const processRecipe = async () => {
-		console.log('Process Recipe pressed for URL:', url);
+		const urlToUse = isUrlInputMode ? inputUrl : (inputUrl || url);
+		console.log('Process Recipe pressed for URL:', urlToUse);
 		setIsProcessing(true);
 
 		try {
 			// Validate URL format first
 			try {
-				new URL(url);
+				new URL(urlToUse);
 			} catch {
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.alert
-					window.alert(
-						'Invalid URL\n\nThe URL format is not valid. Please check the URL and try again.'
-					);
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert(
-						'Invalid URL',
-						'The URL format is not valid. Please check the URL and try again.',
-						[{ text: 'OK' }]
-					);
-				}
+				// Use React Native Alert
+				Alert.alert(
+					'Invalid URL',
+					'The URL format is not valid. Please check the URL and try again.',
+					[{ text: 'OK' }]
+				);
 				setIsProcessing(false);
 				return;
 			}
@@ -128,7 +138,7 @@ export default function UrlActionModal({ visible, url, onClose }: Props) {
 			let html;
 
 			try {
-				const response = await CorsProxyService.fetchWithCorsProxy(url);
+				const response = await CorsProxyService.fetchWithCorsProxy(urlToUse);
 				html = await response.text();
 				console.log('Webpage content fetched successfully');
 			} catch (fetchError) {
@@ -142,96 +152,62 @@ export default function UrlActionModal({ visible, url, onClose }: Props) {
 						.map((alt) => `• ${alt}`)
 						.join('\n')}`;
 
-					// Use cross-platform dialog approach
-					if (typeof window !== 'undefined') {
-						// Web: Use window.confirm
-						const userWantsManualEntry = window.confirm(
-							`Network Error\n\n${errorMessage}\n\nWould you like to enter the recipe manually?`
-						);
-						if (userWantsManualEntry) {
-							setIsProcessing(false);
-							setShowManualEntry(true);
-						}
-					} else {
-						// Mobile: Use React Native Alert
-						Alert.alert('Network Error', errorMessage, [
-							{ text: 'OK' },
-							{
-								text: 'Enter Manually',
-								onPress: () => {
-									setIsProcessing(false);
-									setShowManualEntry(true);
-								},
+					// Use React Native Alert
+					Alert.alert('Network Error', errorMessage, [
+						{ text: 'OK' },
+						{
+							text: 'Enter Manually',
+							onPress: () => {
+								setIsProcessing(false);
+								setShowManualEntry(true);
 							},
-						]);
-					}
+						},
+					]);
 					return;
 				} else {
 					errorMessage +=
 						'This might be due to:\n\n• Network connectivity issues\n• Website requires authentication\n• Server temporarily unavailable\n\nTry opening the URL in your browser first, then copy the recipe content manually.';
 				}
 
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.alert
-					window.alert(`Network Error\n\n${errorMessage}`);
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert('Network Error', errorMessage, [{ text: 'OK' }]);
-				}
+				// Use React Native Alert
+				Alert.alert('Network Error', errorMessage, [{ text: 'OK' }]);
 				setIsProcessing(false);
 				return;
 			}
 
-			if (!RecipeExtractor.isRecipePage(url, html)) {
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.alert
-					window.alert(
-						'No Recipe Found\n\nThis webpage does not appear to contain a recipe. Please try a different URL from a recipe website like AllRecipes, Food Network, or Epicurious.'
-					);
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert(
-						'No Recipe Found',
-						'This webpage does not appear to contain a recipe. Please try a different URL from a recipe website like AllRecipes, Food Network, or Epicurious.',
-						[{ text: 'OK' }]
-					);
-				}
+			if (!RecipeExtractor.isRecipePage(urlToUse, html)) {
+				// Use React Native Alert
+				Alert.alert(
+					'No Recipe Found',
+					'This webpage does not appear to contain a recipe. Please try a different URL from a recipe website like AllRecipes, Food Network, or Epicurious.',
+					[{ text: 'OK' }]
+				);
 				setIsProcessing(false);
 				return;
 			}
 
 			// Check if recipe already exists in database
-			const existingRecipe = await RecipeDatabase.getRecipeByUrl(url);
+			const existingRecipe = await RecipeDatabase.getRecipeByUrl(urlToUse);
 			if (existingRecipe) {
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.confirm
-					const message = `Recipe Already Saved\n\nThe recipe "${existingRecipe.title}" is already in your collection.\n\nWould you like to view the recipe?`;
-					const userWantsToView = window.confirm(message);
-
-					if (userWantsToView) {
-						// TODO: Navigate to recipe detail view
-						console.log('Navigate to recipe:', existingRecipe.id);
-					}
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert(
-						'Recipe Already Saved',
-						`The recipe "${existingRecipe.title}" is already in your collection.`,
-						[
-							{ text: 'OK' },
-							{
-								text: 'View Recipe',
-								onPress: () => {
-									// TODO: Navigate to recipe detail view
+				// Use React Native Alert
+				Alert.alert(
+					'Recipe Already Saved',
+					`The recipe "${existingRecipe.title}" is already in your collection.`,
+					[
+						{ text: 'OK' },
+						{
+							text: 'View Recipe',
+							onPress: () => {
+								if (onRecipeSelect && existingRecipe) {
+									onClose();
+									onRecipeSelect(existingRecipe);
+								} else {
 									console.log('Navigate to recipe:', existingRecipe.id);
-								},
+								}
 							},
-						]
-					);
-				}
+						},
+					]
+				);
 
 				setIsProcessing(false);
 				onClose();
@@ -240,23 +216,15 @@ export default function UrlActionModal({ visible, url, onClose }: Props) {
 
 			// Extract recipe from the webpage
 			console.log('Extracting recipe data...');
-			const extractedRecipe = await RecipeExtractor.extractRecipeFromUrl(url);
+			const extractedRecipe = await RecipeExtractor.extractRecipeFromUrl(urlToUse);
 
 			if (!extractedRecipe) {
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.alert
-					window.alert(
-						"Extraction Failed\n\nCould not extract recipe information from this webpage. The recipe might be in a format we don't support yet, or the page structure is too complex."
-					);
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert(
-						'Extraction Failed',
-						"Could not extract recipe information from this webpage. The recipe might be in a format we don't support yet, or the page structure is too complex.",
-						[{ text: 'OK' }]
-					);
-				}
+				// Use React Native Alert
+				Alert.alert(
+					'Extraction Failed',
+					"Could not extract recipe information from this webpage. The recipe might be in a format we don't support yet, or the page structure is too complex.",
+					[{ text: 'OK' }]
+				);
 				setIsProcessing(false);
 				return;
 			}
@@ -274,49 +242,33 @@ export default function UrlActionModal({ visible, url, onClose }: Props) {
 					? ''
 					: '\n\n💡 Set up Supabase for permanent storage (see SUPABASE_SETUP.md)';
 
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.confirm
-					const message = `Recipe Saved!\n\nSuccessfully saved "${extractedRecipe.title}" to ${storageType} with ${extractedRecipe.ingredients.length} ingredients and ${extractedRecipe.directions.length} steps.${setupNote}\n\nWould you like to view the recipe?`;
-					const userWantsToView = window.confirm(message);
-
-					if (userWantsToView) {
-						// TODO: Navigate to recipe detail view
-						console.log('Navigate to saved recipe:', saveResult.data?.id);
-					}
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert(
-						'Recipe Saved!',
-						`Successfully saved "${extractedRecipe.title}" to ${storageType} with ${extractedRecipe.ingredients.length} ingredients and ${extractedRecipe.directions.length} steps.${setupNote}`,
-						[
-							{ text: 'OK' },
-							{
-								text: 'View Recipe',
-								onPress: () => {
-									// TODO: Navigate to recipe detail view
+				// Use React Native Alert
+				Alert.alert(
+					'Recipe Saved!',
+					`Successfully saved "${extractedRecipe.title}" to ${storageType} with ${extractedRecipe.ingredients.length} ingredients and ${extractedRecipe.directions.length} steps.${setupNote}`,
+					[
+						{ text: 'OK' },
+						{
+							text: 'View Recipe',
+							onPress: () => {
+								if (onRecipeSelect && saveResult.data) {
+									onClose();
+									onRecipeSelect(saveResult.data);
+								} else {
 									console.log('Navigate to saved recipe:', saveResult.data?.id);
-								},
+								}
 							},
-						]
-					);
-				}
+						},
+					]
+				);
 				onClose();
 			} else {
-				// Use cross-platform dialog approach
-				if (typeof window !== 'undefined') {
-					// Web: Use window.alert
-					window.alert(
-						`Save Failed\n\nCould not save the recipe to your collection: ${saveResult.error}`
-					);
-				} else {
-					// Mobile: Use React Native Alert
-					Alert.alert(
-						'Save Failed',
-						`Could not save the recipe to your collection: ${saveResult.error}`,
-						[{ text: 'OK' }]
-					);
-				}
+				// Use React Native Alert
+				Alert.alert(
+					'Save Failed',
+					`Could not save the recipe to your collection: ${saveResult.error}`,
+					[{ text: 'OK' }]
+				);
 			}
 		} catch (error) {
 			console.error('Error processing recipe:', error);
@@ -356,29 +308,17 @@ export default function UrlActionModal({ visible, url, onClose }: Props) {
 				}
 			}
 
-			// Use cross-platform dialog approach
-			if (typeof window !== 'undefined') {
-				// Web: Use window.confirm
-				const userWantsManualEntry = window.confirm(
-					`${errorTitle}\n\n${errorMessage}\n\nWould you like to enter the recipe manually?`
-				);
-				if (userWantsManualEntry) {
-					// TODO: Open manual entry form
-					console.log('Open manual recipe entry');
-				}
-			} else {
-				// Mobile: Use React Native Alert
-				Alert.alert(errorTitle, errorMessage, [
-					{ text: 'OK' },
-					{
-						text: 'Enter Manually',
-						onPress: () => {
-							// TODO: Open manual entry form
-							console.log('Open manual recipe entry');
-						},
+			// Use React Native Alert
+			Alert.alert(errorTitle, errorMessage, [
+				{ text: 'OK' },
+				{
+					text: 'Enter Manually',
+					onPress: () => {
+						// TODO: Open manual entry form
+						console.log('Open manual recipe entry');
 					},
-				]);
-			}
+				},
+			]);
 		} finally {
 			setIsProcessing(false);
 		}
@@ -393,45 +333,79 @@ export default function UrlActionModal({ visible, url, onClose }: Props) {
 		>
 			<View style={styles.modalOverlay}>
 				<View style={styles.modalContent}>
-					<Text style={styles.modalTitle}>Recipe Website Ready</Text>
-					<Text style={styles.modalText}>Website: {url}</Text>
-
-					<View style={styles.modalButtons}>
-						<View style={styles.actionButtonsRow}>
-							<CircleButton
-								icon='globe'
-								label='Open Website'
-								onPress={openUrlInBrowser}
+					{isUrlInputMode ? (
+						// URL Input Mode
+						<>
+							<Text style={styles.modalTitle}>Add Recipe from URL</Text>
+							<Text style={styles.modalText}>Enter the website URL for the recipe:</Text>
+							
+							<TextInput
+								style={styles.urlInput}
+								placeholder="https://example.com/recipe"
+								placeholderTextColor="#666"
+								value={inputUrl}
+								onChangeText={setInputUrl}
+								autoCapitalize="none"
+								keyboardType="url"
+								autoCorrect={false}
+								multiline={false}
 							/>
-							<CircleButton
-								icon='star'
-								label='Add to Favorites'
-								onPress={addToFavorites}
-							/>
-							<View style={styles.processButtonContainer}>
-								{isProcessing && (
-									<ActivityIndicator
-										size='small'
-										color='#faf4eb'
-										style={styles.loadingIndicator}
-									/>
-								)}
-								<ProcessButton
-									icon={isProcessing ? 'spinner' : 'cog'}
-									label={isProcessing ? 'Processing...' : 'Process Recipe'}
-									onPress={processRecipe}
+							
+							<View style={styles.modalButtons}>
+								<Button 
+									label="Continue" 
+									theme="primary" 
+									onPress={handleUrlSubmit} 
+									disabled={!inputUrl.trim()}
 								/>
+								<Button label="Cancel" onPress={onClose} />
 							</View>
-						</View>
-						<Button label='Cancel' onPress={onClose} />
-					</View>
+						</>
+					) : (
+						// URL Action Mode
+						<>
+							<Text style={styles.modalTitle}>Recipe Website Ready</Text>
+							<Text style={styles.modalText}>Website: {inputUrl || url}</Text>
+
+							<View style={styles.modalButtons}>
+								<View style={styles.actionButtonsRow}>
+									<CircleButton
+										icon='globe'
+										label='Open Website'
+										onPress={openUrlInBrowser}
+									/>
+									<CircleButton
+										icon='star'
+										label='Add to Favorites'
+										onPress={addToFavorites}
+									/>
+									<View style={styles.processButtonContainer}>
+										{isProcessing && (
+											<ActivityIndicator
+												size='small'
+												color='#faf4eb'
+												style={styles.loadingIndicator}
+											/>
+										)}
+										<ProcessButton
+											icon={isProcessing ? 'spinner' : 'cog'}
+											label={isProcessing ? 'Processing...' : 'Process Recipe'}
+											onPress={processRecipe}
+										/>
+									</View>
+								</View>
+								<Button label='Edit URL' onPress={() => setIsUrlInputMode(true)} />
+								<Button label='Cancel' onPress={onClose} />
+							</View>
+						</>
+					)}
 				</View>
 			</View>
 
 			<ManualRecipeModal
 				visible={showManualEntry}
 				onClose={() => setShowManualEntry(false)}
-				initialUrl={url}
+				initialUrl={isUrlInputMode ? inputUrl : (inputUrl || url)}
 			/>
 		</Modal>
 	);
@@ -443,12 +417,15 @@ const styles = StyleSheet.create({
 		backgroundColor: 'rgba(0, 0, 0, 0.5)',
 		justifyContent: 'center',
 		alignItems: 'center',
+		padding: 20,
 	},
 	modalContent: {
 		backgroundColor: '#faf4eb',
 		borderRadius: 10,
 		padding: 20,
-		width: '80%',
+		width: '95%',
+		maxWidth: 400,
+		maxHeight: '80%',
 		alignItems: 'center',
 		borderWidth: 2,
 		borderColor: '#00205B',
@@ -466,9 +443,21 @@ const styles = StyleSheet.create({
 		marginBottom: 20,
 		textAlign: 'center',
 	},
+	urlInput: {
+		borderWidth: 1,
+		borderColor: '#00205B',
+		borderRadius: 8,
+		padding: 12,
+		marginBottom: 20,
+		fontSize: 16,
+		backgroundColor: '#fff',
+		color: '#00205B',
+		width: '100%',
+		minHeight: 44,
+	},
 	modalButtons: {
 		width: '100%',
-		gap: 20,
+		gap: 15,
 		alignItems: 'center',
 	},
 	actionButtonsRow: {
@@ -476,9 +465,10 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		paddingVertical: 20,
-		paddingHorizontal: 30,
-		gap: 40,
+		paddingHorizontal: 10,
+		gap: 25,
 		width: '100%',
+		flexWrap: 'wrap',
 	},
 	processButtonContainer: {
 		position: 'relative',
