@@ -1,14 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
+import { Recipe } from '@/lib/supabase';
 import { FavoritesService } from '@/services/FavoritesService';
 import { RecipeDatabase } from '@/services/recipeDatabase';
+import { DemoStorage } from '@/services/demoStorage';
+import { DemoFavorites } from '@/utils/demoFavorites';
 import { formatTimeAgo } from '@/utils/timeFormatter';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
 import {
+	Image,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -21,6 +25,7 @@ export default function Index() {
 	const [favoriteCount, setFavoriteCount] = useState<number>(0);
 	const [recentCount, setRecentCount] = useState<number>(0);
 	const [lastRecipeTime, setLastRecipeTime] = useState<string>('');
+	const [categoryRecipes, setCategoryRecipes] = useState<{ [key: string]: Recipe[] }>({});
 
 	const colors = useColors();
 	const radius = useRadius();
@@ -31,6 +36,9 @@ export default function Index() {
 	// Load recipe count on component mount and when URL modal closes
 	const loadRecipeCount = async () => {
 		try {
+			// Create demo recipes if needed (only for demo purposes)
+			await DemoStorage.createDemoRecipesWithCategories();
+			
 			const recipes = await RecipeDatabase.getAllRecipes();
 			setRecipeCount(recipes.length);
 		} catch (error) {
@@ -40,6 +48,9 @@ export default function Index() {
 
 	const loadFavoriteCount = async () => {
 		try {
+			// Create demo favorites if needed (only runs once if no favorites exist)
+			await DemoFavorites.createDemoFavoritesIfNeeded();
+			
 			const favorites = await FavoritesService.getFavoriteRecipes();
 			setFavoriteCount(favorites.length);
 		} catch (error) {
@@ -71,11 +82,39 @@ export default function Index() {
 		}
 	};
 
+	const loadCategoryRecipes = async () => {
+		try {
+			// Define popular categories with emojis
+			const categories = [
+				{ key: 'italian', name: 'Italian', emoji: '🍝' },
+				{ key: 'mexican', name: 'Mexican', emoji: '🌮' },
+				{ key: 'asian', name: 'Asian', emoji: '🥢' },
+				{ key: 'american', name: 'American', emoji: '🍔' },
+				{ key: 'mediterranean', name: 'Mediterranean', emoji: '🫒' },
+				{ key: 'indian', name: 'Indian', emoji: '🍛' }
+			];
+
+			const categoryData: { [key: string]: Recipe[] } = {};
+			
+			for (const category of categories) {
+				const recipes = await RecipeDatabase.getRecipesByCategory(category.key, 3);
+				if (recipes.length > 0) {
+					categoryData[category.key] = recipes;
+				}
+			}
+			
+			setCategoryRecipes(categoryData);
+		} catch (error) {
+			console.error('Error loading category recipes:', error);
+		}
+	};
+
 	useEffect(() => {
 		loadRecipeCount();
 		loadFavoriteCount();
 		loadRecentCount();
 		loadLastRecipeTime();
+		loadCategoryRecipes();
 	}, []);
 
 	// Refresh data when screen comes into focus (e.g., returning from adding a recipe)
@@ -85,6 +124,7 @@ export default function Index() {
 			loadFavoriteCount();
 			loadRecentCount();
 			loadLastRecipeTime();
+			loadCategoryRecipes();
 		}, [])
 	);
 
@@ -227,6 +267,96 @@ export default function Index() {
 						/>
 					</Pressable>
 				</View>
+
+				{/* Quick Categories */}
+				{Object.keys(categoryRecipes).length > 0 && (
+					<View style={styles.categoriesSection}>
+						<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+							Quick Categories 🍽️
+						</Text>
+						<ScrollView 
+							horizontal 
+							showsHorizontalScrollIndicator={false}
+							contentContainerStyle={styles.categoriesScrollContainer}
+						>
+							{[
+								{ key: 'italian', name: 'Italian', emoji: '🍝' },
+								{ key: 'mexican', name: 'Mexican', emoji: '🌮' },
+								{ key: 'asian', name: 'Asian', emoji: '🥢' },
+								{ key: 'american', name: 'American', emoji: '🍔' },
+								{ key: 'mediterranean', name: 'Mediterranean', emoji: '🫒' },
+								{ key: 'indian', name: 'Indian', emoji: '🍛' }
+							].map((category) => {
+								const recipes = categoryRecipes[category.key];
+								if (!recipes || recipes.length === 0) return null;
+								
+								return (
+									<Pressable
+										key={category.key}
+										style={({ pressed }) => [
+											styles.categoryCard,
+											{
+												backgroundColor: colors.surface,
+												borderRadius: radius.lg,
+												opacity: pressed ? 0.8 : 1,
+												transform: pressed ? [{ scale: 0.95 }] : [{ scale: 1 }],
+											},
+										]}
+										onPress={() => router.push({
+											pathname: '/(tabs)/recipes',
+											params: { category: category.key }
+										})}
+									>
+										<View style={styles.categoryHeader}>
+											<Text style={styles.categoryEmoji}>{category.emoji}</Text>
+											<Text style={[styles.categoryTitle, { color: colors.textPrimary }]}>
+												{category.name}
+											</Text>
+											<Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
+												{recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+											</Text>
+										</View>
+										
+										<View style={styles.categoryRecipes}>
+											{recipes.slice(0, 3).map((recipe, index) => (
+												<View key={recipe.id || index} style={styles.categoryRecipeItem}>
+													{recipe.image_url ? (
+														<Image
+															source={{ uri: recipe.image_url }}
+															style={[styles.categoryRecipeImage, { borderRadius: radius.sm }]}
+														/>
+													) : (
+														<View style={[
+															styles.categoryRecipeImagePlaceholder,
+															{ 
+																backgroundColor: colors.border,
+																borderRadius: radius.sm 
+															}
+														]}>
+															<FontAwesome6 name="utensils" size={12} color={colors.textLight} />
+														</View>
+													)}
+													<Text 
+														style={[styles.categoryRecipeTitle, { color: colors.textPrimary }]}
+														numberOfLines={2}
+													>
+														{recipe.title}
+													</Text>
+												</View>
+											))}
+										</View>
+										
+										<View style={styles.categoryFooter}>
+											<Text style={[styles.viewMoreText, { color: colors.primary }]}>
+												View All →
+											</Text>
+										</View>
+									</Pressable>
+								);
+							}).filter(Boolean)}
+						</ScrollView>
+					</View>
+				)}
 
 				{/* Recent Activity */}
 				<View style={styles.recentSection}>
@@ -431,5 +561,68 @@ const styles = StyleSheet.create({
 	recentText: {
 		fontSize: 14,
 		flex: 1,
+	},
+	// Quick Categories styles
+	categoriesSection: {
+		marginBottom: 32,
+	},
+	categoriesScrollContainer: {
+		paddingHorizontal: 20,
+		gap: 16,
+	},
+	categoryCard: {
+		width: 200,
+		padding: 16,
+		marginRight: 16,
+	},
+	categoryHeader: {
+		alignItems: 'center',
+		marginBottom: 12,
+	},
+	categoryEmoji: {
+		fontSize: 32,
+		marginBottom: 8,
+	},
+	categoryTitle: {
+		fontSize: 16,
+		fontWeight: 'bold',
+		marginBottom: 4,
+	},
+	categoryCount: {
+		fontSize: 12,
+	},
+	categoryRecipes: {
+		gap: 8,
+		marginBottom: 12,
+	},
+	categoryRecipeItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+	},
+	categoryRecipeImage: {
+		width: 24,
+		height: 24,
+	},
+	categoryRecipeImagePlaceholder: {
+		width: 24,
+		height: 24,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	categoryRecipeTitle: {
+		flex: 1,
+		fontSize: 11,
+		lineHeight: 14,
+	},
+	categoryFooter: {
+		alignItems: 'center',
+		borderTopWidth: 1,
+		borderTopColor: '#f0f0f0',
+		paddingTop: 8,
+	},
+	viewMoreText: {
+		fontSize: 12,
+		fontWeight: '600',
 	},
 });

@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import { useColors } from '../../contexts/ThemeContext';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '../../contexts/ThemeContext';
 
 
 
@@ -92,7 +92,7 @@ export default function TabsLayout() {
 						<TabIcon
 							focused={focused}
 							color={color}
-							iconName='bowl-food'
+							iconName='kitchen-set'
 							iconLibrary='FontAwesome6'
 						/>
 					),
@@ -107,7 +107,7 @@ export default function TabsLayout() {
 						<TabIcon
 							focused={focused}
 							color={color}
-							iconName='plus-circle'
+							iconName='plus'
 							iconLibrary='FontAwesome6'
 						/>
 					),

@@ -4,6 +4,7 @@ import { FavoritesService } from '../services/FavoritesService';
 import { Favorite, Recipe } from '../lib/supabase';
 import { useColors, useSpacing, useRadius, useTypography, useElevation } from '../contexts/ThemeContext';
 import Button from './button';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 type Props = {
   onRecipeSelect?: (recipe: Recipe) => void;
@@ -292,7 +293,7 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen, refreshTrigge
             style={[styles.actionButton, { padding: spacing.sm }]}
             onPress={() => handleRemoveFavorite(favorite)}
           >
-            <Text style={[styles.actionIcon, { color: colors.error }]}>❌</Text>
+            <FontAwesome6 name="trash" size={16} color={colors.error} />
           </TouchableOpacity>
         </View>
       </View>

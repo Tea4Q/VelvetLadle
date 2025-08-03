@@ -30,15 +30,36 @@ export class FavoritesService {
           title: recipe.title,
           description: recipe.description,
           image_url: recipe.image_url,
-          url: recipe.web_address
+          // Note: url must be NULL for recipe type due to database constraint
+          url: undefined
         };
 
-        await supabase
+        // Check if recipe already exists in favorites table
+        const { data: existing } = await supabase
           .from('favorites')
-          .upsert(favorite, { 
-            onConflict: 'recipe_id',
-            ignoreDuplicates: false 
-          });
+          .select('*')
+          .eq('recipe_id', recipe.id)
+          .eq('type', 'recipe')
+          .single();
+        
+        let result;
+        if (existing) {
+          // Update existing record
+          result = await supabase
+            .from('favorites')
+            .update(favorite)
+            .eq('recipe_id', recipe.id)
+            .eq('type', 'recipe');
+        } else {
+          // Insert new record
+          result = await supabase
+            .from('favorites')
+            .insert(favorite);
+        }
+        
+        if (result.error) {
+          console.warn('⚠️ Error adding to favorites table (but recipe marked as favorite):', result.error);
+        }
 
         console.log('✅ Recipe added to favorites in database');
       } else {
@@ -49,7 +70,7 @@ export class FavoritesService {
           title: recipe.title,
           description: recipe.description,
           image_url: recipe.image_url,
-          url: recipe.web_address,
+          url: undefined, // Keep consistent with database constraint
           created_at: new Date().toISOString()
         });
         console.log('✅ Recipe added to local favorites');
@@ -115,14 +136,35 @@ export class FavoritesService {
       };
 
       if (isSupabaseConfigured && supabase) {
-        await supabase
+        // First check if URL already exists
+        const { data: existing } = await supabase
           .from('favorites')
-          .upsert(favorite, { 
-            onConflict: 'url',
-            ignoreDuplicates: false 
-          });
+          .select('*')
+          .eq('url', url)
+          .eq('type', 'url')
+          .single();
+        
+        let result;
+        if (existing) {
+          // Update existing record
+          result = await supabase
+            .from('favorites')
+            .update(favorite)
+            .eq('url', url)
+            .eq('type', 'url');
+        } else {
+          // Insert new record
+          result = await supabase
+            .from('favorites')
+            .insert(favorite);
+        }
+        
+        if (result.error) {
+          throw result.error;
+        }
         console.log('✅ Website added to favorites in database');
       } else {
+        console.log('🔧 addUrlToFavorites: Using local storage...');
         await this.addToLocalFavorites(favorite);
         console.log('✅ Website added to local favorites');
       }
@@ -237,7 +279,7 @@ export class FavoritesService {
           .select('is_favorite')
           .eq('id', recipeId)
           .single();
-
+        
         if (error) return false;
         return data?.is_favorite || false;
       } else {

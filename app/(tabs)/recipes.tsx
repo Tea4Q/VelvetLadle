@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import RecipeList from '../../components/RecipeList';
 import RecipeViewer from '../../components/RecipeViewer';
 import ManualRecipeModal from '../../components/ManualRecipeModal';
@@ -12,6 +13,9 @@ export default function RecipesScreen() {
 	const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 	const [refreshKey, setRefreshKey] = useState(0);
 	const colors = useColors();
+	
+	// Get URL parameters for category filtering
+	const { category } = useLocalSearchParams();
 
 	const handleRecipeSelect = (recipe: Recipe) => {
 		setSelectedRecipe(recipe);
@@ -52,6 +56,7 @@ export default function RecipesScreen() {
 				<RecipeList
 					key={refreshKey} // This will trigger a refresh when the key changes
 					onRecipeSelect={handleRecipeSelect}
+					initialCategoryFilter={category as string}
 				/>
 			)}
 			

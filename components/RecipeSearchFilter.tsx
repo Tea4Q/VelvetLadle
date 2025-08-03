@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useColors, useSpacing, useTypography, useRadius } from '../contexts/ThemeContext';
 import Button from './button';
@@ -8,17 +8,23 @@ type Props = {
   onClear: () => void;
   availableIngredients: string[];
   availableCuisines: string[];
+  initialSearchTerm?: string;
+  initialIngredients?: string[];
+  initialCuisines?: string[];
 };
 
 export default function RecipeSearchFilter({ 
   onSearch, 
   onClear, 
   availableIngredients, 
-  availableCuisines 
+  availableCuisines,
+  initialSearchTerm = '',
+  initialIngredients = [],
+  initialCuisines = []
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(initialIngredients);
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>(initialCuisines);
   const [showIngredients, setShowIngredients] = useState(false);
   const [showCuisines, setShowCuisines] = useState(false);
 
@@ -26,6 +32,13 @@ export default function RecipeSearchFilter({
   const spacing = useSpacing();
   const typography = useTypography();
   const radius = useRadius();
+
+  // Trigger search when component mounts with initial values
+  useEffect(() => {
+    if (initialCuisines.length > 0 || initialIngredients.length > 0 || initialSearchTerm) {
+      onSearch(searchTerm, selectedIngredients, selectedCuisines);
+    }
+  }, [initialCuisines.length, initialIngredients.length, initialSearchTerm, onSearch, searchTerm, selectedIngredients, selectedCuisines]);
 
   const toggleIngredient = (ingredient: string) => {
     setSelectedIngredients(prev => 

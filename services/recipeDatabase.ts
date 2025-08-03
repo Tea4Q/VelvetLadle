@@ -223,4 +223,66 @@ export class RecipeDatabase {
       return null;
     }
   }
+
+  static async getRecipesByCategory(cuisineType: string, limit: number = 4): Promise<Recipe[]> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        const allRecipes = await DemoStorage.getAllRecipes();
+        return allRecipes
+          .filter(recipe => recipe.cuisine_type?.toLowerCase() === cuisineType.toLowerCase())
+          .slice(0, limit);
+      }
+
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .ilike('cuisine_type', cuisineType)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching recipes by category:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error fetching recipes by category:', error);
+      return [];
+    }
+  }
+
+  static async getAvailableCategories(): Promise<string[]> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const categories = [...new Set(allRecipes
+          .map(recipe => recipe.cuisine_type)
+          .filter(Boolean)
+          .map(cat => cat!.toLowerCase())
+        )];
+        return categories;
+      }
+
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('cuisine_type')
+        .not('cuisine_type', 'is', null);
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+
+      const categories = [...new Set(data
+        .map((item: { cuisine_type?: string }) => item.cuisine_type?.toLowerCase())
+        .filter(Boolean)
+      )] as string[];
+      
+      return categories;
+    } catch (error) {
+      console.error('Unexpected error fetching categories:', error);
+      return [];
+    }
+  }
 }

@@ -18,9 +18,21 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 	const [ingredients, setIngredients] = useState('');
 	const [directions, setDirections] = useState('');
 	const [servings, setServings] = useState('');
+	const [url, setUrl] = useState('');
+	const [imageUrl, setImageUrl] = useState('');
 	const [isSaving, setIsSaving] = useState(false);
 
 	const isEditing = !!editingRecipe;
+
+	// Helper function to validate URL format
+	const isValidUrl = (string: string) => {
+		try {
+			new URL(string);
+			return true;
+		} catch {
+			return false;
+		}
+	};
 
 	// Populate form when editing
 	React.useEffect(() => {
@@ -29,16 +41,26 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 			setIngredients(editingRecipe.ingredients ? editingRecipe.ingredients.join('\n') : '');
 			setDirections(editingRecipe.directions ? editingRecipe.directions.join('\n') : '');
 			setServings(editingRecipe.servings ? editingRecipe.servings.toString() : '');
+			setUrl(editingRecipe.web_address === 'manually-entered' ? '' : editingRecipe.web_address || '');
+			setImageUrl(editingRecipe.image_url || '');
 		} else {
-			resetForm();
+			// Reset form
+			setTitle('');
+			setIngredients('');
+			setDirections('');
+			setServings('');
+			setUrl(initialUrl || '');
+			setImageUrl('');
 		}
-	}, [editingRecipe, visible]);
+	}, [editingRecipe, visible, initialUrl]);
 
 	const resetForm = () => {
 		setTitle('');
 		setIngredients('');
 		setDirections('');
 		setServings('');
+		setUrl('');
+		setImageUrl('');
 	};
 
 	const handleSave = async () => {
@@ -57,6 +79,17 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 			return;
 		}
 
+		// Validate URLs if provided
+		if (url.trim() && !isValidUrl(url.trim())) {
+			Alert.alert('Invalid URL', 'Please enter a valid recipe URL or leave it blank.');
+			return;
+		}
+
+		if (imageUrl.trim() && !isValidUrl(imageUrl.trim())) {
+			Alert.alert('Invalid Image URL', 'Please enter a valid image URL or leave it blank.');
+			return;
+		}
+
 		setIsSaving(true);
 
 		try {
@@ -65,7 +98,8 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 				ingredients: ingredients.split('\n').map(ing => ing.trim()).filter(ing => ing.length > 0),
 				directions: directions.split('\n').map(dir => dir.trim()).filter(dir => dir.length > 0),
 				servings: servings.trim() ? parseInt(servings.trim()) : undefined,
-				web_address: initialUrl || editingRecipe?.web_address || 'manually-entered',
+				web_address: url.trim() || initialUrl || editingRecipe?.web_address || 'manually-entered',
+				image_url: imageUrl.trim() || undefined,
 				description: editingRecipe?.description || 'Manually entered recipe'
 			};
 
@@ -83,13 +117,16 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 				const setupNote = isSupabaseConfigured ? '' : '\n\n💡 Set up Supabase for permanent storage';
 				const actionText = isEditing ? 'updated' : 'saved';
 				
+				// Close modal and reset form immediately
+				resetForm();
+				onClose();
+				if (onRecipeUpdated) onRecipeUpdated();
+				
 				const buttons = [
 					{ 
 						text: 'OK', 
 						onPress: () => { 
-							resetForm(); 
-							onClose(); 
-							if (onRecipeUpdated) onRecipeUpdated();
+							// Modal already closed, no additional action needed
 						} 
 					}
 				];
@@ -99,9 +136,6 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 					buttons.push({
 						text: 'View Recipe',
 						onPress: () => {
-							resetForm();
-							onClose();
-							if (onRecipeUpdated) onRecipeUpdated();
 							if (result.data) {
 								onRecipeSelect(result.data);
 							}
@@ -154,10 +188,40 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 							autoCorrect={true}
 						/>
 
-						<Text style={styles.label}>Ingredients * (one per line)</Text>
+						<Text style={styles.label}>Recipe URL (optional)</Text>
+						<TextInput
+							style={styles.textInput}
+							placeholder="https://example.com/recipe-url (optional)"
+							value={url}
+							onChangeText={setUrl}
+							multiline={false}
+							keyboardType="url"
+							autoCapitalize="none"
+							autoCorrect={false}
+						/>
+
+						<Text style={styles.label}>Recipe Image URL (optional)</Text>
+						<Text style={[styles.label, {fontSize: 12, color: '#666', fontWeight: 'normal', marginTop: 0, marginBottom: 5}]}>
+							Direct link to an image (jpg, png, gif, webp)
+						</Text>
+						<TextInput
+							style={styles.textInput}
+							placeholder="https://example.com/image.jpg (optional)"
+							value={imageUrl}
+							onChangeText={setImageUrl}
+							multiline={false}
+							keyboardType="url"
+							autoCapitalize="none"
+							autoCorrect={false}
+						/>
+
+						<Text style={styles.label}>Ingredients * (one per line, include amounts)</Text>
+						<Text style={[styles.label, {fontSize: 12, color: '#666', fontWeight: 'normal', marginTop: 0, marginBottom: 5}]}>
+							Include amounts and units (e.g., &quot;2 cups flour&quot;, &quot;1 tsp salt&quot;)
+						</Text>
 						<TextInput
 							style={[styles.textInput, styles.multilineInput]}
-							placeholder={`1 lb chicken gizzards\n2 tbsp olive oil\n1 onion, diced\nSalt and pepper to taste`}
+							placeholder={`2 1/4 cups all-purpose flour\n1 teaspoon baking soda\n1/2 cup butter, softened\n2 large eggs\nSalt and pepper to taste`}
 							value={ingredients}
 							onChangeText={setIngredients}
 							multiline={true}

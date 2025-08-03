@@ -1,9 +1,26 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider } from '../contexts/ThemeContext';
+import { useState } from 'react';
 import { AuthProvider } from '../contexts/AuthContext';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import AnimatedSplashScreen from './SplashScreenFullBackground';
 
 export default function RootLayout() {
+	const [isShowingSplash, setIsShowingSplash] = useState(true);
+
+	const handleSplashFinish = () => {
+		setIsShowingSplash(false);
+	};
+
+	if (isShowingSplash) {
+		return (
+			<ThemeProvider>
+				<StatusBar style='light' />
+				<AnimatedSplashScreen onAnimationFinish={handleSplashFinish} />
+			</ThemeProvider>
+		);
+	}
+
 	return (
 		<ThemeProvider>
 			<AuthProvider>

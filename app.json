@@ -22,7 +22,11 @@
         "image": "./assets/images/Velvet_Ladle_Splash_Android_Large_2400x1080.png",
         "resizeMode": "cover",
         "backgroundColor": "#faf4eb"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -49,6 +53,12 @@
       "eas": {
         "projectId": "df5296c9-1e42-454b-924c-07dc23f4ed53"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/df5296c9-1e42-454b-924c-07dc23f4ed53"
     }
   }
 }

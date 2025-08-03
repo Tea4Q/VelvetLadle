@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
 	Alert,
 	FlatList,
@@ -26,14 +26,15 @@ import RecipeSearchFilter from './RecipeSearchFilter';
 
 type Props = {
 	onRecipeSelect?: (recipe: Recipe) => void;
+	initialCategoryFilter?: string;
 };
 
-export default function RecipeList({ onRecipeSelect }: Props) {
+export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Props) {
 	const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 	const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
-	const [showFilters, setShowFilters] = useState(false);
+	const [showFilters, setShowFilters] = useState(!!initialCategoryFilter);
 	const [favoriteStatuses, setFavoriteStatuses] = useState<{
 		[key: number]: boolean;
 	}>({});
@@ -45,17 +46,27 @@ export default function RecipeList({ onRecipeSelect }: Props) {
 	const typography = useTypography();
 	const elevation = useElevation();
 
-	const loadRecipes = async () => {
+	const loadRecipes = useCallback(async () => {
 		try {
 			const recipes = await RecipeDatabase.getAllRecipes();
 
-			// Clean and validate recipes
-			const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
+		// Clean and validate recipes
+		const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
 
-			setAllRecipes(cleanRecipes);
+		setAllRecipes(cleanRecipes);
+		
+		// Apply initial category filter if provided
+		if (initialCategoryFilter) {
+			const filtered = RecipeFilterService.filterRecipes(
+				cleanRecipes,
+				'',
+				[],
+				[initialCategoryFilter]
+			);
+			setFilteredRecipes(filtered);
+		} else {
 			setFilteredRecipes(cleanRecipes);
-
-			// Load favorite statuses
+		}			// Load favorite statuses
 			const statuses: { [key: number]: boolean } = {};
 			for (const recipe of cleanRecipes) {
 				if (recipe.id) {
@@ -76,7 +87,7 @@ export default function RecipeList({ onRecipeSelect }: Props) {
 			setLoading(false);
 			setRefreshing(false);
 		}
-	};
+	}, [initialCategoryFilter]);
 
 	const handleToggleFavorite = async (recipe: Recipe) => {
 		if (!recipe.id) return;
@@ -354,7 +365,7 @@ export default function RecipeList({ onRecipeSelect }: Props) {
 				console.error('❌ Image cleanup failed:', error);
 			}
 		};
-	}, []);
+	}, [loadRecipes]);
 
 	const availableIngredients =
 		RecipeFilterService.extractIngredients(allRecipes);
@@ -683,6 +694,7 @@ export default function RecipeList({ onRecipeSelect }: Props) {
 					onClear={handleClearSearch}
 					availableIngredients={availableIngredients}
 					availableCuisines={availableCuisines}
+					initialCuisines={initialCategoryFilter ? [initialCategoryFilter] : []}
 				/>
 			)}
 
