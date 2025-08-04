@@ -44,7 +44,28 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 	
 	// Stabilize the initial category filter to prevent unnecessary re-renders
 	const stableCategoryFilter = useRef(initialCategoryFilter);
-	stableCategoryFilter.current = initialCategoryFilter;
+
+	// Watch for changes to initialCategoryFilter and update the filter
+	useEffect(() => {
+		if (stableCategoryFilter.current !== initialCategoryFilter) {
+			stableCategoryFilter.current = initialCategoryFilter;
+			
+			// Apply the new category filter to the existing recipes
+			if (initialCategoryFilter) {
+				const filtered = RecipeFilterService.filterRecipes(
+					allRecipes,
+					'',
+					[],
+					[initialCategoryFilter]
+				);
+				setFilteredRecipes(filtered);
+				setShowFilters(true);
+			} else {
+				setFilteredRecipes(allRecipes);
+				setShowFilters(false);
+			}
+		}
+	}, [initialCategoryFilter, allRecipes]);
 
 	// Use theme
 	const colors = useColors();
@@ -70,7 +91,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 
 			setAllRecipes(cleanRecipes);
 			
-			// Apply initial category filter if provided
+			// Apply current category filter if provided
 			if (stableCategoryFilter.current) {
 				const filtered = RecipeFilterService.filterRecipes(
 					cleanRecipes,
@@ -163,6 +184,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 			const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
 			setAllRecipes(cleanRecipes);
 			
+			// Apply current category filter if provided
 			if (stableCategoryFilter.current) {
 				const filtered = RecipeFilterService.filterRecipes(
 					cleanRecipes,
@@ -205,38 +227,42 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 			console.warn('⚠️ Recipe has empty title, ID:', recipe.id);
 		}
 
-		const confirmDelete =
-			typeof window !== 'undefined'
-				? window.confirm(
-						`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`
-				  )
-				: true;
-
-		if (!confirmDelete) {
-			console.log('Delete cancelled by user');
-			return;
-		}
-
-		console.log('🗑️ Confirming delete for recipe ID:', recipe.id);
-		try {
-			await RecipeDatabase.deleteRecipe(recipe.id!);
-			console.log('✅ Recipe deleted successfully');
-			
-			// Reload recipes after deletion
-			const recipes = await RecipeDatabase.getAllRecipes();
-			const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
-			setAllRecipes(cleanRecipes);
-			setFilteredRecipes(cleanRecipes);
-			
-			console.log('Recipe deleted successfully!');
-		} catch (error) {
-			console.error('❌ Error deleting recipe:', error);
-		}
-	}, []);
+		// Use Alert for both web and mobile
+		Alert.alert(
+			'Delete Recipe',
+			`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`,
+			[
+				{
+					text: 'Cancel',
+					style: 'cancel',
+					onPress: () => console.log('Delete cancelled by user')
+				},
+				{
+					text: 'Delete',
+					style: 'destructive',
+					onPress: async () => {
+						console.log('🗑️ Confirming delete for recipe ID:', recipe.id);
+						try {
+							await RecipeDatabase.deleteRecipe(recipe.id!);
+							console.log('✅ Recipe deleted successfully');
+							
+							// Reload recipes after deletion
+							handleRefresh();
+							
+							console.log('Recipe deleted successfully!');
+						} catch (error) {
+							console.error('❌ Error deleting recipe:', error);
+							Alert.alert('Error', 'Failed to delete recipe. Please try again.');
+						}
+					}
+				}
+			]
+		);
+	}, [handleRefresh]);
 
 	useEffect(() => {
 		loadRecipes();
-	}, []); // Remove loadRecipes dependency to prevent infinite loops
+	}, [loadRecipes]); // Use loadRecipes dependency properly
 
 	// Separate useEffect for debug functions to avoid re-render loops
 	useEffect(() => {

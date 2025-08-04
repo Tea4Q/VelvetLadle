@@ -39,6 +39,7 @@ CREATE TABLE recipes (
   total_time TEXT,
   nutritional_info JSONB,
   web_address TEXT NOT NULL,
+  recipe_source TEXT, -- Where the recipe came from (e.g., "Grandma's recipe", "Found in old cookbook")
   image_url TEXT,
   description TEXT,
   cuisine_type TEXT,
@@ -127,6 +128,7 @@ If you already have a recipes table, run this migration to add the new search an
 ```sql
 -- Add new columns for enhanced search and filtering
 ALTER TABLE recipes 
+ADD COLUMN IF NOT EXISTS recipe_source TEXT, -- Where the recipe came from (e.g., "Grandma's recipe", "Found in old cookbook")
 ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS dietary_restrictions TEXT[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS meal_type TEXT,

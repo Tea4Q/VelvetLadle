@@ -273,4 +273,34 @@
 - Focus on real-world usage scenarios
 - Document any bugs or issues found
 
+
+## 🧪 Testing Data
+
+### Sample Recipes for Testing
+- [ ] Add 10+ recipes with a variety of cuisines, ingredient counts, and difficulty levels
+- [ ] Include recipes with long ingredient lists (20+ items)
+- [ ] Include recipes with minimal ingredients (3-5 items)
+- [ ] Add recipes with and without images
+- [ ] Add recipes with special characters and emojis in titles/ingredients
+- [ ] Add recipes with missing optional fields (e.g., no image, no description)
+- [ ] Add recipes with step-by-step images (if supported)
+
+### Sample URLs for Testing
+- [ ] Use URLs from major recipe sites (AllRecipes, Food Network, NYT Cooking, etc.)
+- [ ] Include valid and invalid URLs
+- [ ] Test with recipe URLs that require scrolling or login
+- [ ] Add duplicate URLs for duplicate handling tests
+
+### Sample Favorites Data
+- [ ] Favorite a mix of recipes and URLs
+- [ ] Add/remove favorites rapidly to test edge cases
+- [ ] Test favorites with and without internet connection
+
+### Accessibility & Edge Case Data
+- [ ] Add recipes with very long names and directions
+- [ ] Add recipes with non-English characters
+- [ ] Add recipes with accessibility tags (if supported)
+
+---
+
 **Ready to Ship:** ✅ All tests passing, features complete, documentation ready!

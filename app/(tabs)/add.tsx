@@ -18,9 +18,15 @@ export default function AddScreen() {
 	const [showUrlModal, setShowUrlModal] = useState<boolean>(false);
 	const [showManualModal, setShowManualModal] = useState<boolean>(false);
 	const [processedUrl, setProcessedUrl] = useState<string>('');
+	const [testRecipeSource, setTestRecipeSource] = useState<string>('');
 
 	const colors = useColors();
 	const radius = useRadius();
+
+	const handleTestRecipeSourceChange = (text: string) => {
+		console.log('Test recipe source changed to:', `"${text}"`);
+		setTestRecipeSource(text);
+	};
 
 	const handleWebPageOption = () => {
 		console.log('handleWebPageOption called - opening URL modal directly');
@@ -48,6 +54,11 @@ export default function AddScreen() {
 
 	const closeManualModal = () => {
 		setShowManualModal(false);
+	};
+
+	const handleManualRecipeUpdated = () => {
+		console.log('Manual recipe was updated/saved');
+		// The modal will close itself, we just need to handle any additional logic
 	};
 
 	const handleRecipeSelect = (recipe: Recipe) => {
@@ -172,6 +183,7 @@ export default function AddScreen() {
 				visible={showManualModal}
 				onClose={closeManualModal}
 				onRecipeSelect={handleRecipeSelect}
+				onRecipeUpdated={handleManualRecipeUpdated}
 			/>
 		</View>
 	);

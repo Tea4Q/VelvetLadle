@@ -93,6 +93,7 @@ substitutionOptions: {
 - Search by available ingredients
 - Seasonal recipe suggestions
 
+
 ### Meal Planning
 - Weekly meal planning integration
 - Shopping list generation
@@ -102,3 +103,38 @@ substitutionOptions: {
 - Detailed macro/micro nutrient analysis
 - Daily nutrition summaries
 - Dietary goal tracking
+
+### Ingredient-Based Filtering
+- Filter/search recipes by number of ingredients (e.g., "5-ingredient recipes")
+- Quick filter for "minimal ingredient" meals
+
+### Audio Recipe Entry
+- Add recipes using voice dictation/audio input
+- Integrate with device speech-to-text APIs
+- Option to read recipes aloud for hands-free cooking
+
+### Accessibility Improvements
+- Enhanced screen reader support (labels, hints, focus order)
+- High-contrast and large text modes
+- Keyboard navigation and full tab support
+
+### Multi-Language Support
+- Localize app UI to multiple languages
+- Community-driven recipe translations
+- Auto-detect device language and switch
+
+### Step-by-Step Images
+- Allow users to add images for each stage of recipe preparation
+- Display step images alongside directions in RecipeViewer
+- Option to capture photos during manual entry or upload from gallery
+- Improve clarity for complex recipes and visual learners
+
+### Recipe-Specific Cooking Tips
+- Provide customized cooking tips tailored to each specific recipe
+- Tips dynamically adjusted based on recipe ingredients, methods, and cuisine
+- Include technique explanations for complex steps (e.g., proper folding, searing)
+- Suggest equipment alternatives if specialized tools mentioned
+- Highlight critical success factors unique to the recipe
+- Offer timing and doneness indicators for perfect results
+- Flag common pitfalls and mistakes specific to the dish
+- Provide altitude adjustments and regional variations where applicable

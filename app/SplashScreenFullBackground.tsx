@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, ImageBackground } from 'react-native';
-import { useColors } from '../contexts/ThemeContext';
 import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Dimensions, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { useColors } from '../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -176,6 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
+    
   },
   overlay: {
     position: 'absolute',
@@ -190,6 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+  
   },
   textContainer: {
     alignItems: 'center',

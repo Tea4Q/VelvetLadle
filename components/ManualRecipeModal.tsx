@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Recipe, isSupabaseConfigured } from '../lib/supabase';
 import { RecipeDatabase } from '../services/recipeDatabase';
+import { RecipeSourceDemo } from '../services/RecipeSourceDemo';
+import { RecipeSourceService } from '../services/RecipeSourceService';
 import Button from './buttons';
+import RecipeSourceInput from './RecipeSourceInput';
 
 type Props = {
 	visible: boolean;
@@ -18,11 +21,16 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 	const [ingredients, setIngredients] = useState('');
 	const [directions, setDirections] = useState('');
 	const [servings, setServings] = useState('');
-	const [url, setUrl] = useState('');
+	const [recipeSource, setRecipeSource] = useState('');
 	const [imageUrl, setImageUrl] = useState('');
 	const [isSaving, setIsSaving] = useState(false);
 
 	const isEditing = !!editingRecipe;
+
+	// Debug function for recipe source changes
+	const handleRecipeSourceChange = (text: string) => {
+		setRecipeSource(text);
+	};
 
 	// Helper function to validate URL format
 	const isValidUrl = (string: string) => {
@@ -36,12 +44,17 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 
 	// Populate form when editing
 	React.useEffect(() => {
+		if (visible) {
+			// Initialize demo sources for first-time users
+			RecipeSourceDemo.initializeDemoSources();
+		}
+
 		if (editingRecipe) {
 			setTitle(editingRecipe.title || '');
 			setIngredients(editingRecipe.ingredients ? editingRecipe.ingredients.join('\n') : '');
 			setDirections(editingRecipe.directions ? editingRecipe.directions.join('\n') : '');
 			setServings(editingRecipe.servings ? editingRecipe.servings.toString() : '');
-			setUrl(editingRecipe.web_address === 'manually-entered' ? '' : editingRecipe.web_address || '');
+			setRecipeSource(editingRecipe.recipe_source || '');
 			setImageUrl(editingRecipe.image_url || '');
 		} else {
 			// Reset form
@@ -49,7 +62,7 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 			setIngredients('');
 			setDirections('');
 			setServings('');
-			setUrl(initialUrl || '');
+			setRecipeSource('');
 			setImageUrl('');
 		}
 	}, [editingRecipe, visible, initialUrl]);
@@ -59,105 +72,155 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 		setIngredients('');
 		setDirections('');
 		setServings('');
-		setUrl('');
+		setRecipeSource('');
 		setImageUrl('');
 	};
 
-	const handleSave = async () => {
-		if (!title.trim()) {
-			Alert.alert('Missing Information', 'Please enter a recipe title.');
-			return;
+const { fetchNutrition } = require('../services/nutritionService');
+const handleSave = async () => {
+	if (!title.trim()) {
+		Alert.alert('Missing Information', 'Please enter a recipe title.');
+		return;
+	}
+
+	if (!ingredients.trim()) {
+		Alert.alert('Missing Information', 'Please enter at least one ingredient.');
+		return;
+	}
+
+	if (!directions.trim()) {
+		Alert.alert('Missing Information', 'Please enter cooking directions.');
+		return;
+	}
+
+	// Validate URLs if provided
+	if (imageUrl.trim() && !isValidUrl(imageUrl.trim())) {
+		Alert.alert('Invalid Image URL', 'Please enter a valid image URL or leave it blank.');
+		return;
+	}
+
+	setIsSaving(true);
+
+	try {
+		// Save the recipe source for future suggestions
+		if (recipeSource.trim()) {
+			await RecipeSourceService.addSource(recipeSource.trim());
 		}
 
-		if (!ingredients.trim()) {
-			Alert.alert('Missing Information', 'Please enter at least one ingredient.');
-			return;
-		}
-
-		if (!directions.trim()) {
-			Alert.alert('Missing Information', 'Please enter cooking directions.');
-			return;
-		}
-
-		// Validate URLs if provided
-		if (url.trim() && !isValidUrl(url.trim())) {
-			Alert.alert('Invalid URL', 'Please enter a valid recipe URL or leave it blank.');
-			return;
-		}
-
-		if (imageUrl.trim() && !isValidUrl(imageUrl.trim())) {
-			Alert.alert('Invalid Image URL', 'Please enter a valid image URL or leave it blank.');
-			return;
-		}
-
-		setIsSaving(true);
-
+		// Fetch nutrition info from Spoonacular
+		let nutritional_info = undefined;
 		try {
-			const recipe: Recipe = {
-				title: title.trim(),
-				ingredients: ingredients.split('\n').map(ing => ing.trim()).filter(ing => ing.length > 0),
-				directions: directions.split('\n').map(dir => dir.trim()).filter(dir => dir.length > 0),
-				servings: servings.trim() ? parseInt(servings.trim()) : undefined,
-				web_address: url.trim() || initialUrl || editingRecipe?.web_address || 'manually-entered',
-				image_url: imageUrl.trim() || undefined,
-				description: editingRecipe?.description || 'Manually entered recipe'
-			};
-
-			let result;
-			if (isEditing && editingRecipe?.id) {
-				// Update existing recipe
-				result = await RecipeDatabase.updateRecipe(editingRecipe.id, recipe);
-			} else {
-				// Create new recipe
-				result = await RecipeDatabase.saveRecipe(recipe);
-			}
-
-			if (result.success) {
-				const storageType = isSupabaseConfigured ? 'Supabase database' : 'demo storage (temporary)';
-				const setupNote = isSupabaseConfigured ? '' : '\n\n💡 Set up Supabase for permanent storage';
-				const actionText = isEditing ? 'updated' : 'saved';
-				
-				// Close modal and reset form immediately
-				resetForm();
-				onClose();
-				if (onRecipeUpdated) onRecipeUpdated();
-				
-				const buttons = [
-					{ 
-						text: 'OK', 
-						onPress: () => { 
-							// Modal already closed, no additional action needed
-						} 
+			const nutritionResult = await fetchNutrition(
+				ingredients.split('\n').map(ing => ing.trim()).filter(ing => ing.length > 0),
+				servings.trim() ? parseInt(servings.trim()) : 1
+			);
+			if (nutritionResult.success && Array.isArray(nutritionResult.data)) {
+				// Aggregate nutrition data (calories, protein, carbs, fat, fiber, sugar)
+				let calories = 0, protein = 0, carbs = 0, fat = 0, fiber = 0, sugar = 0;
+				nutritionResult.data.forEach((item: any) => {
+					if (item.nutrition) {
+						calories += item.nutrition.nutrients?.find((n: any) => n.name === 'Calories')?.amount || 0;
+						protein += item.nutrition.nutrients?.find((n: any) => n.name === 'Protein')?.amount || 0;
+						carbs += item.nutrition.nutrients?.find((n: any) => n.name === 'Carbohydrates')?.amount || 0;
+						fat += item.nutrition.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
+						fiber += item.nutrition.nutrients?.find((n: any) => n.name === 'Fiber')?.amount || 0;
+						sugar += item.nutrition.nutrients?.find((n: any) => n.name === 'Sugar')?.amount || 0;
 					}
-				];
-
-				// Add "View Recipe" button if onRecipeSelect is provided and we have the saved recipe
-				if (onRecipeSelect && result.data) {
-					buttons.push({
-						text: 'View Recipe',
-						onPress: () => {
-							if (result.data) {
-								onRecipeSelect(result.data);
-							}
-						}
-					});
-				}
-				
-				Alert.alert(
-					`Recipe ${isEditing ? 'Updated' : 'Saved'}!`,
-					`Successfully ${actionText} "${recipe.title}" to ${storageType} with ${recipe.ingredients.length} ingredients and ${recipe.directions.length} steps.${setupNote}`,
-					buttons
-				);
-			} else {
-				Alert.alert(`${isEditing ? 'Update' : 'Save'} Failed`, `Could not ${isEditing ? 'update' : 'save'} the recipe: ${result.error}`);
+				});
+				nutritional_info = {
+					calories: Math.round(calories),
+					protein: protein ? protein.toFixed(1) + 'g' : undefined,
+					carbs: carbs ? carbs.toFixed(1) + 'g' : undefined,
+					fat: fat ? fat.toFixed(1) + 'g' : undefined,
+					fiber: fiber ? fiber.toFixed(1) + 'g' : undefined,
+					sugar: sugar ? sugar.toFixed(1) + 'g' : undefined,
+				};
 			}
-		} catch (error) {
-			console.error(`Error ${isEditing ? 'updating' : 'saving'} manual recipe:`, error);
-			Alert.alert('Error', `An unexpected error occurred while ${isEditing ? 'updating' : 'saving'} the recipe.`);
-		} finally {
-			setIsSaving(false);
+		} catch (err) {
+			// If nutrition fetch fails, continue without it
+			nutritional_info = undefined;
 		}
-	};
+
+		// If recipeSource is a valid URL, treat as web_address and also save as recipe_source
+		let web_address = initialUrl || editingRecipe?.web_address || 'manually-entered';
+		let recipe_source = recipeSource.trim() || undefined;
+		if (recipe_source && isValidUrl(recipe_source)) {
+			web_address = recipe_source;
+			// Always keep recipe_source as the original value for RecipeViewer
+		}
+		// If no recipe_source, set a default
+		if (!recipe_source) {
+			recipe_source = 'Manually entered';
+		}
+		const recipe: Recipe = {
+			title: title.trim(),
+			ingredients: ingredients.split('\n').map(ing => ing.trim()).filter(ing => ing.length > 0),
+			directions: directions.split('\n').map(dir => dir.trim()).filter(dir => dir.length > 0),
+			servings: servings.trim() ? parseInt(servings.trim()) : undefined,
+			web_address,
+			recipe_source,
+			image_url: imageUrl.trim() || undefined,
+			description: editingRecipe?.description || 'Manually entered recipe',
+			nutritional_info,
+		};
+
+		let result;
+		if (isEditing && editingRecipe?.id) {
+			// Update existing recipe
+			result = await RecipeDatabase.updateRecipe(editingRecipe.id, recipe);
+		} else {
+			// Create new recipe
+			result = await RecipeDatabase.saveRecipe(recipe);
+		}
+
+		if (result.success) {
+			const storageType = isSupabaseConfigured ? 'Supabase database' : 'demo storage (temporary)';
+			const setupNote = isSupabaseConfigured ? '' : '\n\n💡 Set up Supabase for permanent storage';
+			const actionText = isEditing ? 'updated' : 'saved';
+			
+			// Close modal and reset form immediately
+			resetForm();
+			onClose();
+			if (onRecipeUpdated) onRecipeUpdated();
+			
+			const buttons = [
+				{ 
+					text: 'OK', 
+					onPress: () => { 
+						// Modal already closed, no additional action needed
+					} 
+				}
+			];
+
+			// Add "View Recipe" button if onRecipeSelect is provided and we have the saved recipe
+			if (onRecipeSelect && result.data) {
+				buttons.push({
+					text: 'View Recipe',
+					onPress: () => {
+						if (result.data) {
+							onRecipeSelect(result.data);
+						}
+					}
+				});
+			}
+			
+			const sourceNote = recipe.recipe_source ? `\n📖 Source: ${recipe.recipe_source}` : '';
+			
+			Alert.alert(
+				`Recipe ${isEditing ? 'Updated' : 'Saved'}!`,
+				`Successfully ${actionText} "${recipe.title}" to ${storageType} with ${recipe.ingredients.length} ingredients and ${recipe.directions.length} steps.${sourceNote}${setupNote}`,
+				buttons
+			);
+		} else {
+			Alert.alert(`${isEditing ? 'Update' : 'Save'} Failed`, `Could not ${isEditing ? 'update' : 'save'} the recipe: ${result.error}`);
+		}
+	} catch (error) {
+		console.error(`Error ${isEditing ? 'updating' : 'saving'} manual recipe:`, error);
+		Alert.alert('Error', `An unexpected error occurred while ${isEditing ? 'updating' : 'saving'} the recipe.`);
+	} finally {
+		setIsSaving(false);
+	}
+};
 
 	const handleCancel = () => {
 		resetForm();
@@ -173,7 +236,7 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 		>
 			<View style={styles.modalOverlay}>
 				<View style={styles.modalContent}>
-					<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+					<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 						<Text style={styles.modalTitle}>{isEditing ? 'Edit Recipe' : 'Add Recipe Manually'}</Text>
 						<Text style={styles.subtitle}>{isEditing ? 'Update recipe details below' : 'Enter recipe details below'}</Text>
 
@@ -188,19 +251,16 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 							autoCorrect={true}
 						/>
 
-						<Text style={styles.label}>Recipe URL (optional)</Text>
-						<TextInput
-							style={styles.textInput}
-							placeholder="https://example.com/recipe-url (optional)"
-							value={url}
-							onChangeText={setUrl}
-							multiline={false}
-							keyboardType="url"
-							autoCapitalize="none"
-							autoCorrect={false}
+						<Text style={styles.label}>Recipe Source</Text>
+						<Text style={[styles.label, {fontSize: 12, color: '#666', fontWeight: 'normal', marginTop: 0, marginBottom: 5}]}>
+							Where did you get this recipe? (e.g., "Grandma's recipe", "Found in old cookbook")
+						</Text>
+						<RecipeSourceInput
+							value={recipeSource}
+							onChangeText={handleRecipeSourceChange}
 						/>
 
-						<Text style={styles.label}>Recipe Image URL (optional)</Text>
+						<Text style={styles.label}>Recipe Image address</Text>
 						<Text style={[styles.label, {fontSize: 12, color: '#666', fontWeight: 'normal', marginTop: 0, marginBottom: 5}]}>
 							Direct link to an image (jpg, png, gif, webp)
 						</Text>
@@ -244,7 +304,7 @@ export default function ManualRecipeModal({ visible, onClose, initialUrl, editin
 							autoCorrect={true}
 						/>
 
-						<Text style={styles.label}>Servings (optional)</Text>
+						<Text style={styles.label}>Servings</Text>
 						<TextInput
 							style={styles.textInput}
 							placeholder="e.g., 4"
@@ -326,6 +386,9 @@ const styles = StyleSheet.create({
 	},
 	multilineInput: {
 		minHeight: 100,
+	},
+	recipeSourceInput: {
+		marginBottom: 10,
 	},
 	buttonContainer: {
 		marginTop: 20,

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS recipes (
   total_time TEXT,
   nutritional_info JSONB,
   web_address TEXT NOT NULL,
+  recipe_source TEXT, -- Where the recipe came from (e.g., "Grandma's recipe", "Found in old cookbook")
   image_url TEXT,
   description TEXT,
   cuisine_type TEXT,

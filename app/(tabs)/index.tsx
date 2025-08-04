@@ -186,7 +186,11 @@ export default function Index() {
 
 	// Navigation handlers for stats cards
 	const handleNavigateToRecipes = () => {
-		router.push('/(tabs)/recipes');
+		// Clear any existing category filter by explicitly setting params to undefined
+		router.push({
+			pathname: '/(tabs)/recipes',
+			params: { category: undefined }
+		});
 	};
 
 	const handleNavigateToFavorites = () => {

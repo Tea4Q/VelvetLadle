@@ -45,6 +45,7 @@ export type Recipe = {
     sugar?: string;
   };
   web_address: string;
+  recipe_source?: string;             // Where the recipe came from (e.g., "Grandma's recipe", "Found in old cookbook")
   image_url?: string;
   description?: string;
   cuisine_type?: string;

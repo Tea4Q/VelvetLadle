@@ -27,6 +27,7 @@ export class RecipeDatabase {
           total_time: recipe.total_time,
           nutritional_info: recipe.nutritional_info,
           web_address: recipe.web_address,
+          recipe_source: recipe.recipe_source,
           image_url: recipe.image_url,
           description: recipe.description,
           cuisine_type: recipe.cuisine_type,

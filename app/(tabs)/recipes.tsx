@@ -55,7 +55,7 @@ export default function RecipesScreen() {
 				/>
 			) : (
 				<RecipeList
-					key={refreshKey} // This will trigger a refresh when the key changes
+					key={`recipes-list-${refreshKey}-${stableCategory || 'all'}`} // Include category in key to force re-render
 					onRecipeSelect={handleRecipeSelect}
 					initialCategoryFilter={stableCategory}
 				/>

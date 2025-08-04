@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useColors, useRadius, useSpacing, useTypography } from '../contexts/ThemeContext';
 import Button from './buttons';
@@ -32,6 +32,25 @@ export default function RecipeSearchFilter({
   const spacing = useSpacing();
   const typography = useTypography();
   const radius = useRadius();
+
+  // Helper function to clean ingredient names by removing units and common words
+  const cleanIngredientName = (ingredient: string): string | null => {
+    // First, remove measurement units that appear after numbers
+    const unitPattern = /\d+(\.\d+)?\s*(g|kg|oz|ml|l|1\/2|1\/4|3\/4|cup|cups|pound|pounds|tablespoon|tablespoons|tbsp|teaspoon|teaspoons|tsp|whole|ounces?|lb|gram|grams|milliliter|liter|liters)\.?\s*/gi;
+    
+    // Then, remove common words that we don't want in the ingredient names
+    const wordPattern = /\b(fresh|dried|frozen|chopped|minced|diced|sliced|grated|crushed|ground|peeled|pitted|cored|cubed|julienned|1\/4|1\/2|3\/4|cube|cup|cups|Large|Ounces|Pounds|Tablespoon|Tablespoons|Teaspoon|Teaspoons|Tsp|Whole|shredded|melted|softened|room temperature|ripe|unripe|raw|cooked|boiled|baked|roasted|toasted|pureed|sifted)\b\s*/gi;
+    
+    // Apply both patterns sequentially
+    let cleaned = ingredient.replace(unitPattern, '');
+    cleaned = cleaned.replace(wordPattern, '');
+    
+    // Final trim to remove any leading/trailing whitespace
+    cleaned = cleaned.trim();
+    
+    // Return null for empty ingredients so they can be filtered out
+    return cleaned === '' ? null : cleaned;
+  };
 
   // Trigger search when component mounts with initial values
   useEffect(() => {
@@ -122,7 +141,12 @@ export default function RecipeSearchFilter({
             showsHorizontalScrollIndicator={false}
             style={[styles.tagContainer, { marginTop: spacing.sm }]}
           >
-            {availableIngredients.map((ingredient) => (
+            {availableIngredients
+              .filter(ingredient => {
+                const cleaned = cleanIngredientName(ingredient);
+                return cleaned !== null && cleaned.trim() !== '';
+              })
+              .map((ingredient) => (
               <TouchableOpacity
                 key={ingredient}
                 style={[
@@ -151,7 +175,7 @@ export default function RecipeSearchFilter({
                     fontSize: typography.fontSize.sm,
                   }
                 ]}>
-                  {ingredient}
+                  {cleanIngredientName(ingredient) || ingredient}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -264,7 +288,10 @@ export default function RecipeSearchFilter({
           )}
           {selectedIngredients.length > 0 && (
             <Text style={[styles.summaryText, { color: colors.textSecondary, fontSize: typography.fontSize.xs }]}>
-              • Ingredients: {selectedIngredients.join(', ')}
+              • Ingredients: {selectedIngredients
+                .map(ing => cleanIngredientName(ing) || ing)
+                .filter(ing => ing && ing.trim() !== '')
+                .join(', ')}
             </Text>
           )}
           {selectedCuisines.length > 0 && (

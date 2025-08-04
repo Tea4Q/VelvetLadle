@@ -211,10 +211,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoWrapper: {
-    width: 200,
     height: 112,
     borderRadius: 12,
     overflow: 'hidden',
+    padding: 20,
   },
   textContainer: {
     alignItems: 'center',
