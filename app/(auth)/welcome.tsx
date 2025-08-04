@@ -1,8 +1,8 @@
-import Button from '@/components/button';
+import Button from '@/components/buttons';
 import ImageViewer from '@/components/imageViewer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColors } from '@/contexts/ThemeContext';
-import { Pressable, ScrollView, StyleSheet, Text, View, KeyboardAvoidingView } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const placeHolderImage = require('../../assets/images/veveltLifeSplashImage.png');
 

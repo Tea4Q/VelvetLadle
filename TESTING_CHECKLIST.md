@@ -1,5 +1,23 @@
 # VelvetLadle Testing Checklist ✅
 
+## 🚀 **Performance & Stability Testing (v1.2.1)**
+
+### **Render Loop Prevention**
+- [ ] **Quick Categories**: Rapidly click Italian → Mexican → Asian categories - verify no "Maximum update depth exceeded" errors
+- [ ] **Search Filter Stress**: Open filters → select ingredients → clear filters → repeat 10 times - verify no crashes
+- [ ] **Recipe List Navigation**: Scroll through recipes → toggle favorites → delete items rapidly - verify smooth performance
+- [ ] **Tab Switching**: Switch between tabs while operations are running - verify no render conflicts
+
+### **Loading State Management**
+- [ ] **Simultaneous Operations**: Try to load recipes while another load is in progress - verify guard prevents issues
+- [ ] **Demo Data Initialization**: Restart app multiple times - verify demo data only initializes once per session
+- [ ] **Background Tasks**: Navigate away and back while recipe is processing - verify stable state
+
+### **Memory & Performance**
+- [ ] **Long Sessions**: Use app for extended periods - verify no memory leaks or performance degradation
+- [ ] **Large Recipe Lists**: Test with 50+ recipes - verify smooth scrolling and filtering
+- [ ] **Network Interruptions**: Test recipe processing with poor network - verify graceful handling
+
 ## 🎯 **Recipe Navigation & Viewing (August 2025 Updates)**
 
 ### **"View Recipe" Functionality**

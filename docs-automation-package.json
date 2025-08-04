@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "commit": "git-cz",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "docs:update": "node scripts/update-docs.js",
+    "docs:auto": "./scripts/auto-doc.sh",
+    "release": "npm run changelog && npm run docs:update"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "devDependencies": {
+    "commitizen": "^4.3.0",
+    "conventional-changelog-cli": "^2.2.2",
+    "cz-conventional-changelog": "^3.3.0"
+  }
+}

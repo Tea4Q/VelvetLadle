@@ -4,8 +4,9 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
 
 ## ✨ **Recent Enhancements (August 2025)**
 
+- **🚀 Performance Optimization**: Fixed critical render loops and "Maximum update depth exceeded" errors
 - **🎯 Recipe Navigation**: Seamless "View Recipe" functionality after adding recipes
-- **� Mobile Optimization**: Full cross-platform compatibility with native alerts
+- **📱 Mobile Optimization**: Full cross-platform compatibility with native alerts
 - **✏️ Enhanced Editing**: Complete recipe editing with spell check and validation
 - **🚀 Streamlined UX**: One-step URL processing workflow
 - **🎨 Professional UI**: Touch-responsive buttons and modern interactions
@@ -33,6 +34,7 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
 
 ## 📖 **Documentation**
 
+- **[Render Optimization Guide](RENDER_OPTIMIZATION_GUIDE.md)**: Performance improvements and render loop fixes
 - **[Home Page Redesign](HOME_PAGE_REDESIGN.md)**: Complete authentication system and modern UI
 - **[Recipe Management Enhancements](RECIPE_MANAGEMENT_ENHANCEMENTS.md)**: Latest feature improvements and technical details
 - **[Favorites Guide](FAVORITES_GUIDE.md)**: Favorite recipes functionality

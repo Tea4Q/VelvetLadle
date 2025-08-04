@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, View, TextInput, ScrollView } from 'react-native';
-import Button from './button';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Recipe, isSupabaseConfigured } from '../lib/supabase';
 import { RecipeDatabase } from '../services/recipeDatabase';
+import Button from './buttons';
 
 type Props = {
 	visible: boolean;

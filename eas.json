@@ -30,6 +30,9 @@
       },
       "ios": {
         "simulator": false
+      },
+      "cache": {
+        "disabled": false
       }
     },
     "production": {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
 	Alert,
 	FlatList,
@@ -21,7 +21,7 @@ import { RecipeDatabase } from '../services/recipeDatabase';
 import { RecipeExtractor } from '../services/recipeExtractor';
 import { RecipeFilterService } from '../services/RecipeFilterService';
 import { RecipeValidation } from '../utils/recipeValidation';
-import Button from './button';
+import Button from './buttons';
 import RecipeSearchFilter from './RecipeSearchFilter';
 
 type Props = {
@@ -39,6 +39,13 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		[key: number]: boolean;
 	}>({});
 
+	// Use ref to prevent multiple simultaneous loads
+	const isLoadingRef = useRef(false);
+	
+	// Stabilize the initial category filter to prevent unnecessary re-renders
+	const stableCategoryFilter = useRef(initialCategoryFilter);
+	stableCategoryFilter.current = initialCategoryFilter;
+
 	// Use theme
 	const colors = useColors();
 	const spacing = useSpacing();
@@ -47,26 +54,36 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 	const elevation = useElevation();
 
 	const loadRecipes = useCallback(async () => {
+		// Prevent multiple simultaneous loads
+		if (isLoadingRef.current) {
+			console.log('Load already in progress, skipping...');
+			return;
+		}
+
+		isLoadingRef.current = true;
+		
 		try {
 			const recipes = await RecipeDatabase.getAllRecipes();
 
-		// Clean and validate recipes
-		const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
+			// Clean and validate recipes
+			const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
 
-		setAllRecipes(cleanRecipes);
-		
-		// Apply initial category filter if provided
-		if (initialCategoryFilter) {
-			const filtered = RecipeFilterService.filterRecipes(
-				cleanRecipes,
-				'',
-				[],
-				[initialCategoryFilter]
-			);
-			setFilteredRecipes(filtered);
-		} else {
-			setFilteredRecipes(cleanRecipes);
-		}			// Load favorite statuses
+			setAllRecipes(cleanRecipes);
+			
+			// Apply initial category filter if provided
+			if (stableCategoryFilter.current) {
+				const filtered = RecipeFilterService.filterRecipes(
+					cleanRecipes,
+					'',
+					[],
+					[stableCategoryFilter.current]
+				);
+				setFilteredRecipes(filtered);
+			} else {
+				setFilteredRecipes(cleanRecipes);
+			}
+			
+			// Load favorite statuses
 			const statuses: { [key: number]: boolean } = {};
 			for (const recipe of cleanRecipes) {
 				if (recipe.id) {
@@ -78,16 +95,15 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 			setFavoriteStatuses(statuses);
 		} catch (error) {
 			console.error('Error loading recipes:', error);
-			if (typeof window !== 'undefined') {
-				window.alert('Error: Failed to load recipes');
-			} else {
-				Alert.alert('Error', 'Failed to load recipes');
-			}
+			// Simple error handling without Alert dependency issues
+			setLoading(false);
+			setRefreshing(false);
 		} finally {
 			setLoading(false);
 			setRefreshing(false);
+			isLoadingRef.current = false;
 		}
-	}, [initialCategoryFilter]);
+	}, []); // Remove initialCategoryFilter dependency completely
 
 	const handleToggleFavorite = async (recipe: Recipe) => {
 		if (!recipe.id) return;
@@ -99,34 +115,21 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				await FavoritesService.removeRecipeFromFavorites(recipe.id);
 				setFavoriteStatuses((prev) => ({ ...prev, [recipe.id!]: false }));
 
-				// Web-compatible alert
-				if (typeof window !== 'undefined') {
-					console.log('⭐ Recipe removed from favorites');
-				} else {
-					Alert.alert('Removed', 'Recipe removed from favorites');
-				}
+				// Web-compatible success message
+				console.log('⭐ Recipe removed from favorites');
 			} else {
 				await FavoritesService.addRecipeToFavorites(recipe);
 				setFavoriteStatuses((prev) => ({ ...prev, [recipe.id!]: true }));
 
-				// Web-compatible alert
-				if (typeof window !== 'undefined') {
-					console.log('⭐ Recipe added to favorites');
-				} else {
-					Alert.alert('Added', 'Recipe added to favorites');
-				}
+				// Web-compatible success message
+				console.log('⭐ Recipe added to favorites');
 			}
 		} catch (error) {
 			console.error('Error toggling favorite:', error);
-			if (typeof window !== 'undefined') {
-				window.alert('Error: Failed to update favorites');
-			} else {
-				Alert.alert('Error', 'Failed to update favorites');
-			}
 		}
 	};
 
-	const handleSearch = (
+	const handleSearch = useCallback((
 		searchTerm: string,
 		selectedIngredients: string[],
 		selectedCuisines: string[]
@@ -138,78 +141,111 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 			selectedCuisines
 		);
 		setFilteredRecipes(filtered);
-	};
+	}, [allRecipes]);
 
-	const handleClearSearch = () => {
+	const handleClearSearch = useCallback(() => {
 		setFilteredRecipes(allRecipes);
-	};
+	}, [allRecipes]);
 
-	const handleRefresh = async () => {
+	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
-		await loadRecipes();
-	};
+		
+		// Inline the refresh logic to avoid dependency issues
+		if (isLoadingRef.current) {
+			setRefreshing(false);
+			return;
+		}
 
-	const handleDelete = async (recipe: Recipe) => {
+		isLoadingRef.current = true;
+		
+		try {
+			const recipes = await RecipeDatabase.getAllRecipes();
+			const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
+			setAllRecipes(cleanRecipes);
+			
+			if (stableCategoryFilter.current) {
+				const filtered = RecipeFilterService.filterRecipes(
+					cleanRecipes,
+					'',
+					[],
+					[stableCategoryFilter.current]
+				);
+				setFilteredRecipes(filtered);
+			} else {
+				setFilteredRecipes(cleanRecipes);
+			}
+			
+			const statuses: { [key: number]: boolean } = {};
+			for (const recipe of cleanRecipes) {
+				if (recipe.id) {
+					statuses[recipe.id] = await FavoritesService.isRecipeFavorited(
+						recipe.id
+					);
+				}
+			}
+			setFavoriteStatuses(statuses);
+		} catch (error) {
+			console.error('Error refreshing recipes:', error);
+		} finally {
+			setRefreshing(false);
+			isLoadingRef.current = false;
+		}
+	}, []);
+
+	const handleDelete = useCallback(async (recipe: Recipe) => {
 		const recipeTitle = RecipeValidation.getSafeTitle(recipe);
 		console.log('🗑️ Delete button pressed for recipe:', recipeTitle);
 
 		if (!recipe.id) {
 			console.error('❌ Recipe has no ID, cannot delete');
-			// Use browser confirm for web compatibility
-			if (typeof window !== 'undefined') {
-				window.alert('Error: Cannot delete recipe - missing ID');
-			} else {
-				Alert.alert('Error', 'Cannot delete recipe: missing ID');
-			}
 			return;
 		}
 
-		// Additional validation for empty titles
 		if (!recipe.title || recipe.title.trim() === '') {
 			console.warn('⚠️ Recipe has empty title, ID:', recipe.id);
 		}
 
-		// Use browser confirm dialog for web compatibility
 		const confirmDelete =
 			typeof window !== 'undefined'
 				? window.confirm(
 						`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`
 				  )
-				: false;
+				: true;
 
 		if (!confirmDelete) {
 			console.log('Delete cancelled by user');
 			return;
 		}
 
-		// If user confirmed, proceed with deletion
 		console.log('🗑️ Confirming delete for recipe ID:', recipe.id);
 		try {
 			await RecipeDatabase.deleteRecipe(recipe.id!);
 			console.log('✅ Recipe deleted successfully');
-			await loadRecipes(); // Reload the list
-
-			// Show success message
-			if (typeof window !== 'undefined') {
-				window.alert('Recipe deleted successfully!');
-			} else {
-				Alert.alert('Success', 'Recipe deleted successfully');
-			}
+			
+			// Reload recipes after deletion
+			const recipes = await RecipeDatabase.getAllRecipes();
+			const cleanRecipes = RecipeValidation.cleanRecipeList(recipes);
+			setAllRecipes(cleanRecipes);
+			setFilteredRecipes(cleanRecipes);
+			
+			console.log('Recipe deleted successfully!');
 		} catch (error) {
 			console.error('❌ Error deleting recipe:', error);
-			if (typeof window !== 'undefined') {
-				window.alert('Error: Failed to delete recipe');
-			} else {
-				Alert.alert('Error', 'Failed to delete recipe');
-			}
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		loadRecipes();
+	}, []); // Remove loadRecipes dependency to prevent infinite loops
 
-		// Make cleanup function available in browser console for debugging
-		(window as any).debugFixEmptyTitles = async () => {
+	// Separate useEffect for debug functions to avoid re-render loops
+	useEffect(() => {
+		// Only set debug functions if they don't already exist
+		if (typeof window !== 'undefined' && !(window as any).debugFixEmptyTitles) {
+			console.log('Setting up debug functions...');
+			
+			// Make cleanup function available in browser console for debugging
+			(window as any).debugFixEmptyTitles = async () => {
 			try {
 				console.log('🧹 Starting manual recipe cleanup...');
 				const recipes = await RecipeDatabase.getAllRecipes();
@@ -250,7 +286,12 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				}
 
 				console.log('🎉 Cleanup completed! Reloading recipes...');
-				await loadRecipes();
+				// Use window.location.reload() only on web, manual refresh on mobile
+				if (typeof window !== 'undefined' && window.location) {
+					window.location.reload();
+				} else {
+					console.log('On mobile - please manually refresh the app');
+				}
 			} catch (error) {
 				console.error('❌ Cleanup failed:', error);
 			}
@@ -305,7 +346,11 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				console.log(
 					`🎉 Cuisine cleanup completed! Updated ${updatedCount} recipes. Reloading...`
 				);
-				await loadRecipes();
+				if (typeof window !== 'undefined' && window.location) {
+					window.location.reload();
+				} else {
+					console.log('On mobile - please manually refresh the app');
+				}
 			} catch (error) {
 				console.error('❌ Cuisine cleanup failed:', error);
 			}
@@ -360,16 +405,25 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				console.log(
 					`🎉 Image cleanup completed! Updated ${updatedCount} recipes. Reloading...`
 				);
-				await loadRecipes();
+				if (typeof window !== 'undefined' && window.location) {
+					window.location.reload();
+				} else {
+					console.log('On mobile - please manually refresh the app');
+				}
 			} catch (error) {
 				console.error('❌ Image cleanup failed:', error);
 			}
 		};
-	}, [loadRecipes]);
+		
+		} // Close the if statement for debug functions check
+	}, []); // Empty dependency array - run only once on mount
 
-	const availableIngredients =
-		RecipeFilterService.extractIngredients(allRecipes);
-	const availableCuisines = RecipeFilterService.extractCuisines(allRecipes);
+	const availableIngredients = useMemo(() => 
+		RecipeFilterService.extractIngredients(allRecipes), [allRecipes]
+	);
+	const availableCuisines = useMemo(() => 
+		RecipeFilterService.extractCuisines(allRecipes), [allRecipes]
+	);
 
 	const renderRecipe = ({ item: recipe }: { item: Recipe }) => (
 		<TouchableOpacity
@@ -683,7 +737,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					label={showFilters ? 'Hide Filters' : 'Show Filters'}
 					theme={showFilters ? 'primary' : 'outline'}
 					onPress={() => setShowFilters(!showFilters)}
-					icon={showFilters ? 'filter-solid' : 'filter'}
+					icon={showFilters ? 'filter' : 'filter'}
 				/>
 			</View>
 
@@ -694,7 +748,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					onClear={handleClearSearch}
 					availableIngredients={availableIngredients}
 					availableCuisines={availableCuisines}
-					initialCuisines={initialCategoryFilter ? [initialCategoryFilter] : []}
+					initialCuisines={stableCategoryFilter.current ? [stableCategoryFilter.current] : []}
 				/>
 			)}
 

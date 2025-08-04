@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useColors, useSpacing, useTypography, useRadius } from '../contexts/ThemeContext';
-import Button from './button';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useColors, useRadius, useSpacing, useTypography } from '../contexts/ThemeContext';
+import Button from './buttons';
 
 type Props = {
   onSearch: (searchTerm: string, selectedIngredients: string[], selectedCuisines: string[]) => void;
@@ -38,7 +38,7 @@ export default function RecipeSearchFilter({
     if (initialCuisines.length > 0 || initialIngredients.length > 0 || initialSearchTerm) {
       onSearch(searchTerm, selectedIngredients, selectedCuisines);
     }
-  }, [initialCuisines.length, initialIngredients.length, initialSearchTerm, onSearch, searchTerm, selectedIngredients, selectedCuisines]);
+  }, []); // Remove all dependencies to run only once on mount
 
   const toggleIngredient = (ingredient: string) => {
     setSelectedIngredients(prev => 

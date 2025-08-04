@@ -1,15 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
 import { Recipe } from '@/lib/supabase';
+import { DemoStorage } from '@/services/demoStorage';
 import { FavoritesService } from '@/services/FavoritesService';
 import { RecipeDatabase } from '@/services/recipeDatabase';
-import { DemoStorage } from '@/services/demoStorage';
 import { DemoFavorites } from '@/utils/demoFavorites';
 import { formatTimeAgo } from '@/utils/timeFormatter';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 
 import {
 	Image,
@@ -32,42 +32,50 @@ export default function Index() {
 
 	// Use auth context instead of local state
 	const { user } = useAuth();
+	
+	// Prevent multiple simultaneous loads
+	const isLoadingRef = useRef(false);
+	const demoDataInitialized = useRef(false);
+	
+	// Memoize categories to prevent unnecessary re-renders
+	const categories = useMemo(() => [
+		{ key: 'italian', name: 'Italian', emoji: '🍝' },
+		{ key: 'mexican', name: 'Mexican', emoji: '🌮' },
+		{ key: 'asian', name: 'Asian', emoji: '🥢' },
+		{ key: 'american', name: 'American', emoji: '🍔' },
+		{ key: 'mediterranean', name: 'Mediterranean', emoji: '🫒' },
+		{ key: 'indian', name: 'Indian', emoji: '🍛' }
+	], []);
 
 	// Load recipe count on component mount and when URL modal closes
-	const loadRecipeCount = async () => {
+	const loadRecipeCount = useCallback(async () => {
 		try {
-			// Create demo recipes if needed (only for demo purposes)
-			await DemoStorage.createDemoRecipesWithCategories();
-			
 			const recipes = await RecipeDatabase.getAllRecipes();
 			setRecipeCount(recipes.length);
 		} catch (error) {
 			console.error('Error loading recipe count:', error);
 		}
-	};
+	}, []);
 
-	const loadFavoriteCount = async () => {
+	const loadFavoriteCount = useCallback(async () => {
 		try {
-			// Create demo favorites if needed (only runs once if no favorites exist)
-			await DemoFavorites.createDemoFavoritesIfNeeded();
-			
 			const favorites = await FavoritesService.getFavoriteRecipes();
 			setFavoriteCount(favorites.length);
 		} catch (error) {
 			console.error('Error loading favorite count:', error);
 		}
-	};
+	}, []);
 
-	const loadRecentCount = async () => {
+	const loadRecentCount = useCallback(async () => {
 		try {
 			const recent = await RecipeDatabase.getRecentRecipes();
 			setRecentCount(recent.length);
 		} catch (error) {
 			console.error('Error loading recent count:', error);
 		}
-	};
+	}, []);
 
-	const loadLastRecipeTime = async () => {
+	const loadLastRecipeTime = useCallback(async () => {
 		try {
 			const mostRecent = await RecipeDatabase.getMostRecentRecipe();
 			if (mostRecent && mostRecent.created_at) {
@@ -80,20 +88,10 @@ export default function Index() {
 			console.error('Error loading last recipe time:', error);
 			setLastRecipeTime('');
 		}
-	};
+	}, []);
 
-	const loadCategoryRecipes = async () => {
+	const loadCategoryRecipes = useCallback(async () => {
 		try {
-			// Define popular categories with emojis
-			const categories = [
-				{ key: 'italian', name: 'Italian', emoji: '🍝' },
-				{ key: 'mexican', name: 'Mexican', emoji: '🌮' },
-				{ key: 'asian', name: 'Asian', emoji: '🥢' },
-				{ key: 'american', name: 'American', emoji: '🍔' },
-				{ key: 'mediterranean', name: 'Mediterranean', emoji: '🫒' },
-				{ key: 'indian', name: 'Indian', emoji: '🍛' }
-			];
-
 			const categoryData: { [key: string]: Recipe[] } = {};
 			
 			for (const category of categories) {
@@ -107,25 +105,83 @@ export default function Index() {
 		} catch (error) {
 			console.error('Error loading category recipes:', error);
 		}
-	};
+	}, [categories]);
 
-	useEffect(() => {
-		loadRecipeCount();
-		loadFavoriteCount();
-		loadRecentCount();
-		loadLastRecipeTime();
-		loadCategoryRecipes();
+	// Initialize demo data only once
+	const initializeDemoData = useCallback(async () => {
+		if (demoDataInitialized.current) {
+			return;
+		}
+		
+		try {
+			console.log('Initializing demo data...');
+			demoDataInitialized.current = true;
+			
+			// Create demo recipes and favorites only once
+			await Promise.all([
+				DemoStorage.createDemoRecipesWithCategories(),
+				DemoFavorites.createDemoFavoritesIfNeeded()
+			]);
+			
+			console.log('Demo data initialized successfully');
+		} catch (error) {
+			console.error('Error initializing demo data:', error);
+			demoDataInitialized.current = false; // Reset on error
+		}
 	}, []);
 
-	// Refresh data when screen comes into focus (e.g., returning from adding a recipe)
+	// Single function to load all data and prevent simultaneous calls
+	const loadAllData = useCallback(async () => {
+		if (isLoadingRef.current) {
+			console.log('Data load already in progress, skipping...');
+			return;
+		}
+		
+		isLoadingRef.current = true;
+		
+		try {
+			// Initialize demo data first, but only once
+			await initializeDemoData();
+			
+			// Then load all the display data
+			await Promise.all([
+				loadRecipeCount(),
+				loadFavoriteCount(),
+				loadRecentCount(),
+				loadLastRecipeTime(),
+				loadCategoryRecipes()
+			]);
+		} catch (error) {
+			console.error('Error loading dashboard data:', error);
+		} finally {
+			isLoadingRef.current = false;
+		}
+	}, [initializeDemoData, loadRecipeCount, loadFavoriteCount, loadRecentCount, loadLastRecipeTime, loadCategoryRecipes]);
+
+	useEffect(() => {
+		loadAllData();
+	}, [loadAllData]);
+
+	// Refresh data when screen comes into focus, but don't re-initialize demo data
 	useFocusEffect(
 		useCallback(() => {
-			loadRecipeCount();
-			loadFavoriteCount();
-			loadRecentCount();
-			loadLastRecipeTime();
-			loadCategoryRecipes();
-		}, [])
+			// Only load display data, not demo initialization
+			if (isLoadingRef.current) {
+				return;
+			}
+			
+			isLoadingRef.current = true;
+			
+			Promise.all([
+				loadRecipeCount(),
+				loadFavoriteCount(),
+				loadRecentCount(),
+				loadLastRecipeTime(),
+				loadCategoryRecipes()
+			]).finally(() => {
+				isLoadingRef.current = false;
+			});
+		}, [loadRecipeCount, loadFavoriteCount, loadRecentCount, loadLastRecipeTime, loadCategoryRecipes])
 	);
 
 	// Navigation handlers for stats cards
@@ -245,11 +301,9 @@ export default function Index() {
 						]}
 						onPress={() => router.push('/(tabs)/add')}
 					>
-						<FontAwesome6
-							name='plus-circle'
-							size={32}
-							color={colors.textInverse}
+						<Image
 							style={styles.quickActionsLinkIcon}
+							source={require('@/assets/icons/recipesIcon.png')}
 						/>
 						<View style={styles.quickActionsLinkContent}>
 							<Text style={[styles.quickActionsLinkTitle, { color: colors.textInverse }]}>
@@ -279,14 +333,7 @@ export default function Index() {
 							showsHorizontalScrollIndicator={false}
 							contentContainerStyle={styles.categoriesScrollContainer}
 						>
-							{[
-								{ key: 'italian', name: 'Italian', emoji: '🍝' },
-								{ key: 'mexican', name: 'Mexican', emoji: '🌮' },
-								{ key: 'asian', name: 'Asian', emoji: '🥢' },
-								{ key: 'american', name: 'American', emoji: '🍔' },
-								{ key: 'mediterranean', name: 'Mediterranean', emoji: '🫒' },
-								{ key: 'indian', name: 'Indian', emoji: '🍛' }
-							].map((category) => {
+							{categories.map((category) => {
 								const recipes = categoryRecipes[category.key];
 								if (!recipes || recipes.length === 0) return null;
 								
@@ -360,6 +407,7 @@ export default function Index() {
 
 				{/* Recent Activity */}
 				<View style={styles.recentSection}>
+
 					<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
 						Recent Activity
 					</Text>
@@ -383,45 +431,16 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-	// Legacy styles for compatibility
-	text: {
-		color: '#00205B',
-		fontFamily: 'Nunito',
-		fontSize: 20,
-		fontWeight: 'bold',
-	},
 	container: {
 		flex: 1,
 		backgroundColor: '#faf4eb',
 	},
-	button: {
-		backgroundColor: '#00205B',
-		padding: 5,
-		borderRadius: 5,
-		marginTop: 20,
-		textAlign: 'center',
-		textDecorationLine: 'underline',
-		width: '10%',
-		fontWeight: 'bold',
-	},
-	imageContainer: {
-		flex: 1,
-	},
-	textInput: {
-		borderWidth: 1,
-		borderColor: '#00205B',
-		borderRadius: 8,
-		padding: 12,
-		marginBottom: 15,
-		width: '100%',
-		fontSize: 16,
-		backgroundColor: '#fff',
-	},
-
+	
 	// Main app styles
 	mainContainer: {
 		flexGrow: 1,
 		padding: 20,
+		paddingBottom: 80,
 	},
 	headerSection: {
 		flexDirection: 'row',
@@ -448,6 +467,8 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
+
+	//Stats cards
 	statsContainer: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -468,6 +489,7 @@ const styles = StyleSheet.create({
 		fontSize: 12,
 		textAlign: 'center',
 	},
+	// Quick Actions Link
 	quickActionsLinkSection: {
 		marginBottom: 32,
 	},
@@ -479,6 +501,8 @@ const styles = StyleSheet.create({
 	},
 	quickActionsLinkIcon: {
 		marginRight: 4,
+		height: 32,
+		width: 32,
 	},
 	quickActionsLinkContent: {
 		flex: 1,
@@ -495,73 +519,12 @@ const styles = StyleSheet.create({
 	quickActionsLinkArrow: {
 		marginLeft: 8,
 	},
-	quickActionsSection: {
-		marginBottom: 32,
-	},
 	sectionTitle: {
 		fontSize: 20,
 		fontWeight: 'bold',
 		marginBottom: 16,
 	},
-	quickActionsGrid: {
-		flexDirection: 'row',
-		gap: 16,
-	},
-	quickActionCard: {
-		flex: 1,
-		padding: 24,
-		alignItems: 'center',
-		gap: 12,
-	},
-	quickActionIcon: {
-		marginBottom: 4,
-	},
-	quickActionTitle: {
-		fontSize: 16,
-		fontWeight: 'bold',
-		textAlign: 'center',
-	},
-	quickActionSubtitle: {
-		fontSize: 12,
-		textAlign: 'center',
-		opacity: 0.9,
-	},
-	urlInputSection: {
-		padding: 24,
-		marginBottom: 32,
-	},
-	inputSectionTitle: {
-		fontSize: 18,
-		fontWeight: '600',
-		marginBottom: 16,
-		textAlign: 'center',
-	},
-	urlInputContainer: {
-		gap: 16,
-	},
-	modernTextInput: {
-		borderWidth: 1,
-		borderRadius: 12,
-		padding: 16,
-		fontSize: 16,
-	},
-	urlInputButtons: {
-		flexDirection: 'row',
-		gap: 12,
-	},
-	recentSection: {
-		marginBottom: 24,
-	},
-	recentCard: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		padding: 16,
-		gap: 12,
-	},
-	recentText: {
-		fontSize: 14,
-		flex: 1,
-	},
+
 	// Quick Categories styles
 	categoriesSection: {
 		marginBottom: 32,
@@ -624,5 +587,29 @@ const styles = StyleSheet.create({
 	viewMoreText: {
 		fontSize: 12,
 		fontWeight: '600',
+	},
+
+	// Recent Activity styles
+	recentSection: {
+		marginBottom: 40,
+		paddingBottom: 20,
+	},
+	recentCard: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		padding: 20,
+		gap: 12,
+		elevation: 2,
+		shadowColor: '#000',
+		shadowOffset: {
+			width: 0,
+			height: 1,
+		},
+		shadowOpacity: 0.1,
+		shadowRadius: 2,
+	},
+	recentText: {
+		fontSize: 14,
+		flex: 1,
 	},
 });

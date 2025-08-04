@@ -14,7 +14,7 @@ import { CorsProxyService } from '../services/corsProxyService';
 import { FavoritesService } from '../services/FavoritesService';
 import { RecipeDatabase } from '../services/recipeDatabase';
 import { RecipeExtractor } from '../services/recipeExtractor';
-import Button from './button';
+import Button from './buttons';
 import CircleButton from './circleButton';
 import ManualRecipeModal from './ManualRecipeModal';
 import ProcessButton from './processIconButton';

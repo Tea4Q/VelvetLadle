@@ -1,6 +1,7 @@
-import UrlActionModal from '@/components/UrlActionModal';
 import ManualRecipeModal from '@/components/ManualRecipeModal';
+import UrlActionModal from '@/components/UrlActionModal';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
+import { Recipe } from '@/lib/supabase';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -12,7 +13,6 @@ import {
 	Text,
 	View,
 } from 'react-native';
-import { Recipe } from '@/lib/supabase';
 
 export default function AddScreen() {
 	const [showUrlModal, setShowUrlModal] = useState<boolean>(false);
@@ -229,31 +229,8 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		opacity: 0.9,
 	},
-	urlInputSection: {
-		padding: 24,
-		marginBottom: 32,
-	},
-	inputSectionTitle: {
-		fontSize: 18,
-		fontWeight: '600',
-		marginBottom: 16,
-		textAlign: 'center',
-	},
-	urlInputContainer: {
-		gap: 16,
-	},
-	modernTextInput: {
-		borderWidth: 1,
-		borderRadius: 12,
-		padding: 16,
-		fontSize: 16,
-	},
-	urlInputButtons: {
-		flexDirection: 'row',
-		gap: 12,
-	},
 	tipsSection: {
-		marginBottom: 24,
+		marginBottom: 120,
 	},
 	sectionTitle: {
 		fontSize: 18,

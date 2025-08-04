@@ -1,5 +1,43 @@
 # VelvetLadle Changelog 📋
 
+## [1.2.1] - August 2025 - Performance & Stability Update
+
+### 🚀 **Critical Bug Fixes**
+
+#### **Infinite Render Loop Resolution**
+- **Fixed "Maximum update depth exceeded" errors**: Resolved critical React render loops affecting Quick Categories and Recipe List components
+- **Stabilized Component Architecture**: Implemented proper `useCallback` and `useMemo` patterns for all handlers and expensive calculations
+- **Demo Data Optimization**: Demo data now initializes only once on app startup instead of on every render
+- **Search Filter Stability**: Fixed RecipeSearchFilter useEffect dependencies that were causing infinite re-renders
+
+#### **Performance Optimizations**
+- **Loading Guards**: Added useRef-based guards to prevent simultaneous data loading operations
+- **Dependency Chain Optimization**: Eliminated circular dependencies in useCallback/useEffect chains
+- **Memory Efficiency**: Reduced unnecessary re-renders by stabilizing function references
+- **State Management**: Improved state update patterns to prevent cascading re-renders
+
+### 🛠 **Technical Improvements**
+
+#### **Component Stability**
+- **RecipeList Component**: Fixed infinite loops in loadRecipes, handleSearch, handleRefresh, and handleDelete functions
+- **RecipeSearchFilter Component**: Removed unstable dependencies from useEffect that were triggering continuous re-renders
+- **Home Dashboard**: Separated demo data initialization from display data loading to prevent render conflicts
+- **Navigation Integration**: Stabilized Quick Categories navigation parameters using useMemo
+
+#### **Code Quality Enhancements**
+- **useCallback Implementation**: All event handlers now use proper useCallback with stable dependencies
+- **useMemo Optimization**: Expensive calculations like ingredient/cuisine extraction are now memoized
+- **Ref-based Guards**: Implemented loading state guards using useRef to prevent race conditions
+- **Inline Logic**: Eliminated problematic function dependencies by inlining critical logic
+
+### 📱 **User Experience**
+- **Smooth Navigation**: Quick Categories buttons now work without render errors
+- **Responsive UI**: Recipe list scrolling and filtering now perform smoothly
+- **Stable Search**: Search and filter operations no longer cause app freezes
+- **Reliable Interactions**: All touch interactions are now stable and predictable
+
+---
+
 ## [1.2.0] - August 2025
 
 ### ✨ **Major Features Added**
