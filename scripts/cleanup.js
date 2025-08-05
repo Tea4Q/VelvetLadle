@@ -4,23 +4,23 @@
 // Simple cleanup function that doesn't require imports
 window.fixEmptyRecipes = async function() {
   try {
-    console.log('🧹 Starting recipe cleanup...');
+    // Production build: console.log removed
     
     // Access the database service directly from the global context
     const { RecipeDatabase } = await import('../services/recipeDatabase');
     
     const allRecipes = await RecipeDatabase.getAllRecipes();
-    console.log(`Found ${allRecipes.length} total recipes`);
+    // Production build: console.log removed
     
     const problematicRecipes = allRecipes.filter(recipe => 
       !recipe.title || recipe.title.trim() === ''
     );
     
-    console.log(`Found ${problematicRecipes.length} recipes with empty titles`);
+    // Production build: console.log removed
     
     for (const recipe of problematicRecipes) {
       if (recipe.id) {
-        console.log(`Fixing recipe ID ${recipe.id}...`);
+        // Production build: console.log removed
         
         // Try to generate a title from ingredients or description
         let newTitle = '(Untitled Recipe)';
@@ -47,11 +47,11 @@ window.fixEmptyRecipes = async function() {
           title: newTitle
         });
         
-        console.log(`✅ Updated recipe ID ${recipe.id} with title: "${newTitle}"`);
+        // Production build: console.log removed
       }
     }
     
-    console.log('🎉 Database cleanup completed! Please refresh the page.');
+    // Production build: console.log removed
     
   } catch (error) {
     console.error('❌ Cleanup failed:', error);
@@ -59,4 +59,4 @@ window.fixEmptyRecipes = async function() {
 };
 
 // Auto-run on import if this is run directly
-console.log('💡 Cleanup function loaded! Run window.fixEmptyRecipes() in console to fix empty recipe titles.');
+// Production build: console.log removed in console to fix empty recipe titles.');

@@ -61,7 +61,7 @@ export class FavoritesService {
           console.warn('⚠️ Error adding to favorites table (but recipe marked as favorite):', result.error);
         }
 
-        console.log('✅ Recipe added to favorites in database');
+        // Production build: console.log removed
       } else {
         // Local storage fallback
         await this.addToLocalFavorites({
@@ -73,7 +73,7 @@ export class FavoritesService {
           url: undefined, // Keep consistent with database constraint
           created_at: new Date().toISOString()
         });
-        console.log('✅ Recipe added to local favorites');
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Error adding recipe to favorites:', error);
@@ -102,11 +102,11 @@ export class FavoritesService {
           .delete()
           .eq('recipe_id', recipeId);
 
-        console.log('✅ Recipe removed from favorites in database');
+        // Production build: console.log removed
       } else {
         // Local storage fallback
         await this.removeFromLocalFavorites('recipe', recipeId);
-        console.log('✅ Recipe removed from local favorites');
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Error removing recipe from favorites:', error);
@@ -162,11 +162,11 @@ export class FavoritesService {
         if (result.error) {
           throw result.error;
         }
-        console.log('✅ Website added to favorites in database');
+        // Production build: console.log removed
       } else {
-        console.log('🔧 addUrlToFavorites: Using local storage...');
+        // Production build: console.log removed
         await this.addToLocalFavorites(favorite);
-        console.log('✅ Website added to local favorites');
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Error adding website to favorites:', error);
@@ -184,10 +184,10 @@ export class FavoritesService {
           .from('favorites')
           .delete()
           .eq('url', url);
-        console.log('✅ Website removed from favorites in database');
+        // Production build: console.log removed
       } else {
         await this.removeFromLocalFavorites('url', undefined, url);
-        console.log('✅ Website removed from local favorites');
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Error removing Website from favorites:', error);
@@ -321,10 +321,10 @@ export class FavoritesService {
             updated_at: new Date().toISOString()
           })
           .eq('id', favoriteId);
-        console.log('✅ Favorite updated in database');
+        // Production build: console.log removed
       } else {
         await this.updateLocalFavorite(favoriteId, updates);
-        console.log('✅ Favorite updated locally');
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Error updating favorite:', error);

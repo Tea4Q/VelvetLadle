@@ -114,7 +114,7 @@ export default function Index() {
 		}
 		
 		try {
-			console.log('Initializing demo data...');
+			// Production build: console.log removed
 			demoDataInitialized.current = true;
 			
 			// Create demo recipes and favorites only once
@@ -123,7 +123,7 @@ export default function Index() {
 				DemoFavorites.createDemoFavoritesIfNeeded()
 			]);
 			
-			console.log('Demo data initialized successfully');
+			// Production build: console.log removed
 		} catch (error) {
 			console.error('Error initializing demo data:', error);
 			demoDataInitialized.current = false; // Reset on error
@@ -133,7 +133,7 @@ export default function Index() {
 	// Single function to load all data and prevent simultaneous calls
 	const loadAllData = useCallback(async () => {
 		if (isLoadingRef.current) {
-			console.log('Data load already in progress, skipping...');
+			// Production build: console.log removed
 			return;
 		}
 		

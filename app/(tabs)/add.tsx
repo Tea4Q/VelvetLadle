@@ -24,12 +24,12 @@ export default function AddScreen() {
 	const radius = useRadius();
 
 	const handleTestRecipeSourceChange = (text: string) => {
-		console.log('Test recipe source changed to:', `"${text}"`);
+		// Production build: console.log removed
 		setTestRecipeSource(text);
 	};
 
 	const handleWebPageOption = () => {
-		console.log('handleWebPageOption called - opening URL modal directly');
+		// Production build: console.log removed
 		// Open the URL modal with an empty URL - the modal should handle URL input
 		setProcessedUrl('');
 		setShowUrlModal(true);
@@ -48,7 +48,7 @@ export default function AddScreen() {
 	};
 
 	const closeModal = () => {
-		console.log('Modal closed');
+		// Production build: console.log removed
 		setShowUrlModal(false);
 	};
 
@@ -57,7 +57,7 @@ export default function AddScreen() {
 	};
 
 	const handleManualRecipeUpdated = () => {
-		console.log('Manual recipe was updated/saved');
+		// Production build: console.log removed
 		// The modal will close itself, we just need to handle any additional logic
 	};
 

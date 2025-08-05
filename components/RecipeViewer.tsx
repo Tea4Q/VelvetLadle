@@ -1,10 +1,11 @@
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useColors, useRadius, useSpacing, useTypography } from '../contexts/ThemeContext';
 import { Recipe } from '../lib/supabase';
 import { FavoritesService } from '../services/FavoritesService';
 import IngredientList from './IngredientList';
+import SmartImage from './SmartImage';
 
 type Props = {
 	recipe: Recipe;
@@ -225,14 +226,16 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 			{activeTab === 'overview' && (
 				<>
 					{/* Recipe Image */}
-					{recipe.image_url && (
+					{recipe.image_url && recipe.id && (
 						<View style={styles.imageContainer}>
-							<Image
-								source={{ uri: recipe.image_url }}
+							<SmartImage
+								imageUrl={recipe.image_url}
+								recipeId={recipe.id}
 								style={styles.recipeImage}
 								resizeMode="cover"
-								onError={(error) => {
-									console.log('Recipe image load error:', error.nativeEvent.error);
+								fallbackIcon="🍽️"
+								onError={(error: any) => {
+									// Production build: console.log removed
 								}}
 							/>
 						</View>

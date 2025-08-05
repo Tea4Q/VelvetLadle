@@ -10,21 +10,21 @@ export class DemoFavorites {
    */
   static async createDemoFavoritesIfNeeded(): Promise<void> {
     try {
-      console.log('🔍 Checking for existing favorites...');
+      // Production build: console.log removed
       
       // Check if there are already favorites
       const existingFavorites = await FavoritesService.getFavoriteRecipes();
-      console.log(`Found ${existingFavorites.length} existing favorite recipes`);
+      // Production build: console.log removed
       
       if (existingFavorites.length > 0) {
-        console.log('✅ Favorites already exist, skipping demo creation');
+        // Production build: console.log removed
         return;
       }
 
-      console.log('🔍 Checking for existing recipes...');
+      // Production build: console.log removed
       // Check if there are any recipes at all
       const allRecipes = await RecipeDatabase.getAllRecipes();
-      console.log(`Found ${allRecipes.length} existing recipes`);
+      // Production build: console.log removed
       
       // Always add some demo URL favorites, even if no recipes exist
       await this.createDemoUrlFavorites();
@@ -36,16 +36,16 @@ export class DemoFavorites {
         for (const recipe of recipesToFavorite) {
           try {
             await FavoritesService.addRecipeToFavorites(recipe);
-            console.log('✅ Created demo favorite recipe:', recipe.title);
+            // Production build: console.log removed
           } catch (error) {
             console.error('❌ Error creating favorite for recipe:', recipe.title, error);
           }
         }
       } else {
-        console.log('ℹ️ No recipes exist yet, only creating URL favorites');
+        // Production build: console.log removed
       }
       
-      console.log('✅ Demo favorites creation completed');
+      // Production build: console.log removed
     } catch (error) {
       console.error('❌ Error creating demo favorites:', error);
     }
@@ -84,7 +84,7 @@ export class DemoFavorites {
           demo.description,
           demo.imageUrl
         );
-        console.log('✅ Created demo favorite URL:', demo.title);
+        // Production build: console.log removed
       } catch (error) {
         console.error('❌ Error creating demo URL favorite:', demo.title, error);
       }

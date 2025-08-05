@@ -23,7 +23,7 @@ export class WebScrapingAPIService {
         `wait_for_selector=body&` +       // Wait for body element
         `timeout=30000`;                  // 30 second total timeout
 
-      console.log('ScrapingBee: Extracting recipe from:', url);
+      // Production build: console.log removed
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 second client timeout
@@ -39,7 +39,7 @@ export class WebScrapingAPIService {
 
       if (response.ok) {
         const html = await response.text();
-        console.log('ScrapingBee: Successfully extracted HTML (', html.length, 'characters)');
+        // Production build: console.log removed');
         return html;
       } else {
         console.error('ScrapingBee API error:', response.status, response.statusText);
@@ -145,19 +145,19 @@ export class WebScrapingAPIService {
    * Enhanced recipe extraction with API fallbacks
    */
   static async extractRecipeWithAPIs(url: string): Promise<Recipe | null> {
-    console.log('Attempting recipe extraction with APIs for:', url);
+    // Production build: console.log removed
 
     // Try Spoonacular recipe extraction first (most reliable for recipes)
     const spoonacularRecipe = await this.extractRecipeSpoonacular(url);
     if (spoonacularRecipe) {
-      console.log('✅ Extracted recipe using Spoonacular API');
+      // Production build: console.log removed
       return spoonacularRecipe;
     }
 
     // Fallback to ScrapingBee for general web scraping
     const html = await this.extractWithScrapingBee(url);
     if (html) {
-      console.log('✅ Fetched HTML using ScrapingBee, parsing...');
+      // Production build: console.log removed
       // Use your existing RecipeExtractor logic on the HTML
       const { RecipeExtractor } = await import('./recipeExtractor');
       
@@ -174,7 +174,7 @@ export class WebScrapingAPIService {
       }
     }
 
-    console.log('❌ All API extraction methods failed');
+    // Production build: console.log removed
     return null;
   }
 }

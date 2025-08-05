@@ -9,7 +9,7 @@ export class CorsProxyService {
   ];
 
   static async fetchWithCorsProxy(url: string): Promise<Response> {
-    console.log('Attempting to fetch with CORS proxy...');
+    // Production build: console.log removed
     
     // Try direct fetch first (works on mobile/native)
     try {
@@ -23,17 +23,17 @@ export class CorsProxyService {
       });
       
       if (response.ok) {
-        console.log('Direct fetch successful');
+        // Production build: console.log removed
         return response;
       }
     } catch {
-      console.log('Direct fetch failed, trying CORS proxy...');
+      // Production build: console.log removed
     }
 
     // Try CORS proxies if direct fetch fails
     for (const proxy of this.CORS_PROXIES) {
       try {
-        console.log(`Trying proxy: ${proxy}`);
+        // Production build: console.log removed
         const proxiedUrl = proxy + encodeURIComponent(url);
         
         const response = await fetch(proxiedUrl, {
@@ -44,11 +44,11 @@ export class CorsProxyService {
         });
 
         if (response.ok) {
-          console.log(`Success with proxy: ${proxy}`);
+          // Production build: console.log removed
           return response;
         }
       } catch (proxyError) {
-        console.log(`Proxy ${proxy} failed:`, proxyError);
+        // Production build: console.log removed
         continue;
       }
     }

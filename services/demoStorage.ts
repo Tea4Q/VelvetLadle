@@ -15,7 +15,7 @@ export class DemoStorage {
       };
       
       demoRecipes.push(newRecipe);
-      console.log('Recipe saved to demo storage:', newRecipe.title);
+      // Production build: console.log removed
       
       return { success: true, data: newRecipe };
     } catch (error) {
@@ -162,6 +162,6 @@ export class DemoStorage {
       await this.saveRecipe(recipe);
     }
 
-    console.log(`Created ${sampleRecipes.length} demo recipes with categories`);
+    // Production build: console.log removed
   }
 }

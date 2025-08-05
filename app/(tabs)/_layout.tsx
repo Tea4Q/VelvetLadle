@@ -144,6 +144,21 @@ export default function TabsLayout() {
 					tabBarLabel: 'Favorites',
 				}}
 			/>
+			<Tabs.Screen
+				name='test-images'
+				options={{
+					headerTitle: 'Image Tests',
+					tabBarIcon: ({ focused, color }) => (
+						<TabIcon
+							focused={focused}
+							color={color}
+							iconName='flask'
+							iconLibrary='Ionicons'
+						/>
+					),
+					tabBarLabel: 'Tests',
+				}}
+			/>
 		</Tabs>
 	);
 }

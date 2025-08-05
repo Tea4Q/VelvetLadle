@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
 	Alert,
 	FlatList,
-	Image,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -20,9 +19,11 @@ import { FavoritesService } from '../services/FavoritesService';
 import { RecipeDatabase } from '../services/recipeDatabase';
 import { RecipeExtractor } from '../services/recipeExtractor';
 import { RecipeFilterService } from '../services/RecipeFilterService';
+import { ImageStorageService } from '../services/ImageStorageService';
 import { RecipeValidation } from '../utils/recipeValidation';
 import Button from './buttons';
 import RecipeSearchFilter from './RecipeSearchFilter';
+import SmartImage from './SmartImage';
 
 type Props = {
 	onRecipeSelect?: (recipe: Recipe) => void;
@@ -77,13 +78,16 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 	const loadRecipes = useCallback(async () => {
 		// Prevent multiple simultaneous loads
 		if (isLoadingRef.current) {
-			console.log('Load already in progress, skipping...');
+			// Production build: console.log removed
 			return;
 		}
 
 		isLoadingRef.current = true;
 		
 		try {
+			// Initialize image storage on first load
+			await ImageStorageService.initializeStorage();
+			
 			const recipes = await RecipeDatabase.getAllRecipes();
 
 			// Clean and validate recipes
@@ -114,6 +118,14 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				}
 			}
 			setFavoriteStatuses(statuses);
+			
+			// Preload images in the background for better UX
+			if (cleanRecipes.length > 0) {
+				// Don't await this - let it run in background
+				ImageStorageService.preloadImages(cleanRecipes).catch(error => {
+					console.warn('⚠️ Image preloading failed:', error);
+				});
+			}
 		} catch (error) {
 			console.error('Error loading recipes:', error);
 			// Simple error handling without Alert dependency issues
@@ -137,13 +149,13 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				setFavoriteStatuses((prev) => ({ ...prev, [recipe.id!]: false }));
 
 				// Web-compatible success message
-				console.log('⭐ Recipe removed from favorites');
+				// Production build: console.log removed
 			} else {
 				await FavoritesService.addRecipeToFavorites(recipe);
 				setFavoriteStatuses((prev) => ({ ...prev, [recipe.id!]: true }));
 
 				// Web-compatible success message
-				console.log('⭐ Recipe added to favorites');
+				// Production build: console.log removed
 			}
 		} catch (error) {
 			console.error('Error toggling favorite:', error);
@@ -216,7 +228,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 
 	const handleDelete = useCallback(async (recipe: Recipe) => {
 		const recipeTitle = RecipeValidation.getSafeTitle(recipe);
-		console.log('🗑️ Delete button pressed for recipe:', recipeTitle);
+		// Production build: console.log removed
 
 		if (!recipe.id) {
 			console.error('❌ Recipe has no ID, cannot delete');
@@ -235,21 +247,26 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				{
 					text: 'Cancel',
 					style: 'cancel',
-					onPress: () => console.log('Delete cancelled by user')
+					onPress: () => {},
 				},
 				{
 					text: 'Delete',
 					style: 'destructive',
 					onPress: async () => {
-						console.log('🗑️ Confirming delete for recipe ID:', recipe.id);
+						// Production build: console.log removed
 						try {
+							// Delete the recipe from database
 							await RecipeDatabase.deleteRecipe(recipe.id!);
-							console.log('✅ Recipe deleted successfully');
+							
+							// Also delete locally cached image
+							await ImageStorageService.deleteLocalImage(recipe.id!);
+							
+							// Production build: console.log removed
 							
 							// Reload recipes after deletion
 							handleRefresh();
 							
-							console.log('Recipe deleted successfully!');
+							// Production build: console.log removed
 						} catch (error) {
 							console.error('❌ Error deleting recipe:', error);
 							Alert.alert('Error', 'Failed to delete recipe. Please try again.');
@@ -268,21 +285,17 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 	useEffect(() => {
 		// Only set debug functions if they don't already exist
 		if (typeof window !== 'undefined' && !(window as any).debugFixEmptyTitles) {
-			console.log('Setting up debug functions...');
+			// Production build: console.log removed
 			
 			// Make cleanup function available in browser console for debugging
 			(window as any).debugFixEmptyTitles = async () => {
 			try {
-				console.log('🧹 Starting manual recipe cleanup...');
+				// Production build: console.log removed
 				const recipes = await RecipeDatabase.getAllRecipes();
 
 				for (const recipe of recipes) {
 					if (recipe.id && (!recipe.title || recipe.title.trim() === '')) {
-						console.log(
-							`Fixing recipe ID ${recipe.id} with ${
-								recipe.ingredients?.length || 0
-							} ingredients`
-						);
+						// Production build: console.log removed
 
 						let newTitle = '(Untitled Recipe)';
 						if (recipe.ingredients && recipe.ingredients.length > 0) {
@@ -305,18 +318,16 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 							title: newTitle,
 						});
 
-						console.log(
-							`✅ Updated recipe ID ${recipe.id} with title: "${newTitle}"`
-						);
+						// Production build: console.log removed
 					}
 				}
 
-				console.log('🎉 Cleanup completed! Reloading recipes...');
+				// Production build: console.log removed
 				// Use window.location.reload() only on web, manual refresh on mobile
 				if (typeof window !== 'undefined' && window.location) {
 					window.location.reload();
 				} else {
-					console.log('On mobile - please manually refresh the app');
+					// Production build: console.log removed
 				}
 			} catch (error) {
 				console.error('❌ Cleanup failed:', error);
@@ -326,7 +337,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		// Add function to fix missing cuisine information
 		(window as any).debugFixMissingCuisines = async () => {
 			try {
-				console.log('🍽️ Starting cuisine information cleanup...');
+				// Production build: console.log removed
 				const recipes = await RecipeDatabase.getAllRecipes();
 				let updatedCount = 0;
 
@@ -336,9 +347,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 						recipe.web_address &&
 						(!recipe.cuisine_type || recipe.cuisine_type.trim() === '')
 					) {
-						console.log(
-							`Attempting to extract cuisine for recipe: "${recipe.title}"`
-						);
+						// Production build: console.log removed
 
 						// Try to extract cuisine from title, description, or re-fetch from URL
 						let extractedCuisine: string | undefined;
@@ -357,25 +366,19 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 								cuisine_type: extractedCuisine,
 							});
 
-							console.log(
-								`✅ Updated recipe "${recipe.title}" with cuisine: "${extractedCuisine}"`
-							);
+							// Production build: console.log removed
 							updatedCount++;
 						} else {
-							console.log(
-								`❌ Could not determine cuisine for recipe: "${recipe.title}"`
-							);
+							// Production build: console.log removed
 						}
 					}
 				}
 
-				console.log(
-					`🎉 Cuisine cleanup completed! Updated ${updatedCount} recipes. Reloading...`
-				);
+				// Production build: console.log removed
 				if (typeof window !== 'undefined' && window.location) {
 					window.location.reload();
 				} else {
-					console.log('On mobile - please manually refresh the app');
+					// Production build: console.log removed
 				}
 			} catch (error) {
 				console.error('❌ Cuisine cleanup failed:', error);
@@ -385,7 +388,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		// Add function to fix missing images
 		(window as any).debugFixMissingImages = async () => {
 			try {
-				console.log('🖼️ Starting image extraction cleanup...');
+				// Production build: console.log removed
 				const recipes = await RecipeDatabase.getAllRecipes();
 				let updatedCount = 0;
 
@@ -395,9 +398,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 						recipe.web_address &&
 						(!recipe.image_url || recipe.image_url.trim() === '')
 					) {
-						console.log(
-							`Attempting to extract image for recipe: "${recipe.title}"`
-						);
+						// Production build: console.log removed
 
 						try {
 							// Re-extract recipe data including images
@@ -410,31 +411,22 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 									image_url: extractedRecipe.image_url,
 								});
 
-								console.log(
-									`✅ Updated recipe "${recipe.title}" with image: "${extractedRecipe.image_url}"`
-								);
+								// Production build: console.log removed
 								updatedCount++;
 							} else {
-								console.log(
-									`❌ Could not extract image for recipe: "${recipe.title}"`
-								);
+								// Production build: console.log removed
 							}
 						} catch (error) {
-							console.log(
-								`❌ Error extracting for recipe "${recipe.title}":`,
-								error
-							);
+							// Production build: console.log removed
 						}
 					}
 				}
 
-				console.log(
-					`🎉 Image cleanup completed! Updated ${updatedCount} recipes. Reloading...`
-				);
+				// Production build: console.log removed
 				if (typeof window !== 'undefined' && window.location) {
 					window.location.reload();
 				} else {
-					console.log('On mobile - please manually refresh the app');
+					// Production build: console.log removed
 				}
 			} catch (error) {
 				console.error('❌ Image cleanup failed:', error);
@@ -505,10 +497,6 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					<TouchableOpacity
 						onPress={(e) => {
 							e.stopPropagation(); // Prevent card press
-							console.log(
-								'🗑️ Delete button tapped for:',
-								RecipeValidation.getSafeTitle(recipe)
-							);
 							handleDelete(recipe);
 						}}
 						style={[
@@ -535,9 +523,10 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 			</View>
 
 			{/* Recipe Image */}
-			{recipe.image_url && (
-				<Image
-					source={{ uri: recipe.image_url }}
+			{recipe.image_url && recipe.id && (
+				<SmartImage
+					imageUrl={recipe.image_url}
+					recipeId={recipe.id}
 					style={[
 						styles.recipeImage,
 						{
@@ -549,8 +538,9 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 						},
 					]}
 					resizeMode='cover'
-					onError={(error) => {
-						console.log('Image load error:', error.nativeEvent.error);
+					fallbackIcon='🍽️'
+					onError={(error: any) => {
+						// Production build: console.log removed
 					}}
 				/>
 			)}

@@ -28,7 +28,7 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen, refreshTrigge
 
   const loadFavorites = useCallback(async () => {
     try {
-      console.log('Loading favorites...');
+      // Production build: console.log removed
       const [allFavorites, recipes] = await Promise.all([
         FavoritesService.getAllFavorites(),
         FavoritesService.getFavoriteRecipes()
@@ -36,7 +36,7 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen, refreshTrigge
       
       setFavorites(allFavorites);
       setFavoriteRecipes(recipes);
-      console.log(`Loaded ${allFavorites.length} favorites and ${recipes.length} favorite recipes`);
+      // Production build: console.log removed
     } catch (error) {
       console.error('Error loading favorites:', error);
       Alert.alert('Error', 'Failed to load favorites');

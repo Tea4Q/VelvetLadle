@@ -14,7 +14,7 @@ export default function FavoritesScreen() {
 	// Refresh favorites when screen comes into focus
 	useFocusEffect(
 		React.useCallback(() => {
-			console.log('Favorites screen focused - refreshing...');
+			// Production build: console.log removed
 			setRefreshKey(prev => prev + 1);
 		}, [])
 	);
@@ -29,7 +29,7 @@ export default function FavoritesScreen() {
 
 	const handleEdit = (recipe: Recipe) => {
 		// TODO: Implement edit functionality
-		console.log('Edit recipe:', recipe.title);
+		// Production build: console.log removed
 	};
 
 	const handleUrlOpen = async (url: string) => {
@@ -38,7 +38,7 @@ export default function FavoritesScreen() {
 			if (supported) {
 				await Linking.openURL(url);
 			} else {
-				console.log("Don't know how to open URI: " + url);
+				// Production build: console.log removed
 			}
 		} catch (error) {
 			console.error('Error opening URL:', error);

@@ -5,7 +5,7 @@ import { WebScrapingAPIService } from './webScrapingAPIService';
 export class RecipeExtractor {
   static async extractRecipeFromUrl(url: string): Promise<Recipe | null> {
     try {
-      console.log('🔍 Starting recipe extraction from Website:', url);
+      // Production build: console.log removed
       
       // Validate URL format first
       if (!this.isValidUrl(url)) {
@@ -14,7 +14,7 @@ export class RecipeExtractor {
       }
 
       // Strategy 1: Try API-based extraction first (most reliable)
-      console.log('🚀 Attempting API-based extraction...');
+      // Production build: console.log removed
       try {
         const apiRecipe = await Promise.race([
           WebScrapingAPIService.extractRecipeWithAPIs(url),
@@ -24,15 +24,15 @@ export class RecipeExtractor {
         ]);
         
         if (apiRecipe) {
-          console.log('✅ Recipe extracted using API services');
+          // Production build: console.log removed
           return apiRecipe;
         }
       } catch (error) {
-        console.log('⚠️  API extraction failed:', error instanceof Error ? error.message : 'Unknown error');
+        // Production build: console.log removed
       }
       
       // Strategy 2: Fallback to CORS proxy method
-      console.log('📡 Trying CORS proxy extraction...');
+      // Production build: console.log removed
       try {
         const response = await Promise.race([
           CorsProxyService.fetchWithCorsProxy(url),
@@ -46,52 +46,52 @@ export class RecipeExtractor {
         }
         
         const html = await response.text();
-        console.log('📄 Got HTML content (', html.length, 'characters)');
+        // Production build: console.log removed');
         
         // Try to extract JSON-LD structured data first (most reliable)
         const jsonLdRecipe = this.extractFromJsonLd(html);
         if (jsonLdRecipe && jsonLdRecipe.title && jsonLdRecipe.ingredients && jsonLdRecipe.ingredients.length > 0) {
-          console.log('✅ Recipe extracted from JSON-LD structured data');
+          // Production build: console.log removed
           const recipeWithImage = { ...jsonLdRecipe, web_address: url } as Recipe;
           // Ensure we have an image
           if (!recipeWithImage.image_url) {
             recipeWithImage.image_url = this.extractImageFromHtml(html, url);
           }
-          console.log('🖼️ Final recipe image URL:', recipeWithImage.image_url);
+          // Production build: console.log removed
           return recipeWithImage;
         }
         
         // Fallback to microdata extraction
         const microdataRecipe = this.extractFromMicrodata(html);
         if (microdataRecipe && microdataRecipe.title && microdataRecipe.ingredients && microdataRecipe.ingredients.length > 0) {
-          console.log('✅ Recipe extracted from microdata');
+          // Production build: console.log removed
           const recipeWithImage = { ...microdataRecipe, web_address: url } as Recipe;
           // Ensure we have an image
           if (!recipeWithImage.image_url) {
             recipeWithImage.image_url = this.extractImageFromHtml(html, url);
           }
-          console.log('🖼️ Final recipe image URL:', recipeWithImage.image_url);
+          // Production build: console.log removed
           return recipeWithImage;
         }
         
         // Last resort: manual extraction from common HTML patterns
         const manualRecipe = this.extractManually(html, url);
         if (manualRecipe && manualRecipe.title && manualRecipe.ingredients && manualRecipe.ingredients.length > 0) {
-          console.log('✅ Recipe extracted using manual parsing');
+          // Production build: console.log removed
           const recipeWithImage = { ...manualRecipe, web_address: url } as Recipe;
           // Ensure we have an image
           if (!recipeWithImage.image_url) {
             recipeWithImage.image_url = this.extractImageFromHtml(html, url);
           }
-          console.log('🖼️ Final recipe image URL:', recipeWithImage.image_url);
+          // Production build: console.log removed
           return recipeWithImage;
         }
         
       } catch (error) {
-        console.log('⚠️  CORS proxy extraction failed:', error instanceof Error ? error.message : 'Unknown error');
+        // Production build: console.log removed
       }
       
-      console.log('❌ All extraction methods failed - no recipe found');
+      // Production build: console.log removed
       return null;
       
     } catch (error) {
@@ -129,7 +129,7 @@ export class RecipeExtractor {
             }
           }
         } catch (parseError) {
-          console.log('Failed to parse JSON-LD script:', parseError);
+          // Production build: console.log removed
           continue;
         }
       }
@@ -142,7 +142,7 @@ export class RecipeExtractor {
   
   static extractImageFromHtml(html: string, baseUrl: string): string | undefined {
     try {
-      console.log('🖼️ Extracting image from HTML...');
+      // Production build: console.log removed
       
       // Priority 1: Look for recipe-specific image patterns
       const recipeImagePatterns = [
@@ -180,7 +180,7 @@ export class RecipeExtractor {
         if (match && match[1]) {
           const imageUrl = this.normalizeImageUrl(match[1], baseUrl);
           if (this.isValidImageUrl(imageUrl)) {
-            console.log('✅ Found recipe image:', imageUrl);
+            // Production build: console.log removed
             return imageUrl;
           }
         }
@@ -202,11 +202,11 @@ export class RecipeExtractor {
         .sort((a, b) => b.score - a.score);
       
       if (candidateImages.length > 0) {
-        console.log('✅ Found candidate image:', candidateImages[0].url);
+        // Production build: console.log removed
         return candidateImages[0].url;
       }
       
-      console.log('❌ No suitable recipe image found');
+      // Production build: console.log removed
       return undefined;
       
     } catch (error) {
@@ -384,7 +384,7 @@ export class RecipeExtractor {
 
   private static extractCuisineFromHtml(html: string): string | null {
     try {
-      console.log('🍽️ Extracting cuisine information from HTML...');
+      // Production build: console.log removed
       
       // Priority 1: Look for specific cuisine/category meta tags
       const metaCuisinePatterns = [
@@ -404,7 +404,7 @@ export class RecipeExtractor {
       for (const pattern of metaCuisinePatterns) {
         const match = html.match(pattern);
         if (match && match[1] && this.isValidCuisine(match[1])) {
-          console.log('✅ Found cuisine from meta tags:', match[1]);
+          // Production build: console.log removed
           return this.normalizeCuisine(match[1]);
         }
       }
@@ -420,7 +420,7 @@ export class RecipeExtractor {
       for (const pattern of structuredPatterns) {
         const match = html.match(pattern);
         if (match && match[1] && this.isValidCuisine(match[1])) {
-          console.log('✅ Found cuisine from structured content:', match[1]);
+          // Production build: console.log removed
           return this.normalizeCuisine(match[1]);
         }
       }
@@ -442,13 +442,13 @@ export class RecipeExtractor {
         if (match && match[1]) {
           const extractedCuisine = this.extractCuisineFromText(match[1]);
           if (extractedCuisine) {
-            console.log('✅ Found cuisine from context:', extractedCuisine);
+            // Production build: console.log removed
             return extractedCuisine;
           }
         }
       }
       
-      console.log('❌ No cuisine information found');
+      // Production build: console.log removed
       return null;
       
     } catch (error) {
@@ -615,7 +615,7 @@ export class RecipeExtractor {
       }
       
       if (recipe.image_url) {
-        console.log('✅ Found image from JSON-LD:', recipe.image_url);
+        // Production build: console.log removed
       }
     }
     
@@ -674,7 +674,7 @@ export class RecipeExtractor {
       const imageMatch = recipeSection.match(/itemprop=["']image["'][^>]*(?:src=["']([^"']+)["']|content=["']([^"']+)["'])/i);
       if (imageMatch) {
         recipe.image_url = imageMatch[1] || imageMatch[2];
-        console.log('✅ Found image from microdata:', recipe.image_url);
+        // Production build: console.log removed
       }
       
       // Extract cuisine from microdata

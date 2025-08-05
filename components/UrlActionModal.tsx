@@ -98,9 +98,11 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 	}
 };	const openUrlInBrowser = () => {
 		const urlToUse = isUrlInputMode ? inputUrl : (inputUrl || url);
-		console.log('Attempting to open URL:', urlToUse);
+		// Production build: console.log removed
 		Linking.openURL(urlToUse)
-			.then(() => console.log('URL opened successfully'))
+			.then(() => {
+				// URL opened successfully
+			})
 			.catch((error) => {
 				console.error('Failed to open URL:', error);
 
@@ -115,7 +117,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 	const processRecipe = async () => {
 		const urlToUse = isUrlInputMode ? inputUrl : (inputUrl || url);
-		console.log('Process Recipe pressed for URL:', urlToUse);
+		// Production build: console.log removed
 		setIsProcessing(true);
 
 		try {
@@ -134,13 +136,13 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 			}
 
 			// First check if this URL contains a recipe
-			console.log('Fetching webpage content...');
+			// Production build: console.log removed
 			let html;
 
 			try {
 				const response = await CorsProxyService.fetchWithCorsProxy(urlToUse);
 				html = await response.text();
-				console.log('Webpage content fetched successfully');
+				// Production build: console.log removed
 			} catch (fetchError) {
 				console.error('Fetch error:', fetchError);
 
@@ -202,7 +204,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 									onClose();
 									onRecipeSelect(existingRecipe);
 								} else {
-									console.log('Navigate to recipe:', existingRecipe.id);
+									// Production build: console.log removed
 								}
 							},
 						},
@@ -215,7 +217,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 			}
 
 			// Extract recipe from the webpage
-			console.log('Extracting recipe data...');
+			// Production build: console.log removed
 			const extractedRecipe = await RecipeExtractor.extractRecipeFromUrl(urlToUse);
 
 			if (!extractedRecipe) {
@@ -229,7 +231,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 				return;
 			}
 
-			console.log('Recipe extracted:', extractedRecipe.title);
+			// Production build: console.log removed
 
 			// Save recipe to database
 			const saveResult = await RecipeDatabase.saveRecipe(extractedRecipe);
@@ -255,7 +257,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 									onClose();
 									onRecipeSelect(saveResult.data);
 								} else {
-									console.log('Navigate to saved recipe:', saveResult.data?.id);
+									// Production build: console.log removed
 								}
 							},
 						},
@@ -315,7 +317,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 					text: 'Enter Manually',
 					onPress: () => {
 						// TODO: Open manual entry form
-						console.log('Open manual recipe entry');
+						// Production build: console.log removed
 					},
 				},
 			]);

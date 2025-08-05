@@ -5,15 +5,15 @@ export class RecipeDatabase {
   static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Recipe; error?: string }> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        console.log('Using demo storage for recipe:', recipe.title);
+        // Production build: console.log removed
         const result = await DemoStorage.saveRecipe(recipe);
         if (result.success) {
-          console.log('📝 Recipe saved to demo storage (in-memory only). Set up Supabase for persistent storage.');
+          // Production build: console.log removed. Set up Supabase for persistent storage.');
         }
         return result;
       }
 
-      console.log('Saving recipe to Supabase database:', recipe.title);
+      // Production build: console.log removed
       
       const { data, error } = await supabase
         .from('recipes')
@@ -43,8 +43,8 @@ export class RecipeDatabase {
         return { success: false, error: error.message };
       }
 
-      console.log('Recipe saved successfully:', data);
-      console.log('🖼️ Saved image URL:', data?.image_url);
+      // Production build: console.log removed
+      // Production build: console.log removed
       return { success: true, data };
     } catch (error) {
       console.error('Unexpected error saving recipe:', error);
@@ -65,7 +65,7 @@ export class RecipeDatabase {
         .single();
 
       if (error) {
-        console.log('Recipe not found for URL:', url);
+        // Production build: console.log removed
         return null;
       }
 
@@ -102,7 +102,7 @@ export class RecipeDatabase {
   static async updateRecipe(id: number, updates: Partial<Recipe>): Promise<{ success: boolean; data?: Recipe; error?: string }> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        console.log('Using demo storage for recipe update:', id);
+        // Production build: console.log removed
         return await DemoStorage.updateRecipe(id, updates);
       }
 

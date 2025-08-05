@@ -3,19 +3,27 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "start": "npx expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "android": "npx expo start --android",
+    "ios": "npx expo start --ios",
+    "web": "npx expo start --web",
     "commit": "git-cz",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "docs:auto": "node scripts/auto-doc.js"
+    "docs:auto": "node scripts/auto-doc.js",
+    "check-deps": "node scripts/check-deps.js",
+    "setup-images": "node scripts/setup-image-storage.js",
+    "prebuild": "node scripts/cleanup-logs.js",
+    "build:preview": "npx eas build --profile preview --platform android",
+    "build:production": "npx eas build --profile production --platform android",
+    "version:patch": "node scripts/bump-version.js patch",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major"
   },
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
-    }    
+    }
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -48,7 +56,8 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-web": "~0.20.0",
-    "react-native-webview": "13.13.5"
+    "react-native-webview": "13.13.5",
+    "expo-file-system": "~18.1.11"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
