@@ -71,6 +71,9 @@ export type Recipe = {
   
   created_at?: string;
   updated_at?: string;
+
+  // Personal notes for this recipe
+  personal_notes?: string;
 };
 
 // Favorites table structure for URLs and quick access

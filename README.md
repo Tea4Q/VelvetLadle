@@ -39,10 +39,12 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
 
 ## 🚀 **Key Features**
 
+
 ### **Recipe Management**
 - **🌐 Web Scraping**: Extract recipes from any website URL
-- **✏️ Manual Entry**: Create recipes with ingredients, directions, and serving info
-- **📝 Full Editing**: Edit existing recipes with pre-populated forms
+- **✏️ Unified Add/Edit Form**: Manual entry and editing are now handled by a single, unified RecipeForm with a tabbed interface (Basics, Details, Nutrition, Notes).
+- **📝 Personal Notes**: Add and edit personal notes for each recipe, accessible in both the form and the viewer.
+- **Full Editing**: Edit existing recipes with all fields pre-populated from the database.
 - **⭐ Favorites**: Mark recipes as favorites for quick access
 - **🔍 Search & Filter**: Find recipes by ingredients, cuisine, or keywords
 
@@ -116,7 +118,7 @@ app/                    # Main application screens
 components/            # Reusable UI components
 ├── RecipeList.tsx     # Recipe browsing and management
 ├── RecipeViewer.tsx   # Recipe detail viewing
-├── ManualRecipeModal.tsx # Manual recipe creation/editing
+├── RecipeForm.tsx     # Unified add/edit form with tabs and notes
 ├── UrlActionModal.tsx # URL processing interface
 └── button.tsx         # Enhanced button component
 services/              # Business logic and API services
@@ -135,7 +137,12 @@ contexts/              # React contexts for global state
 2. **Sign in or continue as guest** - Choose your authentication method
 3. **Add your first recipe** - Use the "Add Recipe" button on the home screen
 4. **From website**: Enter any recipe URL and let the app extract the content
-5. **Manual entry**: Create recipes from scratch with ingredients and directions
+5. **Manual or Edit entry**: Use the unified RecipeForm to create or edit recipes, including all fields and personal notes
+## 📝 **Personal Notes Feature**
+
+- Every recipe supports a personal notes section for your own modifications, reviews, or tips.
+- Notes are available in both the RecipeForm (add/edit) and RecipeViewer (view mode) under a dedicated Notes tab.
+- Notes are saved to the database and can be updated at any time.
 6. **Browse and organize** - View your recipe collection, mark favorites, and search
 
 ## 🚀 **Development**

@@ -66,30 +66,37 @@ Alert.alert(
 );
 ```
 
-### **3. Enhanced Recipe Editing**
 
-#### **Edit Modal Functionality**
-- **Form Pre-population**: Automatically fills form with existing recipe data
-- **Dual Mode**: Single component handles both creation and editing
-- **Spell Check**: Enabled for title, ingredients, and directions
-- **Validation**: Comprehensive input validation with user-friendly error messages
+### **3. Unified Recipe Entry & Editing**
+
+#### **Unified RecipeForm**
+- **Single Form for Add/Edit**: Manual entry and editing are now handled by a single, unified `RecipeForm` component.
+- **Tabbed Interface**: The form uses tabs for Basics, Details, Nutrition, and Notes, making it compact and easy to navigate on mobile.
+- **Form Pre-population**: When editing, all fields are automatically filled with the existing recipe data from the database.
+- **Personal Notes**: Users can add or edit personal notes for each recipe, stored in the `personal_notes` field.
+- **Validation**: Comprehensive input validation with user-friendly error messages.
+- **Keyboard-Aware & Scrollable**: The form is fully scrollable and adapts to the on-screen keyboard for mobile usability.
 
 #### **Technical Implementation**
 ```typescript
-const isEditing = !!editingRecipe;
-
-// Populate form when editing
-React.useEffect(() => {
-  if (editingRecipe) {
-    setTitle(editingRecipe.title || '');
-    setIngredients(editingRecipe.ingredients ? editingRecipe.ingredients.join('\n') : '');
-    setDirections(editingRecipe.directions ? editingRecipe.directions.join('\n') : '');
-    setServings(editingRecipe.servings ? editingRecipe.servings.toString() : '');
-  }
-}, [editingRecipe, visible]);
+// RecipeForm handles both add and edit flows
+<RecipeForm
+  initialRecipe={editingRecipe} // Pass null for manual entry, or a Recipe for editing
+  onSave={handleSave}
+  onCancel={handleCancel}
+/> 
+// All fields, including personal notes, are supported and validated
 ```
 
-### **4. Mobile UX Optimizations**
+
+### **4. Personal Notes Support**
+
+- **Personal Notes Field**: Every recipe now supports a personal notes section, allowing users to record modifications, reviews, or tips.
+- **Notes Tab**: The RecipeForm and RecipeViewer both include a dedicated Notes tab for easy access and editing of personal notes.
+
+---
+
+### **5. Mobile UX Optimizations**
 
 #### **Touch-Responsive Buttons**
 - **Enhanced Hit Targets**: Added `hitSlop` for better touch accuracy

@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
+import RecipeForm from '../../components/RecipeForm';
 import RecipeList from '../../components/RecipeList';
 import RecipeViewer from '../../components/RecipeViewer';
-import ManualRecipeModal from '../../components/ManualRecipeModal';
-import { Recipe } from '../../lib/supabase';
 import { useColors } from '../../contexts/ThemeContext';
+import { Recipe } from '../../lib/supabase';
+import { RecipeDatabase } from '../../services/recipeDatabase';
 
 export default function RecipesScreen() {
 	const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-	const [showEditModal, setShowEditModal] = useState(false);
+	const [showEditForm, setShowEditForm] = useState(false);
 	const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 	const [refreshKey, setRefreshKey] = useState(0);
 	const colors = useColors();
@@ -28,20 +29,32 @@ export default function RecipesScreen() {
 
 	const handleEdit = (recipe: Recipe) => {
 		setEditingRecipe(recipe);
-		setShowEditModal(true);
+		setShowEditForm(true);
 	};
 
-	const handleEditModalClose = () => {
-		setShowEditModal(false);
+	const handleEditFormClose = () => {
+		setShowEditForm(false);
 		setEditingRecipe(null);
 	};
 
-	const handleRecipeUpdated = () => {
-		// Refresh the recipe list by incrementing the refresh key
+
+
+	const handleRecipeFormSave = async (updatedRecipe: Recipe) => {
+		if (!updatedRecipe.id) {
+			Alert.alert('Error', 'Recipe ID is missing.');
+			return;
+		}
+		const { success, data, error } = await RecipeDatabase.updateRecipe(updatedRecipe.id, updatedRecipe);
+		if (!success) {
+			Alert.alert('Error updating recipe', error || 'Unknown error');
+			return;
+		}
+		setShowEditForm(false);
+		setEditingRecipe(null);
 		setRefreshKey(prev => prev + 1);
 		// If we're viewing the edited recipe, update the selected recipe
-		if (selectedRecipe && editingRecipe && selectedRecipe.id === editingRecipe.id) {
-			setSelectedRecipe(null);
+		if (selectedRecipe && data && data.id === selectedRecipe.id) {
+			setSelectedRecipe(data);
 		}
 	};
 
@@ -61,12 +74,15 @@ export default function RecipesScreen() {
 				/>
 			)}
 			
-			<ManualRecipeModal
-				visible={showEditModal}
-				onClose={handleEditModalClose}
-				editingRecipe={editingRecipe}
-				onRecipeUpdated={handleRecipeUpdated}
-			/>
+			{showEditForm && editingRecipe && (
+				<View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.background, zIndex: 10 }}>
+					<RecipeForm
+						initialRecipe={editingRecipe}
+						onSave={handleRecipeFormSave}
+						onCancel={handleEditFormClose}
+					/>
+				</View>
+			)}
 		</View>
 	);
 }

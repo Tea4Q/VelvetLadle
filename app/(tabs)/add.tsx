@@ -1,4 +1,5 @@
-import ManualRecipeModal from '@/components/ManualRecipeModal';
+// import ManualRecipeModal from '@/components/ManualRecipeModal';
+import RecipeForm from '@/components/RecipeForm';
 import UrlActionModal from '@/components/UrlActionModal';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
 import { Recipe } from '@/lib/supabase';
@@ -16,7 +17,8 @@ import {
 
 export default function AddScreen() {
 	const [showUrlModal, setShowUrlModal] = useState<boolean>(false);
-	const [showManualModal, setShowManualModal] = useState<boolean>(false);
+	const [showRecipeForm, setRecipeForm] = useState<boolean>(false);
+	const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 	const [processedUrl, setProcessedUrl] = useState<string>('');
 	const [testRecipeSource, setTestRecipeSource] = useState<string>('');
 
@@ -44,7 +46,8 @@ export default function AddScreen() {
 	};
 
 	const handleManualOption = () => {
-		setShowManualModal(true);
+		setEditingRecipe(null);
+		setRecipeForm(true);
 	};
 
 	const closeModal = () => {
@@ -52,13 +55,18 @@ export default function AddScreen() {
 		setShowUrlModal(false);
 	};
 
-	const closeManualModal = () => {
-		setShowManualModal(false);
+	const closeManualForm = () => {
+		setRecipeForm(false);
+		setEditingRecipe(null);
 	};
 
-	const handleManualRecipeUpdated = () => {
-		// Production build: console.log removed
-		// The modal will close itself, we just need to handle any additional logic
+
+	const handleRecipeFormSave = (recipe: Recipe) => {
+		// Save logic here (call your DB/service)
+		setRecipeForm(false);
+		setEditingRecipe(null);
+		// Optionally, navigate or show a message
+		router.push('/(tabs)/recipes');
 	};
 
 	const handleRecipeSelect = (recipe: Recipe) => {
@@ -179,12 +187,23 @@ export default function AddScreen() {
 				onRecipeSelect={handleRecipeSelect}
 			/>
 			
-			<ManualRecipeModal
-				visible={showManualModal}
-				onClose={closeManualModal}
-				onRecipeSelect={handleRecipeSelect}
-				onRecipeUpdated={handleManualRecipeUpdated}
-			/>
+			   {showRecipeForm && (
+				   <View style={{
+					   position: 'absolute',
+					   top: 0,
+					   left: 0,
+					   right: 0,
+					   bottom: 0,
+					   zIndex: 100,
+					   backgroundColor: '#faf4eb',
+				   }}>
+					   <RecipeForm
+						   initialRecipe={editingRecipe}
+						   onSave={handleRecipeFormSave}
+						   onCancel={closeManualForm}
+					   />
+				   </View>
+			   )}
 		</View>
 	);
 }

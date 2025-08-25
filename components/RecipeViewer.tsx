@@ -19,7 +19,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 	const [activeTab, setActiveTab] = useState<'overview' | 'cooking-tips' | 'notes'>('overview');
 	const [servingAdjustment, setServingAdjustment] = useState(recipe.servings || 4);
 	const [completedSteps, setCompletedSteps] = useState<boolean[]>([]);
-	const [personalNotes, setPersonalNotes] = useState('');
+	const [personalNotes, setPersonalNotes] = useState(recipe.personal_notes || '');
 	
 	const colors = useColors();
 	const spacing = useSpacing();
