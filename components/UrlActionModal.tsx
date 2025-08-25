@@ -218,20 +218,48 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 			// Extract recipe from the webpage
 			// Production build: console.log removed
-			const extractedRecipe = await RecipeExtractor.extractRecipeFromUrl(urlToUse);
+			const extractionResult = await RecipeExtractor.extractRecipeFromUrl(urlToUse);
 
-			if (!extractedRecipe) {
-				// Use React Native Alert
+			// Handle new extraction result format: { recipe, error }
+
+			if (!extractionResult || extractionResult.error || !extractionResult.recipe) {
+				setIsProcessing(false);
+				// Always show an alert and offer manual entry
 				Alert.alert(
 					'Extraction Failed',
-					"Could not extract recipe information from this webpage. The recipe might be in a format we don't support yet, or the page structure is too complex.",
-					[{ text: 'OK' }]
+					extractionResult?.error || "Could not extract recipe information from this webpage. The recipe might be in a format we don't support yet, or the page structure is too complex.",
+					[
+						{
+							text: 'Enter Manually',
+							onPress: () => setShowManualEntry(true),
+						},
+						{ text: 'OK' },
+					]
 				);
-				setIsProcessing(false);
+				// Always open manual entry modal as fallback
+				setShowManualEntry(true);
 				return;
 			}
 
-			// Production build: console.log removed
+			const extractedRecipe = extractionResult.recipe;
+
+			// Block saving if required fields are missing
+			if (!extractedRecipe.title || !extractedRecipe.ingredients?.length || !extractedRecipe.directions?.length) {
+				setIsProcessing(false);
+				Alert.alert(
+					'Incomplete Recipe',
+					'The extracted recipe is missing a title, ingredients, or directions. Please enter the recipe manually.',
+					[
+						{
+							text: 'Enter Manually',
+							onPress: () => setShowManualEntry(true),
+						},
+						{ text: 'OK' },
+					]
+				);
+				setShowManualEntry(true);
+				return;
+			}
 
 			// Save recipe to database
 			const saveResult = await RecipeDatabase.saveRecipe(extractedRecipe);
@@ -256,8 +284,6 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 								if (onRecipeSelect && saveResult.data) {
 									onClose();
 									onRecipeSelect(saveResult.data);
-								} else {
-									// Production build: console.log removed
 								}
 							},
 						},

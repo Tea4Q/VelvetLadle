@@ -1,3 +1,8 @@
+# RENDER OPTIMIZATION GUIDE
+
+## Known UI Issues
+
+- In `RecipeViewer.tsx`, under the infoGrid, the "Total Time" field is being repeated as "Total window with min." This should be reviewed and fixed in a future update. See code comment for details.
 # VelvetLadle Render Optimization Guide 🚀
 
 ## Overview

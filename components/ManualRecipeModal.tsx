@@ -116,7 +116,7 @@ const handleSave = async () => {
 			);
 			if (nutritionResult.success && Array.isArray(nutritionResult.data)) {
 				// Aggregate nutrition data (calories, protein, carbs, fat, fiber, sugar)
-				let calories = 0, protein = 0, carbs = 0, fat = 0, fiber = 0, sugar = 0;
+				let calories = 0, protein = 0, carbs = 0, fat = 0, fiber = 0, sugar = 0, sodium = 0;
 				nutritionResult.data.forEach((item: any) => {
 					if (item.nutrition) {
 						calories += item.nutrition.nutrients?.find((n: any) => n.name === 'Calories')?.amount || 0;
@@ -125,6 +125,7 @@ const handleSave = async () => {
 						fat += item.nutrition.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
 						fiber += item.nutrition.nutrients?.find((n: any) => n.name === 'Fiber')?.amount || 0;
 						sugar += item.nutrition.nutrients?.find((n: any) => n.name === 'Sugar')?.amount || 0;
+						sodium += item.nutrition.nutrients?.find((n: any) => n.name === 'Sodium')?.amount || 0;
 					}
 				});
 				nutritional_info = {
@@ -134,6 +135,7 @@ const handleSave = async () => {
 					fat: fat ? fat.toFixed(1) + 'g' : undefined,
 					fiber: fiber ? fiber.toFixed(1) + 'g' : undefined,
 					sugar: sugar ? sugar.toFixed(1) + 'g' : undefined,
+					sodium: sodium ? Math.round(sodium) + 'mg' : undefined
 				};
 			}
 		} catch (err) {

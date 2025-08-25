@@ -24,7 +24,7 @@ if (isSupabaseConfigured) {
   console.warn('📖 See SUPABASE_SETUP.md for setup instructions.');
 }
 
-export { supabase, isSupabaseConfigured };
+export { isSupabaseConfigured, supabase };
 
 // Database table structure for recipes with enhanced search fields
 export type Recipe = {
@@ -43,6 +43,7 @@ export type Recipe = {
     fat?: string;
     fiber?: string;
     sugar?: string;
+    sodium?: string;
   };
   web_address: string;
   recipe_source?: string;             // Where the recipe came from (e.g., "Grandma's recipe", "Found in old cookbook")

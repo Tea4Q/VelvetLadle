@@ -20,11 +20,8 @@ export class WebScrapingAPIService {
         `render_js=true&` +
         `premium_proxy=true&` +
         `wait=5000&` +                    // Wait 5 seconds for page to load
-        `wait_for_selector=body&` +       // Wait for body element
         `timeout=30000`;                  // 30 second total timeout
 
-      // Production build: console.log removed
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 second client timeout
 
@@ -39,17 +36,17 @@ export class WebScrapingAPIService {
 
       if (response.ok) {
         const html = await response.text();
-        // Production build: console.log removed');
         return html;
       } else {
-        console.error('ScrapingBee API error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('[ScrapingBee] API error:', response.status, response.statusText, errorText);
         return null;
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error('ScrapingBee request timed out after 35 seconds');
+        console.error('[ScrapingBee] Request timed out after 35 seconds');
       } else {
-        console.error('ScrapingBee API error:', error);
+        console.error('[ScrapingBee] API error:', error?.message || error);
       }
       return null;
     }
@@ -106,7 +103,7 @@ export class WebScrapingAPIService {
    */
   static async extractRecipeSpoonacular(url: string): Promise<Recipe | null> {
     if (!this.SPOONACULAR_API_KEY) {
-      console.warn('Spoonacular API key not configured');
+      console.warn('[Spoonacular] API key not configured');
       return null;
     }
 
@@ -117,26 +114,54 @@ export class WebScrapingAPIService {
         `forceExtraction=true`;
 
       const response = await fetch(apiUrl);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Spoonacular] API error:`, response.status, response.statusText, errorText);
+        return null;
+      }
       const recipe = await response.json();
 
-      if (recipe.id) {
-        return {
-          title: recipe.title,
-          ingredients: recipe.extendedIngredients?.map((ing: any) => ing.original) || [],
-          directions: recipe.analyzedInstructions?.[0]?.steps?.map((step: any) => step.step) || [],
-          servings: recipe.servings,
-          prep_time: `PT${recipe.preparationMinutes || 0}M`,
-          cook_time: `PT${recipe.cookingMinutes || 0}M`,
-          total_time: `PT${recipe.readyInMinutes || 0}M`,
-          image_url: recipe.image,
-          description: recipe.summary?.replace(/<[^>]*>/g, ''),
-          web_address: url,
-          cuisine_type: recipe.cuisines?.[0],
-        };
+      if (!recipe || !recipe.id) {
+        console.error('[Spoonacular] No recipe found or missing ID in response:', recipe);
+        return null;
       }
-      return null;
-    } catch (error) {
-      console.error('Spoonacular extract error:', error);
+
+      // Map Spoonacular nutrition to app's nutritional_info format (with units)
+      const getNutrient = (name: string, unit: string): string | undefined => {
+        const n = recipe.nutrition?.nutrients?.find((nutrient: any) => nutrient.name === name);
+        if (!n || n.amount == null) return undefined;
+        return `${parseFloat(n.amount).toFixed(1)}${unit}`;
+      };
+      const result: Recipe = {
+        title: recipe.title,
+        ingredients: recipe.extendedIngredients?.map((ing: any) => ing.original) || [],
+        directions: recipe.analyzedInstructions?.[0]?.steps?.map((step: any) => step.step) || [],
+        servings: recipe.servings,
+        prep_time: `PT${recipe.preparationMinutes || 0}M`,
+        cook_time: `PT${recipe.cookingMinutes || 0}M`,
+        total_time: `PT${recipe.readyInMinutes || 0}M`,
+        image_url: recipe.image,
+        description: recipe.summary?.replace(/<[^>]*>/g, ''),
+        web_address: url,
+        cuisine_type: recipe.cuisines?.[0],
+        nutritional_info: recipe.nutrition ? {
+          calories: recipe.nutrition.nutrients?.find((n: any) => n.name === 'Calories')?.amount ? Math.round(recipe.nutrition.nutrients.find((n: any) => n.name === 'Calories').amount) : undefined,
+          protein: getNutrient('Protein', 'g'),
+          carbs: getNutrient('Carbohydrates', 'g'),
+          fat: getNutrient('Fat', 'g'),
+          sugar: getNutrient('Sugar', 'g'),
+          fiber: getNutrient('Fiber', 'g'),
+          sodium: getNutrient('Sodium', 'mg'),
+        } : undefined,
+      };
+      // Check for critical fields
+      if (!result.title || !result.ingredients.length || !result.directions.length) {
+        console.error('[Spoonacular] Incomplete recipe data:', result);
+        return null;
+      }
+      return result;
+    } catch (error: any) {
+      console.error('[Spoonacular] Extract error:', error?.message || error);
       return null;
     }
   }
@@ -145,36 +170,42 @@ export class WebScrapingAPIService {
    * Enhanced recipe extraction with API fallbacks
    */
   static async extractRecipeWithAPIs(url: string): Promise<Recipe | null> {
-    // Production build: console.log removed
-
     // Try Spoonacular recipe extraction first (most reliable for recipes)
-    const spoonacularRecipe = await this.extractRecipeSpoonacular(url);
+    let spoonacularRecipe: Recipe | null = null;
+    try {
+      spoonacularRecipe = await this.extractRecipeSpoonacular(url);
+    } catch (e: any) {
+      console.error('[extractRecipeWithAPIs] Spoonacular extraction failed:', e?.message || e);
+    }
     if (spoonacularRecipe) {
-      // Production build: console.log removed
       return spoonacularRecipe;
     }
 
     // Fallback to ScrapingBee for general web scraping
-    const html = await this.extractWithScrapingBee(url);
+    let html: string | null = null;
+    try {
+      html = await this.extractWithScrapingBee(url);
+    } catch (e: any) {
+      console.error('[extractRecipeWithAPIs] ScrapingBee extraction failed:', e?.message || e);
+    }
     if (html) {
-      // Production build: console.log removed
-      // Use your existing RecipeExtractor logic on the HTML
-      const { RecipeExtractor } = await import('./recipeExtractor');
-      
-      // Try JSON-LD extraction on ScrapingBee HTML
-      const jsonLdRecipe = RecipeExtractor.extractFromJsonLd(html);
-      if (jsonLdRecipe && jsonLdRecipe.title && jsonLdRecipe.ingredients && jsonLdRecipe.ingredients.length > 0) {
-        return { ...jsonLdRecipe, web_address: url } as Recipe;
-      }
-
-      // Try other extraction methods
-      const microdataRecipe = RecipeExtractor.extractFromMicrodata(html);
-      if (microdataRecipe && microdataRecipe.title && microdataRecipe.ingredients && microdataRecipe.ingredients.length > 0) {
-        return { ...microdataRecipe, web_address: url } as Recipe;
+      try {
+        const { RecipeExtractor } = await import('./recipeExtractor');
+        // Try JSON-LD extraction on ScrapingBee HTML
+        const jsonLdRecipe = RecipeExtractor.extractFromJsonLd(html);
+        if (jsonLdRecipe && jsonLdRecipe.title && jsonLdRecipe.ingredients && jsonLdRecipe.ingredients.length > 0) {
+          return { ...jsonLdRecipe, web_address: url } as Recipe;
+        }
+        // Try other extraction methods
+        const microdataRecipe = RecipeExtractor.extractFromMicrodata(html);
+        if (microdataRecipe && microdataRecipe.title && microdataRecipe.ingredients && microdataRecipe.ingredients.length > 0) {
+          return { ...microdataRecipe, web_address: url } as Recipe;
+        }
+      } catch (e: any) {
+        console.error('[extractRecipeWithAPIs] Error in HTML extraction:', e?.message || e);
       }
     }
-
-    // Production build: console.log removed
+    console.error('[extractRecipeWithAPIs] All extraction methods failed for URL:', url);
     return null;
   }
 }

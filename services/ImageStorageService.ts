@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { Image } from 'expo-image';
 
 /**
@@ -16,6 +17,7 @@ export class ImageStorageService {
    * Initialize the image storage directory
    */
   static async initializeStorage(): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       const dirInfo = await FileSystem.getInfoAsync(this.IMAGES_DIR);
       if (!dirInfo.exists) {
@@ -38,7 +40,10 @@ export class ImageStorageService {
       console.warn('⚠️ Invalid parameters for image download');
       return null;
     }
-
+    if (Platform.OS === 'web') {
+      // On web, do not store locally, just return the remote URL
+      return imageUrl;
+    }
     try {
       // Ensure storage is initialized
       await this.initializeStorage();
@@ -99,7 +104,10 @@ export class ImageStorageService {
    */
   static async getImageSource(imageUrl: string | undefined, recipeId: number): Promise<string | null> {
     if (!imageUrl) return null;
-
+    if (Platform.OS === 'web') {
+      // On web, always use the remote URL
+      return imageUrl;
+    }
     try {
       // Check if we already have this image locally
       const fileExtension = this.getFileExtensionFromUrl(imageUrl);
@@ -132,6 +140,7 @@ export class ImageStorageService {
    * @param recipeId - The recipe ID
    */
   static async deleteLocalImage(recipeId: number): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       const possibleExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
       
@@ -158,6 +167,9 @@ export class ImageStorageService {
     totalSize: number;
     formattedSize: string;
   }> {
+    if (Platform.OS === 'web') {
+      return { totalImages: 0, totalSize: 0, formattedSize: '0 B' };
+    }
     try {
       await this.initializeStorage();
       
@@ -187,6 +199,7 @@ export class ImageStorageService {
    * Clean up cache if it exceeds the maximum size
    */
   private static async cleanupCacheIfNeeded(): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       const stats = await this.getStorageStats();
       
@@ -236,6 +249,7 @@ export class ImageStorageService {
    * Clear all cached images
    */
   static async clearAllImages(): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       const dirInfo = await FileSystem.getInfoAsync(this.IMAGES_DIR);
       if (dirInfo.exists) {

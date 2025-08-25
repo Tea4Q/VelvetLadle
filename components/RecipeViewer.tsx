@@ -257,7 +257,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 								</Text>
 							</View>
 							<View style={[styles.infoItem, { backgroundColor: colors.background }]}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Prep Time</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Prep Time </Text>
 								<Text style={[styles.infoValue, { color: colors.textPrimary }]}>
 									{formatTime(recipe.prep_time) || recipe.prep_time || "15 min"}
 								</Text>
@@ -268,9 +268,9 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 									{formatTime(recipe.cook_time) || recipe.cook_time || "30 min"}
 								</Text>
 							</View>
-							<View style={[styles.infoItem, { backgroundColor: colors.background }]}>
+							<View style={[styles.infoItem, { backgroundColor: colors.background }]}> 
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Total Time</Text>
-								<Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+								<Text style={[styles.infoValue, { color: colors.textPrimary }]}> 
 									{formatTime(recipe.total_time) || recipe.total_time || "45 min"}
 								</Text>
 							</View>

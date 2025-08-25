@@ -2,6 +2,32 @@
 
 VelvetLadle is a comprehensive React Native app built with Expo for managing your personal recipe collection. Save recipes from any website, create your own recipes manually, and build your favorite recipe collection with a modern, professional interface.
 
+
+## 🥗 Nutritional Information & Servings Handling
+
+### How Nutritional Info is Added
+
+- When you add a recipe from a website, VelvetLadle attempts to extract nutritional information (calories, protein, carbs, fat, fiber, sugar, sodium) from the site or via the Spoonacular API.
+- The extracted nutrition is mapped to the `nutritional_info` field in the database and displayed per serving in the app.
+- If no nutrition is found, default values are shown in the UI.
+
+**Manual Entry:**
+- You can add or edit nutritional info when creating or editing a recipe manually.
+
+**Troubleshooting:**
+- If nutrition is missing, check that the source site or API provides it. Some sites or proxies may block nutrition extraction due to CORS or API limits.
+- For best results, use well-known recipe sites or add nutrition manually.
+
+### Servings Bug Fix
+
+- Previous versions sometimes failed to divide nutrition by servings, or did not save the correct servings count.
+- This is now fixed: nutrition is always shown per serving, and the servings field is saved and editable for all recipes.
+
+**If you notice incorrect nutrition or servings:**
+- Edit the recipe and update the servings or nutrition fields as needed.
+- For imported recipes, verify the nutrition matches the source and adjust if necessary.
+
+---
 ## ✨ **Recent Enhancements (August 2025)**
 
 - **🚀 Performance Optimization**: Fixed critical render loops and "Maximum update depth exceeded" errors

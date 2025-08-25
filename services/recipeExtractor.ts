@@ -1,102 +1,145 @@
 import { Recipe } from '../lib/supabase';
 import { CorsProxyService } from './corsProxyService';
+import { fetchNutrition } from './nutritionService';
 import { WebScrapingAPIService } from './webScrapingAPIService';
 
 export class RecipeExtractor {
-  static async extractRecipeFromUrl(url: string): Promise<Recipe | null> {
+  /**
+   * Returns { recipe, error } where only one is set.
+   */
+  static async extractRecipeFromUrl(url: string): Promise<{ recipe?: Recipe; error?: string }> {
     try {
-      // Production build: console.log removed
-      
       // Validate URL format first
       if (!this.isValidUrl(url)) {
-        console.error('❌ Invalid Website format:', url);
-        return null;
+        const msg = 'Invalid website URL format.';
+        console.error('❌', msg, url);
+        return { error: msg };
       }
 
       // Strategy 1: Try API-based extraction first (most reliable)
-      // Production build: console.log removed
       try {
         const apiRecipe = await Promise.race([
           WebScrapingAPIService.extractRecipeWithAPIs(url),
-          new Promise<null>((_, reject) => 
+          new Promise<null>((_, reject) =>
             setTimeout(() => reject(new Error('API timeout')), 45000)
           )
         ]);
-        
         if (apiRecipe) {
-          // Production build: console.log removed
-          return apiRecipe;
+          return { recipe: apiRecipe };
         }
-      } catch (error) {
-        // Production build: console.log removed
+      } catch (error: any) {
+        // If error has a message, propagate it
+        if (error?.message) return { error: error.message };
       }
-      
+
       // Strategy 2: Fallback to CORS proxy method
-      // Production build: console.log removed
       try {
         const response = await Promise.race([
           CorsProxyService.fetchWithCorsProxy(url),
-          new Promise<never>((_, reject) => 
+          new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('CORS proxy timeout')), 30000)
           )
         ]);
-        
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const msg = `HTTP error! status: ${response.status}`;
+          return { error: msg };
         }
-        
         const html = await response.text();
-        // Production build: console.log removed');
-        
+
         // Try to extract JSON-LD structured data first (most reliable)
-        const jsonLdRecipe = this.extractFromJsonLd(html);
+        let jsonLdRecipe = this.extractFromJsonLd(html);
         if (jsonLdRecipe && jsonLdRecipe.title && jsonLdRecipe.ingredients && jsonLdRecipe.ingredients.length > 0) {
-          // Production build: console.log removed
-          const recipeWithImage = { ...jsonLdRecipe, web_address: url } as Recipe;
+          let recipeWithImage = { ...jsonLdRecipe, web_address: url } as Recipe;
           // Ensure we have an image
           if (!recipeWithImage.image_url) {
             recipeWithImage.image_url = this.extractImageFromHtml(html, url);
           }
-          // Production build: console.log removed
-          return recipeWithImage;
+          // Debug: Log extracted nutritional_info from site
+          console.log('[Extractor] nutritional_info from site:', recipeWithImage.nutritional_info);
+          // If no nutrition info, use nutritionService
+          if (!recipeWithImage.nutritional_info && recipeWithImage.ingredients && recipeWithImage.ingredients.length > 0) {
+            try {
+              const servings = recipeWithImage.servings || 1;
+              const nutritionResult = await fetchNutrition(recipeWithImage.ingredients, servings);
+              console.log('[Extractor] fetchNutrition result:', nutritionResult);
+              if (nutritionResult.success && nutritionResult.data && Array.isArray(nutritionResult.data)) {
+                // Spoonacular returns an array of ingredient objects, each with nutrition info
+                // We'll sum up the nutrients for all ingredients
+                const totals = {
+                  calories: 0,
+                  protein: 0,
+                  carbs: 0,
+                  fat: 0,
+                  fiber: 0,
+                  sugar: 0,
+                  sodium: 0,
+                };
+                nutritionResult.data.forEach((ingredient: any) => {
+                  if (ingredient.nutrition && ingredient.nutrition.nutrients) {
+                    ingredient.nutrition.nutrients.forEach((nutrient: any) => {
+                      const name = nutrient.name.toLowerCase();
+                      const amount = parseFloat(nutrient.amount);
+                      if (name === 'calories') totals.calories += amount;
+                      if (name === 'protein') totals.protein += amount;
+                      if (name === 'carbohydrates') totals.carbs += amount;
+                      if (name === 'fat') totals.fat += amount;
+                      if (name === 'fiber') totals.fiber += amount;
+                      if (name === 'sugar') totals.sugar += amount;
+                      if (name === 'sodium') totals.sodium += amount;
+                    });
+                  }
+                });
+                // Format to match nutritional_info structure
+                // Only include sodium if the type allows it, otherwise omit
+                recipeWithImage.nutritional_info = {
+                  calories: Math.round(totals.calories),
+                  protein: totals.protein ? totals.protein.toFixed(1) + 'g' : undefined,
+                  carbs: totals.carbs ? totals.carbs.toFixed(1) + 'g' : undefined,
+                  fat: totals.fat ? totals.fat.toFixed(1) + 'g' : undefined,
+                  fiber: totals.fiber ? totals.fiber.toFixed(1) + 'g' : undefined,
+                  sugar: totals.sugar ? totals.sugar.toFixed(1) + 'g' : undefined,
+                  sodium: totals.sodium ? Math.round(totals.sodium) + 'mg' : undefined
+                };
+                console.log('[Extractor] nutritional_info from Spoonacular:', recipeWithImage.nutritional_info);
+              }
+            } catch (e) {
+              console.error('[Extractor] fetchNutrition error:', e);
+            }
+          }
+          return { recipe: recipeWithImage };
         }
-        
+
         // Fallback to microdata extraction
         const microdataRecipe = this.extractFromMicrodata(html);
         if (microdataRecipe && microdataRecipe.title && microdataRecipe.ingredients && microdataRecipe.ingredients.length > 0) {
-          // Production build: console.log removed
           const recipeWithImage = { ...microdataRecipe, web_address: url } as Recipe;
           // Ensure we have an image
           if (!recipeWithImage.image_url) {
             recipeWithImage.image_url = this.extractImageFromHtml(html, url);
           }
-          // Production build: console.log removed
-          return recipeWithImage;
+          return { recipe: recipeWithImage };
         }
-        
+
         // Last resort: manual extraction from common HTML patterns
         const manualRecipe = this.extractManually(html, url);
         if (manualRecipe && manualRecipe.title && manualRecipe.ingredients && manualRecipe.ingredients.length > 0) {
-          // Production build: console.log removed
           const recipeWithImage = { ...manualRecipe, web_address: url } as Recipe;
           // Ensure we have an image
           if (!recipeWithImage.image_url) {
             recipeWithImage.image_url = this.extractImageFromHtml(html, url);
           }
-          // Production build: console.log removed
-          return recipeWithImage;
+          return { recipe: recipeWithImage };
         }
-        
-      } catch (error) {
-        // Production build: console.log removed
+      } catch (error: any) {
+        if (error?.message) return { error: error.message };
       }
-      
-      // Production build: console.log removed
-      return null;
-      
-    } catch (error) {
-      console.error('💥 Critical error during recipe extraction:', error);
-      return null;
+      // If all strategies fail,
+      return { error: 'Could not extract recipe from this URL. The site may be unsupported or blocked.' };
+    } catch (error: any) {
+      const msg = 'Critical error during recipe extraction: ' + (error?.message || error);
+      console.error('💥', msg);
+      return { error: msg };
     }
   }
   
@@ -125,11 +168,23 @@ export class RecipeExtractor {
           
           for (const item of recipes) {
             if (item['@type'] === 'Recipe' || item.type === 'Recipe') {
-              return this.parseJsonLdRecipe(item);
+              // Patch: Extract nutrition directly if present in JSON-LD
+              const parsed = this.parseJsonLdRecipe(item);
+              if (item.nutrition) {
+                parsed.nutritional_info = {
+                  calories: item.nutrition.calories || item.nutrition.caloriesContent || item.nutrition["calories"],
+                  protein: item.nutrition.proteinContent || item.nutrition.protein,
+                  carbs: item.nutrition.carbohydrateContent || item.nutrition.carbs || item.nutrition.carbohydrates,
+                  fat: item.nutrition.fatContent || item.nutrition.fat || item.nutrition.totalFat,
+                  fiber: item.nutrition.fiberContent || item.nutrition.fiber || item.nutrition.dietaryFiber,
+                  sugar: item.nutrition.sugarContent || item.nutrition.sugar || item.nutrition.sugars,
+                  sodium: item.nutrition.sodiumContent || item.nutrition.sodium || item.nutrition.salt,
+                };
+              }
+              return parsed;
             }
           }
         } catch (parseError) {
-          // Production build: console.log removed
           continue;
         }
       }
@@ -142,8 +197,7 @@ export class RecipeExtractor {
   
   static extractImageFromHtml(html: string, baseUrl: string): string | undefined {
     try {
-      // Production build: console.log removed
-      
+       
       // Priority 1: Look for recipe-specific image patterns
       const recipeImagePatterns = [
         // Recipe card images
@@ -309,69 +363,48 @@ export class RecipeExtractor {
   }
 
   private static extractNutritionFromHtml(html: string): any {
+    // Patch: Allrecipes-specific nutrition extraction fallback
+    // Look for Allrecipes nutrition facts section
+    const allrecipesSection = html.match(/<section[^>]*class="nutrition-section"[\s\S]*?<\/section>/i);
+    if (allrecipesSection && allrecipesSection[0]) {
+      const sectionHtml = allrecipesSection[0];
+      // Extract nutrition facts (e.g., Calories, Carbs, Protein, Fat, etc.)
+      const nutrition: any = {};
+      const facts = [
+        { key: 'calories', label: /([\d,]+)\s*calories?/i },
+        { key: 'carbs', label: /([\d,.]+)g\s*carbohydrates?/i },
+        { key: 'protein', label: /([\d,.]+)g\s*protein/i },
+        { key: 'fat', label: /([\d,.]+)g\s*fat/i },
+        { key: 'fiber', label: /([\d,.]+)g\s*fiber/i },
+        { key: 'sugar', label: /([\d,.]+)g\s*sugar/i },
+        { key: 'sodium', label: /([\d,.]+)mg\s*sodium/i },
+      ];
+      for (const fact of facts) {
+        const match = sectionHtml.match(fact.label);
+        if (match && match[1]) {
+          nutrition[fact.key] = match[1] + (fact.key === 'sodium' ? 'mg' : (fact.key === 'calories' ? '' : 'g'));
+        }
+      }
+      if (Object.keys(nutrition).length > 0) return nutrition;
+    }
     try {
       const nutrition: any = {};
 
-      // Extract calories
-      const caloriesMatch = html.match(/(\d+)\s*calories?/gi);
-      if (caloriesMatch && caloriesMatch[0]) {
-        const calories = parseInt(caloriesMatch[0].match(/\d+/)?.[0] || '0');
-        if (calories > 0 && calories < 5000) { // Reasonable calorie range
-          nutrition.calories = calories;
-        }
-      }
-
-      // Extract protein
-      const proteinMatch = html.match(/(\d+)g?\s*protein/gi);
-      if (proteinMatch && proteinMatch[0]) {
-        const protein = parseInt(proteinMatch[0].match(/\d+/)?.[0] || '0');
-        if (protein > 0 && protein < 200) { // Reasonable protein range
-          nutrition.protein = protein + 'g';
-        }
-      }
-
-      // Extract carbohydrates
-      const carbMatch = html.match(/(\d+)g?\s*carb(?:ohydrate)?s?/gi);
-      if (carbMatch && carbMatch[0]) {
-        const carbs = parseInt(carbMatch[0].match(/\d+/)?.[0] || '0');
-        if (carbs > 0 && carbs < 500) { // Reasonable carb range
-          nutrition.carbs = carbs + 'g';
-        }
-      }
-
-      // Extract fat
-      const fatMatch = html.match(/(\d+)g?\s*fat/gi);
-      if (fatMatch && fatMatch[0]) {
-        const fat = parseInt(fatMatch[0].match(/\d+/)?.[0] || '0');
-        if (fat > 0 && fat < 200) { // Reasonable fat range
-          nutrition.fat = fat + 'g';
-        }
-      }
-
-      // Extract fiber
-      const fiberMatch = html.match(/(\d+)g?\s*fiber/gi);
-      if (fiberMatch && fiberMatch[0]) {
-        const fiber = parseInt(fiberMatch[0].match(/\d+/)?.[0] || '0');
-        if (fiber > 0 && fiber < 100) { // Reasonable fiber range
-          nutrition.fiber = fiber + 'g';
-        }
-      }
-
-      // Extract sugar
-      const sugarMatch = html.match(/(\d+)g?\s*sugar/gi);
-      if (sugarMatch && sugarMatch[0]) {
-        const sugar = parseInt(sugarMatch[0].match(/\d+/)?.[0] || '0');
-        if (sugar > 0 && sugar < 200) { // Reasonable sugar range
-          nutrition.sugar = sugar + 'g';
-        }
-      }
-
-      // Extract sodium
-      const sodiumMatch = html.match(/(\d+)mg?\s*sodium/gi);
-      if (sodiumMatch && sodiumMatch[0]) {
-        const sodium = parseInt(sodiumMatch[0].match(/\d+/)?.[0] || '0');
-        if (sodium > 0 && sodium < 5000) { // Reasonable sodium range
-          nutrition.sodium = sodium;
+      // Generic fallback (existing logic, but improved to allow decimals and commas)
+      const facts = [
+        { key: 'calories', label: /(\d+[.,]?\d*)\s*calories?/gi, unit: '' },
+        { key: 'protein', label: /(\d+[.,]?\d*)g?\s*protein/gi, unit: 'g' },
+        { key: 'carbs', label: /(\d+[.,]?\d*)g?\s*carb(?:ohydrate)?s?/gi, unit: 'g' },
+        { key: 'fat', label: /(\d+[.,]?\d*)g?\s*fat/gi, unit: 'g' },
+        { key: 'fiber', label: /(\d+[.,]?\d*)g?\s*fiber/gi, unit: 'g' },
+        { key: 'sugar', label: /(\d+[.,]?\d*)g?\s*sugar/gi, unit: 'g' },
+        { key: 'sodium', label: /(\d+[.,]?\d*)mg?\s*sodium/gi, unit: 'mg' },
+      ];
+      for (const fact of facts) {
+        const match = html.match(fact.label);
+        if (match && match[0]) {
+          const value = match[0].match(/\d+[.,]?\d*/)?.[0].replace(',', '') || '';
+          if (value) nutrition[fact.key] = value + fact.unit;
         }
       }
 
@@ -384,7 +417,6 @@ export class RecipeExtractor {
 
   private static extractCuisineFromHtml(html: string): string | null {
     try {
-      // Production build: console.log removed
       
       // Priority 1: Look for specific cuisine/category meta tags
       const metaCuisinePatterns = [
@@ -404,7 +436,6 @@ export class RecipeExtractor {
       for (const pattern of metaCuisinePatterns) {
         const match = html.match(pattern);
         if (match && match[1] && this.isValidCuisine(match[1])) {
-          // Production build: console.log removed
           return this.normalizeCuisine(match[1]);
         }
       }
@@ -420,7 +451,6 @@ export class RecipeExtractor {
       for (const pattern of structuredPatterns) {
         const match = html.match(pattern);
         if (match && match[1] && this.isValidCuisine(match[1])) {
-          // Production build: console.log removed
           return this.normalizeCuisine(match[1]);
         }
       }
@@ -442,15 +472,11 @@ export class RecipeExtractor {
         if (match && match[1]) {
           const extractedCuisine = this.extractCuisineFromText(match[1]);
           if (extractedCuisine) {
-            // Production build: console.log removed
             return extractedCuisine;
           }
         }
       }
-      
-      // Production build: console.log removed
       return null;
-      
     } catch (error) {
       console.error('Error extracting cuisine:', error);
       return null;
@@ -573,33 +599,11 @@ export class RecipeExtractor {
     if (data.cookTime) recipe.cook_time = data.cookTime;
     if (data.totalTime) recipe.total_time = data.totalTime;
     
-    // Extract nutritional information
-    if (data.nutrition) {
-      recipe.nutritional_info = {
-        calories: data.nutrition.calories ? parseInt(data.nutrition.calories.toString()) : undefined,
-        protein: data.nutrition.proteinContent || data.nutrition.protein,
-        carbs: data.nutrition.carbohydrateContent || data.nutrition.carbs || data.nutrition.carbohydrates,
-        fat: data.nutrition.fatContent || data.nutrition.fat || data.nutrition.totalFat,
-        fiber: data.nutrition.fiberContent || data.nutrition.fiber || data.nutrition.dietaryFiber,
-        sugar: data.nutrition.sugarContent || data.nutrition.sugar || data.nutrition.sugars,
-      };
-      
-      // Clean up nutritional values to remove extra text
-      if (recipe.nutritional_info) {
-        const cleaned = { ...recipe.nutritional_info };
-        Object.keys(cleaned).forEach(key => {
-          const value = cleaned[key as keyof typeof cleaned];
-          if (typeof value === 'string') {
-            // Extract numeric value and unit from strings like "25g", "150 calories", etc.
-            const cleanValue = value.replace(/[^\d.gGmMcC\s]/g, '').trim();
-            if (cleanValue && key !== 'calories') {
-              (cleaned as any)[key] = cleanValue;
-            }
-          }
-        });
-        recipe.nutritional_info = cleaned;
-      }
-    }
+  // Extract nutritional information using nutritionService
+  recipe.nutritional_info = undefined;
+  // We'll use a placeholder async function to fetch nutrition, since parseJsonLdRecipe is not async.
+  // The actual call should be made in the main extraction flow, not here, but for now we mark for follow-up.
+  // See note below for integration in async context.
     
     // Extract other metadata
     if (data.image) {

@@ -5,7 +5,7 @@
 
 
 
-const SPOONACULAR_API_KEY = 'YOUR_SPOONACULAR_API_KEY';
+const SPOONACULAR_API_KEY = '89a6aed438fb42debc55fdb2ab57163e'; 
 const API_URL = 'https://api.spoonacular.com/recipes/parseIngredients';
 
 export async function fetchNutrition(ingredients: string[], servings: number = 1) {
