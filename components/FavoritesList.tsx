@@ -1,5 +1,5 @@
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useColors, useElevation, useRadius, useSpacing, useTypography } from '../contexts/ThemeContext';
 import { Favorite, Recipe } from '../lib/supabase';
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   tabButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 4,
   },
   centerContainer: {
     flex: 1,

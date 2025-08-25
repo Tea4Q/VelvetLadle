@@ -138,3 +138,10 @@ substitutionOptions: {
 - Offer timing and doneness indicators for perfect results
 - Flag common pitfalls and mistakes specific to the dish
 - Provide altitude adjustments and regional variations where applicable
+
+### Supabase Storage Integration
+- Store recipe images and files in Supabase Storage buckets for secure, scalable cloud access
+- Reference image URLs in the database for efficient retrieval
+- Enable multi-device and cross-platform image access
+- Support for image uploads, deletions, and access control
+- Optional fallback to local storage for offline use

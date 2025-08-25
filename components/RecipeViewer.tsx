@@ -107,12 +107,18 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 	return (
 		<ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
 			{/* Header */}
-			<View style={[styles.header, { backgroundColor: colors.surface, padding: spacing.md, borderRadius: radius.md }]}>
+			<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						style={[styles.tabContainer, { marginTop: spacing.md }]}
+						contentContainerStyle={{ paddingLeft: spacing.md, paddingRight: spacing.md }}
+					>
+			
 				<View style={styles.headerTop}>
 					{onBack && (
 						<TouchableOpacity
 							onPress={onBack}
-							style={[styles.headerButton, { backgroundColor: colors.primary, borderRadius: radius.sm }]}
+							style={[styles.headerButton, { backgroundColor: colors.primary, borderRadius: radius.full }]}
 						>
 							<FontAwesome6 name="arrow-left" size={16} color={colors.textInverse} />
 							<Text style={[styles.headerButtonText, { color: colors.textInverse }]}>Back</Text>
@@ -126,7 +132,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 							backgroundColor: isFavorited ? colors.accent : colors.background,
 							borderColor: colors.accent,
 							borderWidth: 1,
-							borderRadius: radius.sm
+							borderRadius: radius.full
 						}]}
 					>
 						<FontAwesome6 
@@ -145,54 +151,52 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 					{onEdit && (
 						<TouchableOpacity
 							onPress={() => onEdit(recipe)}
-							style={[styles.headerButton, { backgroundColor: colors.primary, borderRadius: radius.sm }]}
+							style={[styles.headerButton, { backgroundColor: colors.primary, borderRadius: radius.full }]}
 						>
 							<FontAwesome6 name="pen" size={16} color={colors.textInverse} />
 							<Text style={[styles.headerButtonText, { color: colors.textInverse }]}>Edit</Text>
 						</TouchableOpacity>
 					)}
-				</View>
+				
 
 				{/* Navigation Tabs */}
-				<ScrollView 
-					horizontal 
-					showsHorizontalScrollIndicator={false}
-					style={[styles.tabContainer, { marginTop: spacing.md }]}
-					contentContainerStyle={{ justifyContent: 'flex-end', paddingLeft: spacing.md }}
-				>
-					{[
-						{ key: 'overview', label: '📖 Overview', icon: 'book' },
-						{ key: 'cooking-tips', label: '💡 Tips', icon: 'lightbulb' },
-						{ key: 'notes', label: '📝 Notes', icon: 'note-sticky' }
-					].map((tab) => (
-						<TouchableOpacity
-							key={tab.key}
-							onPress={() => setActiveTab(tab.key as any)}
-							style={[
-								styles.tab,
-								{
-									backgroundColor: activeTab === tab.key ? colors.primary : colors.background,
-									borderRadius: radius.full,
-									paddingHorizontal: spacing.md,
-									paddingVertical: spacing.sm,
-									marginRight: spacing.sm,
-								}
-							]}
-						>
-							<Text style={[
-								styles.tabText,
-								{
-									color: activeTab === tab.key ? colors.textInverse : colors.textPrimary,
-									fontSize: typography.fontSize.sm,
-									fontWeight: activeTab === tab.key ? typography.fontWeight.semibold : typography.fontWeight.normal,
-								}
-							]}>
-								{tab.label}
-							</Text>
-						</TouchableOpacity>
-					))}
-				</ScrollView>
-			</View>
+									
+						{[
+							{ key: 'overview', label: '📖 Overview', icon: 'book' },
+							{ key: 'cooking-tips', label: '💡 Tips', icon: 'lightbulb' },
+							{ key: 'notes', label: '📝 Notes', icon: 'note-sticky' }
+						].map((tab) => (
+							<TouchableOpacity
+								key={tab.key}
+								onPress={() => setActiveTab(tab.key as any)}
+								style={[
+									styles.tab,
+									{
+										backgroundColor: activeTab === tab.key ? colors.primary : colors.background,
+										borderRadius: radius.full,
+										paddingHorizontal: spacing.md,
+										paddingVertical: spacing.sm,
+										marginRight: spacing.sm,
+									}
+								]}
+							>
+								<Text style={[
+									styles.tabText,
+									{
+										color: activeTab === tab.key ? colors.textInverse : colors.textPrimary,
+										fontSize: typography.fontSize.sm,
+										fontWeight: activeTab === tab.key ? typography.fontWeight.semibold : typography.fontWeight.normal,
+									}
+								]}>
+									{tab.label}
+								</Text>
+							</TouchableOpacity>
+						))}
+
+				</View>
+				
+		
+			</ScrollView>
 
 			{/* Recipe Title */}
 			<Text style={[styles.title, { color: colors.textPrimary, marginBottom: spacing.lg }]}>
