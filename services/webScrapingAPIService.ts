@@ -78,9 +78,9 @@ export class WebScrapingAPIService {
         ingredients: recipe.extendedIngredients?.map((ing: any) => ing.original) || [],
         directions: recipe.analyzedInstructions?.[0]?.steps?.map((step: any) => step.step) || [],
         servings: recipe.servings,
-        prep_time: `PT${recipe.preparationMinutes || 0}M`,
-        cook_time: `PT${recipe.cookingMinutes || 0}M`,
-        total_time: `PT${recipe.readyInMinutes || 0}M`,
+        prep_time: `Prep Time ${recipe.preparationMinutes || 0}M`,
+        cook_time: `Cook Time${recipe.cookingMinutes || 0}M`,
+        total_time: `Total Time ${recipe.readyInMinutes || 0}M`,
         image_url: recipe.image,
         description: recipe.summary?.replace(/<[^>]*>/g, ''), // Remove HTML tags
         web_address: recipe.sourceUrl || 'spoonacular-api',

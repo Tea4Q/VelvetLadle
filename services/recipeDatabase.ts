@@ -5,15 +5,14 @@ export class RecipeDatabase {
   static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Recipe; error?: string }> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        // Production build: console.log removed
         const result = await DemoStorage.saveRecipe(recipe);
         if (result.success) {
-          // Production build: console.log removed. Set up Supabase for persistent storage.');
+        
         }
         return result;
       }
 
-      // Production build: console.log removed
+    
       
       const { data, error } = await supabase
         .from('recipes')
@@ -43,8 +42,7 @@ export class RecipeDatabase {
         return { success: false, error: error.message };
       }
 
-      // Production build: console.log removed
-      // Production build: console.log removed
+     
       return { success: true, data };
     } catch (error) {
       console.error('Unexpected error saving recipe:', error);
@@ -130,6 +128,7 @@ export class RecipeDatabase {
 
   static async deleteRecipe(id: number): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log('[RecipeDatabase] Attempting to delete recipe with id:', id);
       if (!isSupabaseConfigured || !supabase) {
         return { 
           success: false, 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	Alert,
 	FlatList,
@@ -16,10 +16,10 @@ import {
 } from '../contexts/ThemeContext';
 import { Recipe } from '../lib/supabase';
 import { FavoritesService } from '../services/FavoritesService';
+import { ImageStorageService } from '../services/ImageStorageService';
 import { RecipeDatabase } from '../services/recipeDatabase';
 import { RecipeExtractor } from '../services/recipeExtractor';
 import { RecipeFilterService } from '../services/RecipeFilterService';
-import { ImageStorageService } from '../services/ImageStorageService';
 import { RecipeValidation } from '../utils/recipeValidation';
 import Button from './buttons';
 import RecipeSearchFilter from './RecipeSearchFilter';
@@ -226,56 +226,60 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		}
 	}, []);
 
-	const handleDelete = useCallback(async (recipe: Recipe) => {
-		const recipeTitle = RecipeValidation.getSafeTitle(recipe);
-		// Production build: console.log removed
 
-		if (!recipe.id) {
-			console.error('❌ Recipe has no ID, cannot delete');
-			return;
-		}
-
-		if (!recipe.title || recipe.title.trim() === '') {
-			console.warn('⚠️ Recipe has empty title, ID:', recipe.id);
-		}
-
-		// Use Alert for both web and mobile
-		Alert.alert(
-			'Delete Recipe',
-			`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`,
-			[
-				{
-					text: 'Cancel',
-					style: 'cancel',
-					onPress: () => {},
-				},
-				{
-					text: 'Delete',
-					style: 'destructive',
-					onPress: async () => {
-						// Production build: console.log removed
-						try {
-							// Delete the recipe from database
-							await RecipeDatabase.deleteRecipe(recipe.id!);
-							
-							// Also delete locally cached image
-							await ImageStorageService.deleteLocalImage(recipe.id!);
-							
-							// Production build: console.log removed
-							
-							// Reload recipes after deletion
-							handleRefresh();
-							
-							// Production build: console.log removed
-						} catch (error) {
-							console.error('❌ Error deleting recipe:', error);
-							Alert.alert('Error', 'Failed to delete recipe. Please try again.');
-						}
-					}
+		// Helper to perform the actual delete
+		const performDelete = async (recipe: Recipe) => {
+			try {
+				const result = await RecipeDatabase.deleteRecipe(recipe.id!);
+				if (result.success) {
+					await ImageStorageService.deleteLocalImage(recipe.id!);
+					handleRefresh();
+				} else {
+					console.error('❌ Error deleting recipe:', result.error);
+					Alert.alert('Error', result.error || 'Failed to delete recipe. Please try again.');
 				}
-			]
-		);
-	}, [handleRefresh]);
+			} catch (error) {
+				console.error('❌ Error deleting recipe:', error);
+				Alert.alert('Error', 'Failed to delete recipe. Please try again.');
+			}
+		};
+
+		const handleDelete = useCallback(async (recipe: Recipe) => {
+			const recipeTitle = RecipeValidation.getSafeTitle(recipe);
+			if (!recipe.id) {
+				console.error('❌ Recipe has no ID, cannot delete');
+				return;
+			}
+			if (!recipe.title || recipe.title.trim() === '') {
+				console.warn('⚠️ Recipe has empty title, ID:', recipe.id);
+			}
+			// Use Alert for both web and mobile
+			if (typeof window !== 'undefined' && window.confirm) {
+				if (!window.confirm(
+					`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`
+				)) {
+					return;
+				}
+				await performDelete(recipe);
+			} else {
+				Alert.alert(
+					'Delete Recipe',
+					`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`,
+					[
+						{
+							text: 'Cancel',
+							style: 'cancel',
+							onPress: () => {},
+						},
+						{
+							text: 'Delete',
+							style: 'destructive',
+							onPress: () => performDelete(recipe),
+						}
+					]
+				);
+			}
+		}, [handleRefresh]);
 
 	useEffect(() => {
 		loadRecipes();
@@ -402,14 +406,14 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 
 						try {
 							// Re-extract recipe data including images
-							const extractedRecipe =
-								await RecipeExtractor.extractRecipeFromUrl(recipe.web_address);
+														const extractedRecipe =
+															await RecipeExtractor.extractRecipeFromUrl(recipe.web_address);
 
-							if (extractedRecipe && extractedRecipe.image_url) {
-								await RecipeDatabase.updateRecipe(recipe.id, {
-									...recipe,
-									image_url: extractedRecipe.image_url,
-								});
+														if (extractedRecipe && extractedRecipe.recipe && extractedRecipe.recipe.image_url) {
+															await RecipeDatabase.updateRecipe(recipe.id, {
+																...recipe,
+																image_url: extractedRecipe.recipe.image_url,
+															});
 
 								// Production build: console.log removed
 								updatedCount++;
