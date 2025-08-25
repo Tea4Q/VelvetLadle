@@ -557,7 +557,15 @@ export class RecipeExtractor {
     // Extract servings
     if (data.recipeYield) {
       const yield_ = Array.isArray(data.recipeYield) ? data.recipeYield[0] : data.recipeYield;
-      recipe.servings = parseInt(yield_.toString()) || undefined;
+      // Always store the original string
+      recipe.recipe_yield = yield_.toString();
+      // Improved number parsing: extract first number in the string
+      const match = yield_.toString().match(/\d+(?:\.\d+)?/);
+      if (match) {
+        recipe.servings = parseFloat(match[0]);
+      } else {
+        recipe.servings = undefined;
+      }
     }
     
     // Extract times
