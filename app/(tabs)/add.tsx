@@ -3,9 +3,12 @@ import RecipeForm from '@/components/RecipeForm';
 import UrlActionModal from '@/components/UrlActionModal';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
 import { Recipe } from '@/lib/supabase';
+import AuthService from '@/services/AuthService';
+import { RecipeDatabase } from '@/services/recipeDatabase';
+import { GUEST_RECIPE_LIMIT } from '@/constants/limits';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
 	Alert,
 	Pressable,
@@ -24,6 +27,23 @@ export default function AddScreen() {
 
 	const colors = useColors();
 	const radius = useRadius();
+
+	// Check guest limit when screen is focused
+	useFocusEffect(
+		useCallback(() => {
+			async function checkLimit() {
+				const isGuest = await AuthService.isCurrentUserGuest();
+				if (isGuest) {
+					const allRecipes = await RecipeDatabase.getAllRecipes();
+					if (allRecipes.length >= GUEST_RECIPE_LIMIT) {
+						// Redirect to upgrade screen
+						router.replace('/upgrade');
+					}
+				}
+			}
+			checkLimit();
+		}, [])
+	);
 
 	const handleTestRecipeSourceChange = (text: string) => {
 		// Production build: console.log removed

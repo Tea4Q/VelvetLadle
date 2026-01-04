@@ -20,12 +20,89 @@ import {
 	View,
 } from 'react-native';
 
+// Recent Recipes List Component
+function RecentRecipesList({ colors, radius }: { colors: any; radius: any }) {
+	const [recentRecipes, setRecentRecipes] = useState<Recipe[]>([]);
+
+	useEffect(() => {
+		async function loadRecent() {
+			try {
+				const recipes = await RecipeDatabase.getRecentRecipes(3);
+				setRecentRecipes(recipes);
+			} catch (error) {
+				console.error('Error loading recent recipes:', error);
+			}
+		}
+		loadRecent();
+	}, []);
+
+	if (recentRecipes.length === 0) return null;
+
+	return (
+		<View style={styles.recentList}>
+			{recentRecipes.map((recipe, index) => (
+				<Pressable
+					key={recipe.id || index}
+					style={({ pressed }) => [
+						styles.recentRecipeCard,
+						{
+							backgroundColor: colors.surface,
+							borderRadius: radius.md,
+							opacity: pressed ? 0.8 : 1,
+						},
+					]}
+					onPress={() => router.push('/(tabs)/recipes')}
+				>
+					{recipe.image_url ? (
+						<Image
+							source={{ uri: recipe.image_url }}
+							style={[styles.recentRecipeImage, { borderRadius: radius.sm }]}
+						/>
+					) : (
+						<View
+							style={[
+								styles.recentRecipeImagePlaceholder,
+								{
+									backgroundColor: colors.border,
+									borderRadius: radius.sm,
+								},
+							]}
+						>
+							<FontAwesome6 name="utensils" size={20} color={colors.textLight} />
+						</View>
+					)}
+					<View style={styles.recentRecipeInfo}>
+						<Text
+							style={[styles.recentRecipeTitle, { color: colors.textPrimary }]}
+							numberOfLines={2}
+						>
+							{recipe.title}
+						</Text>
+						{recipe.cuisine_type && (
+							<Text style={[styles.recentRecipeCuisine, { color: colors.textSecondary }]}>
+								{recipe.cuisine_type}
+							</Text>
+						)}
+						{recipe.created_at && (
+							<Text style={[styles.recentRecipeTime, { color: colors.textLight }]}>
+								Added {formatTimeAgo(recipe.created_at)}
+							</Text>
+						)}
+					</View>
+					<FontAwesome6 name="chevron-right" size={16} color={colors.textLight} />
+				</Pressable>
+			))}
+		</View>
+	);
+}
+
 export default function Index() {
 	const [recipeCount, setRecipeCount] = useState<number>(0);
 	const [favoriteCount, setFavoriteCount] = useState<number>(0);
 	const [recentCount, setRecentCount] = useState<number>(0);
 	const [lastRecipeTime, setLastRecipeTime] = useState<string>('');
 	const [categoryRecipes, setCategoryRecipes] = useState<{ [key: string]: Recipe[] }>({});
+	const [isGuest, setIsGuest] = useState<boolean>(false);
 
 	const colors = useColors();
 	const radius = useRadius();
@@ -36,6 +113,16 @@ export default function Index() {
 	// Prevent multiple simultaneous loads
 	const isLoadingRef = useRef(false);
 	const demoDataInitialized = useRef(false);
+	
+	// Check if user is guest
+	useEffect(() => {
+		async function checkGuestStatus() {
+			const AuthService = (await import('../../services/AuthService')).default;
+			const guestStatus = await AuthService.isCurrentUserGuest();
+			setIsGuest(guestStatus);
+		}
+		checkGuestStatus();
+	}, [user]);
 	
 	// Memoize categories to prevent unnecessary re-renders
 	const categories = useMemo(() => [
@@ -203,16 +290,11 @@ export default function Index() {
 				contentContainerStyle={styles.mainContainer}
 				showsVerticalScrollIndicator={false}
 			>
-				{/* Header Section */}
-				<View style={styles.headerSection}>
-					<View style={styles.welcomeContainer}>
-						<Text style={[styles.welcomeText, { color: colors.textPrimary }]}>
-							Welcome back, {user?.name || 'Chef'}! 👨‍🍳
-						</Text>
-						<Text style={[styles.welcomeSubtext, { color: colors.textLight }]}>
-							These are the recipes you captured so far!
-						</Text>
-					</View>
+				{/* App Bar */}
+				<View style={styles.appBar}>
+					<Text style={[styles.appBarTitle, { color: colors.primary }]}>
+						Velvet Ladle
+					</Text>
 					<Pressable
 						style={[
 							styles.profileButton,
@@ -223,79 +305,84 @@ export default function Index() {
 					</Pressable>
 				</View>
 
-				{/* Stats Cards */}
-				<View style={styles.statsContainer}>
+				{/* Welcome Section */}
+				<View style={styles.welcomeSection}>
+					<Text style={[styles.welcomeText, { color: colors.textPrimary }]}>
+						Welcome back, {user?.name || 'Chef'}! 👨‍🍳
+					</Text>
+					<Text style={[styles.welcomeSubtext, { color: colors.textLight }]}>
+						Ready to explore and create amazing recipes today
+					</Text>
+				</View>
+
+				{/* Search Bar */}
+				<Pressable
+					style={[styles.searchBar, { backgroundColor: colors.surface, borderRadius: radius.lg }]}
+					onPress={() => router.push('/(tabs)/recipes')}
+				>
+					<FontAwesome6 name='magnifying-glass' size={16} color={colors.textLight} />
+					<Text style={[styles.searchPlaceholder, { color: colors.textLight }]}>
+						Search recipes, ingredients, cuisines...
+					</Text>
+				</Pressable>
+
+				{/* Navigation Chips */}
+				<View style={styles.chipsContainer}>
 					<Pressable
 						style={({ pressed }) => [
-							styles.statCard,
-							{ 
-								backgroundColor: colors.surface, 
-								borderRadius: radius.md,
+							styles.chip,
+							{
+								backgroundColor: colors.surface,
+								borderRadius: radius.full,
 								opacity: pressed ? 0.8 : 1,
-								transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
 							},
 						]}
 						onPress={handleNavigateToRecipes}
 					>
-						<FontAwesome6 name='bread-slice' size={24} color={colors.primary} />
-						<Text style={[styles.statNumber, { color: colors.primary }]}>
-							{recipeCount}
-						</Text>
-						<Text style={[styles.statLabel, { color: colors.textLight }]}>
-							Recipe{recipeCount !== 1 ? 's' : ''}
+						<FontAwesome6 name='book' size={14} color={colors.primary} />
+						<Text style={[styles.chipText, { color: colors.primary }]}>
+							Recipes ({recipeCount}{isGuest ? '/10' : ''})
 						</Text>
 					</Pressable>
 					<Pressable
 						style={({ pressed }) => [
-							styles.statCard,
-							{ 
-								backgroundColor: colors.surface, 
-								borderRadius: radius.md,
+							styles.chip,
+							{
+								backgroundColor: colors.surface,
+								borderRadius: radius.full,
 								opacity: pressed ? 0.8 : 1,
-								transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
 							},
 						]}
 						onPress={handleNavigateToFavorites}
 					>
-						<FontAwesome6 name='star' size={24} color={colors.primary} />
-						<Text style={[styles.statNumber, { color: colors.primary }]}>
-							{favoriteCount}
-						</Text>
-						<Text style={[styles.statLabel, { color: colors.primary }]}>
-							Favorites{favoriteCount !== 1 ? 's' : ''}
+						<FontAwesome6 name='star' size={14} color={colors.primary} />
+						<Text style={[styles.chipText, { color: colors.primary }]}>
+							Favorites ({favoriteCount})
 						</Text>
 					</Pressable>
 					<Pressable
 						style={({ pressed }) => [
-							styles.statCard,
-							{ 
-								backgroundColor: colors.surface, 
-								borderRadius: radius.md,
+							styles.chip,
+							{
+								backgroundColor: colors.surface,
+								borderRadius: radius.full,
 								opacity: pressed ? 0.8 : 1,
-								transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
 							},
 						]}
 						onPress={handleNavigateToRecipes}
 					>
-						<FontAwesome6
-							name='cake-candles'
-							size={24}
-							color={colors.primary}
-						/>
-						<Text style={[styles.statNumber, { color: colors.primary }]}>
-							{recentCount}
-						</Text>
-						<Text style={[styles.statLabel, { color: colors.textLight }]}>
-							Recent{recentCount !== 1 ? 's' : ''}
+						<FontAwesome6 name='clock' size={14} color={colors.primary} />
+						<Text style={[styles.chipText, { color: colors.primary }]}>
+							Recents ({recentCount})
 						</Text>
 					</Pressable>
 				</View>
 
-				{/* Quick Actions Link */}
-				<View style={styles.quickActionsLinkSection}>
+				{/* Featured Card */}
+				<View style={styles.featuredSection}>
 					<Pressable
 						style={({ pressed }) => [
-							styles.quickActionsLinkCard,
+							styles.featuredCard,
 							{
 								backgroundColor: colors.accent,
 								borderRadius: radius.lg,
@@ -305,23 +392,27 @@ export default function Index() {
 						]}
 						onPress={() => router.push('/(tabs)/add')}
 					>
-						<Image
-							style={styles.quickActionsLinkIcon}
-							source={require('@/assets/icons/recipesIcon.png')}
-						/>
-						<View style={styles.quickActionsLinkContent}>
-							<Text style={[styles.quickActionsLinkTitle, { color: colors.textInverse }]}>
-								What&apos;s cooking today?
+						<View style={styles.featuredContent}>
+							<Text style={[styles.featuredTitle, { color: colors.textInverse }]}>
+								{recipeCount > 0 && lastRecipeTime
+									? 'Continue where you left off'
+									: 'Start your culinary journey'}
 							</Text>
-							<Text style={[styles.quickActionsLinkSubtitle, { color: colors.textInverse }]}>
-								Add a new recipe from web or image
+							<Text style={[styles.featuredSubtitle, { color: colors.textInverse }]}>
+								{recipeCount > 0 && lastRecipeTime
+									? `Last recipe added ${lastRecipeTime}`
+									: 'Add your first recipe from web or image'}
 							</Text>
+							{isGuest && recipeCount > 0 && (
+								<Text style={[styles.guestLimitText, { color: colors.textInverse, opacity: 0.8 }]}>
+									Guest: {recipeCount}/10 recipes • Upgrade for unlimited
+								</Text>
+							)}
 						</View>
 						<FontAwesome6
 							name='chevron-right'
-							size={20}
+							size={24}
 							color={colors.textInverse}
-							style={styles.quickActionsLinkArrow}
 						/>
 					</Pressable>
 				</View>
@@ -409,26 +500,15 @@ export default function Index() {
 					</View>
 				)}
 
-				{/* Recent Activity */}
-				<View style={styles.recentSection}>
-
-					<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-						Recent Activity
-					</Text>
-					<View
-						style={[
-							styles.recentCard,
-							{ backgroundColor: colors.surface, borderRadius: radius.md },
-						]}
-					>
-						<FontAwesome6 name='clock' size={16} color={colors.textLight} />
-						<Text style={[styles.recentText, { color: colors.textLight }]}>
-							{recipeCount > 0 && lastRecipeTime
-								? `Last recipe added ${lastRecipeTime}`
-								: 'No recipes yet - add your first one!'}
+				{/* Recent Recipes List */}
+				{recentCount > 0 && (
+					<View style={styles.recentSection}>
+						<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+							Recent Recipes 📖
 						</Text>
+						<RecentRecipesList colors={colors} radius={radius} />
 					</View>
-				</View>
+				)}
 			</ScrollView>
 		</View>
 	);
@@ -446,14 +526,30 @@ const styles = StyleSheet.create({
 		padding: 20,
 		paddingBottom: 80,
 	},
-	headerSection: {
+
+	// App Bar
+	appBar: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		marginBottom: 24,
+		marginBottom: 20,
+		paddingTop: 8,
 	},
-	welcomeContainer: {
-		flex: 1,
+	appBarTitle: {
+		fontSize: 28,
+		fontWeight: 'bold',
+	},
+	profileButton: {
+		width: 48,
+		height: 48,
+		borderRadius: 24,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+
+	// Welcome Section
+	welcomeSection: {
+		marginBottom: 20,
 	},
 	welcomeText: {
 		fontSize: 24,
@@ -464,65 +560,68 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		opacity: 0.8,
 	},
-	profileButton: {
-		width: 48,
-		height: 48,
-		borderRadius: 24,
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
 
-	//Stats cards
-	statsContainer: {
+	// Search Bar
+	searchBar: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
-		marginBottom: 32,
+		alignItems: 'center',
+		padding: 16,
+		marginBottom: 20,
 		gap: 12,
 	},
-	statCard: {
+	searchPlaceholder: {
+		fontSize: 15,
 		flex: 1,
-		padding: 20,
+	},
+
+	// Navigation Chips
+	chipsContainer: {
+		flexDirection: 'row',
+		gap: 10,
+		marginBottom: 24,
+		flexWrap: 'wrap',
+	},
+	chip: {
+		flexDirection: 'row',
 		alignItems: 'center',
+		paddingVertical: 10,
+		paddingHorizontal: 16,
 		gap: 8,
 	},
-	statNumber: {
-		fontSize: 24,
-		fontWeight: 'bold',
+	chipText: {
+		fontSize: 14,
+		fontWeight: '600',
 	},
-	statLabel: {
-		fontSize: 12,
-		textAlign: 'center',
-	},
-	// Quick Actions Link
-	quickActionsLinkSection: {
+
+	// Featured Card
+	featuredSection: {
 		marginBottom: 32,
 	},
-	quickActionsLinkCard: {
+	featuredCard: {
 		flexDirection: 'row',
-		padding: 24,
 		alignItems: 'center',
+		padding: 24,
 		gap: 16,
 	},
-	quickActionsLinkIcon: {
-		marginRight: 4,
-		height: 32,
-		width: 32,
-	},
-	quickActionsLinkContent: {
+	featuredContent: {
 		flex: 1,
 	},
-	quickActionsLinkTitle: {
+	featuredTitle: {
 		fontSize: 18,
 		fontWeight: 'bold',
 		marginBottom: 4,
 	},
-	quickActionsLinkSubtitle: {
+	featuredSubtitle: {
 		fontSize: 14,
 		opacity: 0.9,
 	},
-	quickActionsLinkArrow: {
-		marginLeft: 8,
+	guestLimitText: {
+		fontSize: 12,
+		marginTop: 8,
+		fontStyle: 'italic',
 	},
+
+	// Section Title
 	sectionTitle: {
 		fontSize: 20,
 		fontWeight: 'bold',
@@ -593,27 +692,44 @@ const styles = StyleSheet.create({
 		fontWeight: '600',
 	},
 
-	// Recent Activity styles
+	// Recent Recipes List
 	recentSection: {
 		marginBottom: 40,
 		paddingBottom: 20,
 	},
-	recentCard: {
+	recentList: {
+		gap: 12,
+	},
+	recentRecipeCard: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		padding: 20,
+		padding: 16,
 		gap: 12,
-		elevation: 2,
-		shadowColor: '#000',
-		shadowOffset: {
-			width: 0,
-			height: 1,
-		},
-		shadowOpacity: 0.1,
-		shadowRadius: 2,
 	},
-	recentText: {
-		fontSize: 14,
+	recentRecipeImage: {
+		width: 60,
+		height: 60,
+	},
+	recentRecipeImagePlaceholder: {
+		width: 60,
+		height: 60,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	recentRecipeInfo: {
 		flex: 1,
+		gap: 4,
+	},
+	recentRecipeTitle: {
+		fontSize: 16,
+		fontWeight: '600',
+		lineHeight: 20,
+	},
+	recentRecipeCuisine: {
+		fontSize: 13,
+		textTransform: 'capitalize',
+	},
+	recentRecipeTime: {
+		fontSize: 12,
 	},
 });

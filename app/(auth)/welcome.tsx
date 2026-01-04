@@ -35,12 +35,22 @@ export default function WelcomeScreen() {
 					<Button
 						label='Sign In'
 						theme='primary'
-						onPress={() => signInAsGuest()}
+						onPress={() => {
+							// TODO: Implement sign in screen
+							// For now, show coming soon and use guest mode
+							// Alert.alert('Coming Soon', 'Sign in will be available in the next update. Using guest mode for now.');
+							signInAsGuest();
+						}}
 					/>
 					<Button
 						label='Create Account'
 						theme='secondary'
-						onPress={() => signInAsGuest()}
+						onPress={() => {
+							// TODO: Implement sign up screen
+							// For now, show coming soon and use guest mode
+							// Alert.alert('Coming Soon', 'Account creation will be available in the next update. Using guest mode for now.');
+							signInAsGuest();
+						}}
 					/>
 					<Pressable
 						style={styles.guestButton}

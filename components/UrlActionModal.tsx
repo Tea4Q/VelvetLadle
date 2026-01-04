@@ -1,3 +1,4 @@
+import { RecipeDatabase } from '@/services/recipeDatabase';
 import React, { useState } from 'react';
 import {
 	ActivityIndicator,
@@ -12,7 +13,6 @@ import {
 import { Recipe, isSupabaseConfigured } from '../lib/supabase';
 import { CorsProxyService } from '../services/corsProxyService';
 import { FavoritesService } from '../services/FavoritesService';
-import { RecipeDatabase } from '../services/recipeDatabase';
 import { RecipeExtractor } from '../services/recipeExtractor';
 import Button from './buttons';
 import CircleButton from './circleButton';
@@ -31,6 +31,8 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 	const [showManualEntry, setShowManualEntry] = useState(false);
 	const [inputUrl, setInputUrl] = useState('');
 	const [isUrlInputMode, setIsUrlInputMode] = useState(false);
+	const [isChecking, setIsChecking] = useState(false);
+	const [testRecipeSource, setTestRecipeSource] = useState<string>('');
 
 	// Initialize URL input mode based on whether URL is provided
 	React.useEffect(() => {
@@ -508,3 +510,4 @@ const styles = StyleSheet.create({
 		zIndex: 1,
 	},
 });
+

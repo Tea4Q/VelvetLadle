@@ -138,6 +138,11 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		}
 	}, []); // Remove initialCategoryFilter dependency completely
 
+	// Helper to detect demo recipes
+	const isDemoRecipe = (recipe: Recipe) => {
+		return recipe.web_address?.startsWith('https://example.com/');
+	};
+
 	const handleToggleFavorite = async (recipe: Recipe) => {
 		if (!recipe.id) return;
 
@@ -476,6 +481,32 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 				>
 					{RecipeValidation.getSafeTitle(recipe)}
 				</Text>
+
+				{isDemoRecipe(recipe) && (
+					<View
+						style={{
+							backgroundColor: colors.info + '20',
+							borderColor: colors.info,
+							borderWidth: 1,
+							paddingHorizontal: spacing.sm,
+							paddingVertical: 2,
+							borderRadius: radius.sm,
+							marginLeft: spacing.xs,
+							marginRight: spacing.sm,
+							alignSelf: 'flex-start',
+						}}
+					>
+						<Text
+							style={{
+								color: colors.info,
+								fontSize: typography.fontSize.xs,
+								fontWeight: typography.fontWeight.semibold,
+							}}
+						>
+							DEMO
+						</Text>
+					</View>
+				)}
 
 				<View style={styles.headerActions}>
 					<TouchableOpacity
@@ -832,6 +863,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					onRefresh={handleRefresh}
 					showsVerticalScrollIndicator={false}
 					contentContainerStyle={{ paddingBottom: spacing.xl }}
+
 				/>
 			)}
 		</View>

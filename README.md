@@ -55,21 +55,36 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
 - **⚡ Fast Performance**: Smooth animations and efficient state management
 
 ### **Data Storage**
-- **☁️ Supabase Integration**: Cloud storage for permanent recipe collection
-- **💾 Demo Mode**: Local storage for testing and development
+- **☁️ Supabase Integration**: Cloud storage for unlimited recipes
+- **💾 Guest Mode**: Try the app with up to 10 recipes (no signup required)
 - **🔄 Dual Support**: Seamless switching between storage modes
 - **🛡️ Data Safety**: Comprehensive validation and error handling
 
 ## 📖 **Documentation**
 
-- **[Render Optimization Guide](RENDER_OPTIMIZATION_GUIDE.md)**: Performance improvements and render loop fixes
-- **[Home Page Redesign](HOME_PAGE_REDESIGN.md)**: Complete authentication system and modern UI
-- **[Recipe Management Enhancements](RECIPE_MANAGEMENT_ENHANCEMENTS.md)**: Latest feature improvements and technical details
-- **[Favorites Guide](FAVORITES_GUIDE.md)**: Favorite recipes functionality
-- **[Search & Filter Guide](SEARCH_AND_FILTER_GUIDE.md)**: Recipe discovery features
-- **[Theme Guide](THEME_GUIDE.md)**: Design system and theming
-- **[Testing Checklist](TESTING_CHECKLIST.md)**: Quality assurance guidelines
-- **[Supabase Setup](SUPABASE_SETUP.md)**: Cloud database configuration
+**Complete Feature Overview:**
+- **[📋 Complete Features Guide](docs/FEATURES.md)**: Comprehensive feature documentation for users, testers, and investors
+
+**User Guides:**
+- **[Recipe Management](docs/RECIPE_MANAGEMENT_ENHANCEMENTS.md)**: Add, edit, and organize recipes
+- **[Favorites System](docs/FAVORITES_GUIDE.md)**: Quick access to your best recipes
+- **[Search & Filter](docs/SEARCH_AND_FILTER_GUIDE.md)**: Find recipes fast
+- **[Quick Categories](docs/QUICK_CATEGORIES_GUIDE.md)**: Meal type filtering
+
+**Setup & Configuration:**
+- **[Supabase Setup](docs/SUPABASE_SETUP.md)**: Cloud database configuration
+- **[Web Scraping APIs](docs/WEB_SCRAPING_APIS.md)**: External service setup
+- **[Local Image Storage](docs/LOCAL_IMAGE_STORAGE.md)**: Image caching
+
+**Development:**
+- **[Build Process](docs/BUILD_PROCESS.md)**: Build and release workflow
+- **[Testing Checklist](docs/TESTING_CHECKLIST.md)**: QA procedures
+- **[Render Optimization](docs/RENDER_OPTIMIZATION_GUIDE.md)**: Performance patterns
+- **[Theme Guide](docs/THEME_GUIDE.md)**: Design system
+
+**Technical:**
+- **[EAS Build Guide](docs/EAS_BUILD_GUIDE.md)**: Expo Application Services builds
+- **[Changelog](docs/CHANGELOG.md)**: Version history
 
 ## 🛠 **Technology Stack**
 
@@ -94,7 +109,21 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
    npx expo start
    ```
 
-3. Optional: Set up Supabase for cloud storage (see [SUPABASE_SETUP.md](SUPABASE_SETUP.md))
+3. Optional: Set up Supabase for cloud storage (see [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md))
+
+## 📋 **Features**
+
+For a complete overview of all features, see **[docs/FEATURES.md](docs/FEATURES.md)**
+
+**Highlights:**
+- 🌐 Smart recipe import from any website
+- ✏️ Manual recipe entry with full editing
+- ⭐ Favorites system for quick access
+- 🔍 Advanced search and filtering
+- 📊 Automatic nutrition tracking
+- 💾 Dual storage (cloud + local demo)
+- 🎨 Modern, touch-optimized UI
+- ⚡ Performance optimized
 
 In the output, you'll find options to open the app in a
 

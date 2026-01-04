@@ -2,6 +2,7 @@
 // This is a basic implementation - in production you'd use a real auth provider
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GUEST_USER_ID } from '../constants/limits';
 
 export interface User {
   id: string;
@@ -125,7 +126,7 @@ class AuthService {
   static async signInAsGuest(): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
       const user: User = {
-        id: 'guest_user',
+        id: GUEST_USER_ID,
         name: 'Guest Chef',
         email: 'guest@velvetladle.app',
         createdAt: new Date(),
@@ -166,6 +167,17 @@ class AuthService {
     return emailRegex.test(email);
   }
 
+  // Check if current user is a guest
+  static async isCurrentUserGuest(): Promise<boolean> {
+    try {
+      const user = await this.getCurrentUser();
+      return user?.id === GUEST_USER_ID;
+    } catch (error) {
+      console.error('Error checking guest status:', error);
+      return false;
+    }
+  }
+
   // Get auth statistics
   static async getAuthStats(): Promise<{ hasAccount: boolean; isGuest: boolean; signUpDate?: Date }> {
     try {
@@ -176,7 +188,7 @@ class AuthService {
 
       return {
         hasAccount: true,
-        isGuest: user.id === 'guest_user',
+        isGuest: user.id === GUEST_USER_ID,
         signUpDate: user.createdAt,
       };
     } catch (error) {

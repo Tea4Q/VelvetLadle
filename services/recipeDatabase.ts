@@ -77,7 +77,13 @@ export class RecipeDatabase {
   static async getAllRecipes(): Promise<Recipe[]> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        return await DemoStorage.getAllRecipes();
+        const recipes = await DemoStorage.getAllRecipes();
+        // Initialize demo recipes if storage is empty
+        if (recipes.length === 0) {
+          await DemoStorage.createDemoRecipesWithCategories();
+          return await DemoStorage.getAllRecipes();
+        }
+        return recipes;
       }
 
       const { data, error } = await supabase
