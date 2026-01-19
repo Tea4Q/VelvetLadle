@@ -2,6 +2,7 @@
 import RecipeForm from '@/components/RecipeForm';
 import UrlActionModal from '@/components/UrlActionModal';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Recipe } from '@/lib/supabase';
 import AuthService from '@/services/AuthService';
 import { RecipeDatabase } from '@/services/recipeDatabase';
@@ -27,22 +28,42 @@ export default function AddScreen() {
 
 	const colors = useColors();
 	const radius = useRadius();
+	const { user } = useAuth();
 
-	// Check guest limit when screen is focused
+	// Check if guest and redirect to account creation
 	useFocusEffect(
 		useCallback(() => {
-			async function checkLimit() {
-				const isGuest = await AuthService.isCurrentUserGuest();
+			async function checkAccess() {
+				const isGuest = user?.id === 'guest_user';
 				if (isGuest) {
-					const allRecipes = await RecipeDatabase.getAllRecipes();
-					if (allRecipes.length >= GUEST_RECIPE_LIMIT) {
-						// Redirect to upgrade screen
-						router.replace('/upgrade');
-					}
+					// Redirect guests to account creation
+					Alert.alert(
+						'Account Required',
+						'Please create an account or sign in to add recipes.',
+						[
+							{
+								text: 'Create Account',
+								onPress: () => router.replace('/account'),
+							},
+							{
+								text: 'Go Back',
+								style: 'cancel',
+								onPress: () => router.replace('/'),
+							},
+						]
+					);
+					return;
+				}
+				
+				// Check recipe limit for authenticated users
+				const allRecipes = await RecipeDatabase.getAllRecipes();
+				if (allRecipes.length >= GUEST_RECIPE_LIMIT) {
+					// Redirect to upgrade screen if needed
+					router.replace('/upgrade');
 				}
 			}
-			checkLimit();
-		}, [])
+			checkAccess();
+		}, [user])
 	);
 
 	const handleTestRecipeSourceChange = (text: string) => {
@@ -85,13 +106,17 @@ export default function AddScreen() {
 		// Save logic here (call your DB/service)
 		setRecipeForm(false);
 		setEditingRecipe(null);
-		// Optionally, navigate or show a message
+		// Navigate to recipes tab
 		router.push('/(tabs)/recipes');
 	};
 
 	const handleRecipeSelect = (recipe: Recipe) => {
-		// Navigate to recipes tab where the user can view the recipe
-		router.push('/(tabs)/recipes');
+		// Store the recipe to view and navigate to recipes tab
+		// The recipes screen will detect this and open the viewer
+		router.push({
+			pathname: '/(tabs)/recipes',
+			params: { recipeId: recipe.id?.toString() }
+		});
 	};
 
 	const QuickActionCard = ({

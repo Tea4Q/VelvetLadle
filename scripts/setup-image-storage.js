@@ -12,7 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('🖼️  VelvetLadle Image Storage Setup\n');
+// Production build: console.log removed
 
 // Check if expo-file-system is installed
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -33,21 +33,21 @@ requiredDeps.forEach(dep => {
 });
 
 if (missingDeps.length > 0) {
-  console.log('📦 Missing required dependencies:');
-  missingDeps.forEach(dep => console.log(`  - ${dep}`));
-  console.log('\n🔧 Please install them by running:');
-  console.log(`   npx expo install ${missingDeps.join(' ')}`);
+  // Production build: console.log removed
+  missingDeps.forEach(dep => // Production build: console.log removed);
+  // Production build: console.log removed
+  // Production build: console.log removed}`);
   process.exit(1);
 }
 
-console.log('✅ All required dependencies are installed');
+// Production build: console.log removed
 
 // Check if SmartImage component exists
 const smartImagePath = path.join(__dirname, '..', 'components', 'SmartImage.tsx');
 if (!fs.existsSync(smartImagePath)) {
   console.warn('⚠️  SmartImage component not found at:', smartImagePath);
 } else {
-  console.log('✅ SmartImage component found');
+  // Production build: console.log removed
 }
 
 // Check if ImageStorageService exists
@@ -55,24 +55,24 @@ const imageServicePath = path.join(__dirname, '..', 'services', 'ImageStorageSer
 if (!fs.existsSync(imageServicePath)) {
   console.warn('⚠️  ImageStorageService not found at:', imageServicePath);
 } else {
-  console.log('✅ ImageStorageService found');
+  // Production build: console.log removed
 }
 
-console.log('\n📋 Image Storage Features:');
-console.log('  🔄 Automatic image caching');
-console.log('  📱 Local storage management');
-console.log('  🚀 Background image preloading');
-console.log('  🗑️  Automatic cache cleanup');
-console.log('  ⚡ Optimized loading with fallbacks');
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
 
-console.log('\n🎯 Integration Status:');
-console.log('  ✅ Dependencies installed');
-console.log('  ✅ Service layer ready');
-console.log('  ✅ UI components prepared');
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
 
-console.log('\n📖 Usage:');
-console.log('  - Images are automatically cached when viewed');
-console.log('  - Use ImageCacheManager component for cache management');
-console.log('  - SmartImage component handles all image loading logic');
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
 
-console.log('\n🏗️  Ready for build! 🚀');
+// Production build: console.log removed

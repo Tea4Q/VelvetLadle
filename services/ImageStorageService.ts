@@ -22,7 +22,7 @@ export class ImageStorageService {
       const dirInfo = await FileSystem.getInfoAsync(this.IMAGES_DIR);
       if (!dirInfo.exists) {
         await FileSystem.makeDirectoryAsync(this.IMAGES_DIR, { intermediates: true });
-        console.log('📁 Created images directory:', this.IMAGES_DIR);
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Failed to initialize image storage:', error);
@@ -56,14 +56,14 @@ export class ImageStorageService {
       // Check if image already exists locally
       const fileInfo = await FileSystem.getInfoAsync(localPath);
       if (fileInfo.exists) {
-        console.log('✅ Image already cached locally:', localFilename);
+        // Production build: console.log removed
         return localPath;
       }
 
       // Check cache size before downloading
       await this.cleanupCacheIfNeeded();
 
-      console.log('⬇️ Downloading image:', imageUrl);
+      // Production build: console.log removed
       
       // Download the image with timeout and size limits
       const downloadResult = await FileSystem.downloadAsync(imageUrl, localPath, {
@@ -82,7 +82,7 @@ export class ImageStorageService {
             return null;
           }
 
-          console.log('✅ Image downloaded successfully:', localFilename, `(${this.formatFileSize(downloadedFileInfo.size)})`);
+          // Production build: console.log removed})`);
           return localPath;
         }
       }
@@ -126,7 +126,7 @@ export class ImageStorageService {
       }
 
       // Fallback to remote URL if local storage fails
-      console.log('⚠️ Using remote URL as fallback:', imageUrl);
+      // Production build: console.log removed
       return imageUrl;
 
     } catch (error) {
@@ -150,7 +150,7 @@ export class ImageStorageService {
         
         if (fileInfo.exists) {
           await FileSystem.deleteAsync(localPath);
-          console.log('🗑️ Deleted local image:', `recipe_${recipeId}${ext}`);
+          // Production build: console.log removed
           break;
         }
       }
@@ -204,7 +204,7 @@ export class ImageStorageService {
       const stats = await this.getStorageStats();
       
       if (stats.totalSize > this.MAX_CACHE_SIZE) {
-        console.log('🧹 Cache size exceeded, cleaning up...', stats.formattedSize);
+        // Production build: console.log removed
         
         // Get all files with their modification times
         const dirInfo = await FileSystem.readDirectoryAsync(this.IMAGES_DIR);
@@ -235,10 +235,10 @@ export class ImageStorageService {
           
           await FileSystem.deleteAsync(file.path);
           currentSize -= file.size;
-          console.log('🗑️ Deleted old cached image:', file.filename);
+          // Production build: console.log removed
         }
 
-        console.log('✅ Cache cleanup completed');
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Error during cache cleanup:', error);
@@ -255,7 +255,7 @@ export class ImageStorageService {
       if (dirInfo.exists) {
         await FileSystem.deleteAsync(this.IMAGES_DIR);
         await this.initializeStorage();
-        console.log('🧹 Cleared all cached images');
+        // Production build: console.log removed
       }
     } catch (error) {
       console.error('❌ Error clearing images:', error);
@@ -304,7 +304,7 @@ export class ImageStorageService {
    * @param recipes - Array of recipes to preload images for
    */
   static async preloadImages(recipes: Array<{ id?: number; image_url?: string }>): Promise<void> {
-    console.log('🔄 Preloading images for', recipes.length, 'recipes...');
+    // Production build: console.log removed
     
     const downloadPromises = recipes
       .filter(recipe => recipe.id && recipe.image_url)
@@ -312,7 +312,7 @@ export class ImageStorageService {
 
     try {
       await Promise.allSettled(downloadPromises);
-      console.log('✅ Image preloading completed');
+      // Production build: console.log removed
     } catch (error) {
       console.error('❌ Error during image preloading:', error);
     }

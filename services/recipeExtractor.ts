@@ -9,6 +9,8 @@ export class RecipeExtractor {
    */
   static async extractRecipeFromUrl(url: string): Promise<{ recipe?: Recipe; error?: string }> {
     try {
+      // Production build: console.log removed
+      
       // Validate URL format first
       if (!this.isValidUrl(url)) {
         const msg = 'Invalid website URL format.';
@@ -17,6 +19,7 @@ export class RecipeExtractor {
       }
 
       // Strategy 1: Try API-based extraction first (most reliable)
+      // Production build: console.log removed
       try {
         const apiRecipe = await Promise.race([
           WebScrapingAPIService.extractRecipeWithAPIs(url),
@@ -25,14 +28,111 @@ export class RecipeExtractor {
           )
         ]);
         if (apiRecipe) {
+          // Production build: console.log removed
+          // Production build: console.log removed
+          // Production build: console.log removed
+          
+          // If we have directions, return the recipe
+          if (apiRecipe.directions && apiRecipe.directions.length > 0) {
+            return { recipe: apiRecipe };
+          }
+          
+          // If no directions, try to supplement with HTML extraction
+          // Production build: console.log removed
+          try {
+            const response = await Promise.race([
+              CorsProxyService.fetchWithCorsProxy(url),
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('CORS proxy timeout')), 30000)
+              )
+            ]);
+            
+            if (response.ok) {
+              const html = await response.text();
+              // Production build: console.log removed
+              
+              // Try all HTML extraction methods
+              const jsonLdRecipe = this.extractFromJsonLd(html);
+              if (jsonLdRecipe?.directions && jsonLdRecipe.directions.length > 0) {
+                // Production build: console.log removed
+                apiRecipe.directions = jsonLdRecipe.directions;
+                return { recipe: apiRecipe };
+              }
+              
+              const microdataRecipe = this.extractFromMicrodata(html);
+              if (microdataRecipe?.directions && microdataRecipe.directions.length > 0) {
+                // Production build: console.log removed
+                apiRecipe.directions = microdataRecipe.directions;
+                return { recipe: apiRecipe };
+              }
+              
+              const manualRecipe = this.extractManually(html, url);
+              if (manualRecipe?.directions && manualRecipe.directions.length > 0) {
+                // Production build: console.log removed
+                // Production build: console.log removed
+                apiRecipe.directions = manualRecipe.directions;
+                // Production build: console.log removed
+                
+                // Also supplement with cook times if API didn't provide them or provided zero values
+                    // Helper to check if a time value is reasonable (not tiny like PT2M for cook time)
+                    const isReasonableTime = (time: string | undefined, minMinutes: number = 10): boolean => {
+                      if (!time) return false;
+                      const match = time.match(/PT(\d+)([HM])|PT(\d+)H(\d+)M/);
+                      if (!match) return false;
+                      // Handle both PT45M and PT6H20M formats
+                      if (match[3]) {
+                        // PT6H20M format
+                        const hours = parseInt(match[3]);
+                        const mins = parseInt(match[4]);
+                        const minutes = hours * 60 + mins;
+                        return minutes >= minMinutes;
+                      } else {
+                        // PT45M or PT6H format
+                        const value = parseInt(match[1]);
+                        const unit = match[2];
+                        const minutes = unit === 'H' ? value * 60 : value;
+                        return minutes >= minMinutes;
+                      }
+                    };
+                    
+                    // Supplement times from HTML extraction
+                    // Prefer HTML times when they're reasonable, as they're often more accurate than API descriptions
+                    if (manualRecipe.prep_time && isReasonableTime(manualRecipe.prep_time, 10)) {
+                      apiRecipe.prep_time = manualRecipe.prep_time;
+                    }
+                    
+                    if (manualRecipe.cook_time && isReasonableTime(manualRecipe.cook_time, 15)) {
+                      apiRecipe.cook_time = manualRecipe.cook_time;
+                    }
+                    
+                    // For total_time: prefer HTML if it's significantly different from API (HTML is usually more accurate)
+                    if (manualRecipe.total_time && isReasonableTime(manualRecipe.total_time, 15)) {
+                      apiRecipe.total_time = manualRecipe.total_time;
+                    }
+                
+                return { recipe: apiRecipe };
+              }
+              
+              // Production build: console.log removed
+            }
+          } catch (htmlError) {
+            // Production build: console.log removed
+          }
+          
+          // Return API recipe even without directions (user can add manually)
+          // Production build: console.log removed
           return { recipe: apiRecipe };
+        } else {
+          // Production build: console.log removed
         }
       } catch (error: any) {
+        // Production build: console.log removed
         // If error has a message, propagate it
         if (error?.message) return { error: error.message };
       }
 
       // Strategy 2: Fallback to CORS proxy method
+      // Production build: console.log removed
       try {
         const response = await Promise.race([
           CorsProxyService.fetchWithCorsProxy(url),
@@ -46,9 +146,18 @@ export class RecipeExtractor {
           return { error: msg };
         }
         const html = await response.text();
+        // Production build: console.log removed
 
         // Try to extract JSON-LD structured data first (most reliable)
+        // Production build: console.log removed
         let jsonLdRecipe = this.extractFromJsonLd(html);
+        if (jsonLdRecipe) {
+          // Production build: console.log removed
+          // Production build: console.log removed
+          // Production build: console.log removed
+        } else {
+          // Production build: console.log removed
+        }
         if (jsonLdRecipe && jsonLdRecipe.title && jsonLdRecipe.ingredients && jsonLdRecipe.ingredients.length > 0) {
           let recipeWithImage = { ...jsonLdRecipe, web_address: url } as Recipe;
           // Ensure we have an image
@@ -56,13 +165,13 @@ export class RecipeExtractor {
             recipeWithImage.image_url = this.extractImageFromHtml(html, url);
           }
           // Debug: Log extracted nutritional_info from site
-          console.log('[Extractor] nutritional_info from site:', recipeWithImage.nutritional_info);
+          // Production build: console.log removed
           // If no nutrition info, use nutritionService
           if (!recipeWithImage.nutritional_info && recipeWithImage.ingredients && recipeWithImage.ingredients.length > 0) {
             try {
               const servings = recipeWithImage.servings || 1;
               const nutritionResult = await fetchNutrition(recipeWithImage.ingredients, servings);
-              console.log('[Extractor] fetchNutrition result:', nutritionResult);
+              // Production build: console.log removed
               if (nutritionResult.success && nutritionResult.data && Array.isArray(nutritionResult.data)) {
                 // Spoonacular returns an array of ingredient objects, each with nutrition info
                 // We'll sum up the nutrients for all ingredients
@@ -92,16 +201,21 @@ export class RecipeExtractor {
                 });
                 // Format to match nutritional_info structure
                 // Only include sodium if the type allows it, otherwise omit
-                recipeWithImage.nutritional_info = {
-                  calories: Math.round(totals.calories),
-                  protein: totals.protein ? totals.protein.toFixed(1) + 'g' : undefined,
-                  carbs: totals.carbs ? totals.carbs.toFixed(1) + 'g' : undefined,
-                  fat: totals.fat ? totals.fat.toFixed(1) + 'g' : undefined,
-                  fiber: totals.fiber ? totals.fiber.toFixed(1) + 'g' : undefined,
-                  sugar: totals.sugar ? totals.sugar.toFixed(1) + 'g' : undefined,
-                  sodium: totals.sodium ? Math.round(totals.sodium) + 'mg' : undefined
-                };
-                console.log('[Extractor] nutritional_info from Spoonacular:', recipeWithImage.nutritional_info);
+                const hasAnyNutrition = totals.calories > 0 || totals.protein > 0 || totals.carbs > 0 || totals.fat > 0;
+                if (hasAnyNutrition) {
+                  recipeWithImage.nutritional_info = {
+                    calories: Math.round(totals.calories),
+                    protein: totals.protein ? totals.protein.toFixed(1) + 'g' : undefined,
+                    carbs: totals.carbs ? totals.carbs.toFixed(1) + 'g' : undefined,
+                    fat: totals.fat ? totals.fat.toFixed(1) + 'g' : undefined,
+                    fiber: totals.fiber ? totals.fiber.toFixed(1) + 'g' : undefined,
+                    sugar: totals.sugar ? totals.sugar.toFixed(1) + 'g' : undefined,
+                    sodium: totals.sodium ? totals.sodium.toFixed(1) + 'mg' : undefined,
+                  };
+                } else {
+                  recipeWithImage.nutritional_info = undefined;
+                }
+                // Production build: console.log removed
               }
             } catch (e) {
               console.error('[Extractor] fetchNutrition error:', e);
@@ -111,7 +225,15 @@ export class RecipeExtractor {
         }
 
         // Fallback to microdata extraction
+        // Production build: console.log removed
         const microdataRecipe = this.extractFromMicrodata(html);
+        if (microdataRecipe) {
+          // Production build: console.log removed
+          // Production build: console.log removed
+          // Production build: console.log removed
+        } else {
+          // Production build: console.log removed
+        }
         if (microdataRecipe && microdataRecipe.title && microdataRecipe.ingredients && microdataRecipe.ingredients.length > 0) {
           const recipeWithImage = { ...microdataRecipe, web_address: url } as Recipe;
           // Ensure we have an image
@@ -122,7 +244,15 @@ export class RecipeExtractor {
         }
 
         // Last resort: manual extraction from common HTML patterns
+        // Production build: console.log removed
         const manualRecipe = this.extractManually(html, url);
+        if (manualRecipe) {
+          // Production build: console.log removed
+          // Production build: console.log removed
+          // Production build: console.log removed
+        } else {
+          // Production build: console.log removed
+        }
         if (manualRecipe && manualRecipe.title && manualRecipe.ingredients && manualRecipe.ingredients.length > 0) {
           const recipeWithImage = { ...manualRecipe, web_address: url } as Recipe;
           // Ensure we have an image
@@ -168,8 +298,10 @@ export class RecipeExtractor {
           
           for (const item of recipes) {
             if (item['@type'] === 'Recipe' || item.type === 'Recipe') {
+              // Production build: console.log removed
               // Patch: Extract nutrition directly if present in JSON-LD
               const parsed = this.parseJsonLdRecipe(item);
+              // Production build: console.log removed
               if (item.nutrition) {
                 parsed.nutritional_info = {
                   calories: item.nutrition.calories || item.nutrition.caloriesContent || item.nutrition["calories"],
@@ -572,12 +704,19 @@ export class RecipeExtractor {
         : [data.recipeIngredient];
     }
     
-    // Extract directions
-    if (data.recipeInstructions) {
-      recipe.directions = data.recipeInstructions.map((instruction: any) => {
-        if (typeof instruction === 'string') return instruction;
-        return instruction.text || instruction.name || '';
-      }).filter((dir: string) => dir.length > 0);
+    // Extract directions - check both recipeInstructions and instructions fields
+    const instructionsData = data.recipeInstructions || data.instructions;
+    // Production build: console.log removed
+    if (instructionsData) {
+      recipe.directions = (Array.isArray(instructionsData) ? instructionsData : [instructionsData])
+        .map((instruction: any) => {
+          if (typeof instruction === 'string') return instruction;
+          return instruction.text || instruction.name || '';
+        })
+        .filter((dir: string) => dir.length > 0);
+      // Production build: console.log removed
+    } else {
+      console.warn('[JSON-LD] No instructions data found in JSON-LD');
     }
     
     // Extract servings
@@ -673,13 +812,15 @@ export class RecipeExtractor {
         }).filter(text => text.length > 0);
       }
       
-      // Extract directions
-      const directionMatches = recipeSection.match(/itemprop=["']recipeInstructions["'][^>]*>([^<]+)/gi);
+      // Extract directions - check both recipeInstructions and instructions
+      let directionMatches = recipeSection.match(/itemprop=["'](recipeInstructions|instructions)["'][^>]*>([^<]+)/gi);
+      // Production build: console.log removed
       if (directionMatches) {
         recipe.directions = directionMatches.map(match => {
           const content = match.match(/>([^<]+)/);
           return content ? content[1].trim() : '';
         }).filter(text => text.length > 0);
+        // Production build: console.log removed
       }
       
       // Extract image from microdata
@@ -733,6 +874,7 @@ export class RecipeExtractor {
   
   static extractManually(html: string, baseUrl: string = ''): Partial<Recipe> | null {
     try {
+      // Production build: console.log removed
       const recipe: Partial<Recipe> = {
         title: '',
         ingredients: [],
@@ -770,18 +912,173 @@ export class RecipeExtractor {
         }
       }
       
-      // Extract directions using common patterns
-      const directionPatterns = [
-        /<[^>]*class="[^"]*instruction[^"]*"[^>]*>([^<]+)/gi,
-        /<[^>]*class="[^"]*direction[^"]*"[^>]*>([^<]+)/gi,
-        /<[^>]*class="[^"]*step[^"]*"[^>]*>([^<]+)/gi
-      ];
+      // Extract directions using common patterns - check for both "direction", "instruction", and "step"
+      // Production build: console.log removed
       
-      for (const pattern of directionPatterns) {
-        const matches = Array.from(html.matchAll(pattern));
-        if (matches.length > 0) {
-          recipe.directions = matches.map(match => match[1].trim()).filter(text => text.length > 10);
-          if (recipe.directions.length > 0) break;
+      // Strategy 1: Look for structured steps (STEP 1, STEP 2, etc.)
+      const stepHeadingPattern = /(?:STEP|Step)\s+\d+[^<]*(?:<[^>]*>)*\s*([^<]+(?:<[^>]+>[^<]+)*)/gi;
+      let stepMatches = Array.from(html.matchAll(stepHeadingPattern));
+      // Production build: console.log removed
+      
+      if (stepMatches.length > 0) {
+        recipe.directions = stepMatches.map(match => {
+          // Extract text, removing HTML tags
+          const text = match[1].replace(/<[^>]*>/g, ' ').trim();
+          return text;
+        }).filter(text => text.length > 20);
+        
+        if (recipe.directions.length > 0) {
+          // Production build: console.log removed
+        }
+      }
+      
+      // Strategy 2: Look for paragraphs after "Instructions" or "Directions" heading
+      if (!recipe.directions || recipe.directions.length === 0) {
+        const instructionsSectionPattern = /<h[1-6][^>]*>\s*(?:Instructions?|Directions?|Method|Steps?)\s*<\/h[1-6]>([\s\S]*?)(?:<h[1-6]|<div[^>]*class="[^"]*(?:notes|tips|nutrition|related)[^"]*"|$)/i;
+        const sectionMatch = html.match(instructionsSectionPattern);
+        
+        if (sectionMatch) {
+          // Production build: console.log removed
+          const section = sectionMatch[1];
+          // Extract all paragraphs from this section
+          const paragraphs = section.match(/<p[^>]*>([^<]+(?:<[^>]+>[^<]+)*)<\/p>/gi);
+          
+          if (paragraphs && paragraphs.length > 0) {
+            recipe.directions = paragraphs.map(p => {
+              const text = p.replace(/<[^>]*>/g, ' ').replace(/&[^;]+;/g, ' ').trim();
+              return text;
+            }).filter(text => text.length > 20);
+            // Production build: console.log removed
+          }
+        }
+      }
+      
+      // Strategy 3: Traditional patterns for class-based extraction
+      if (!recipe.directions || recipe.directions.length === 0) {
+        const directionPatterns = [
+          /<[^>]*class="[^"]*instruction[^"]*"[^>]*>([^<]+)/gi,
+          /<[^>]*class="[^"]*direction[^"]*"[^>]*>([^<]+)/gi,
+          /<[^>]*class="[^"]*step[^"]*"[^>]*>([^<]+)/gi,
+          /<[^>]*id="[^"]*instruction[^"]*"[^>]*>([^<]+)/gi,
+          /<[^>]*data-[^=]*="[^"]*instruction[^"]*"[^>]*>([^<]+)/gi,
+          /<li[^>]*class="[^"]*mntl-sc-block-html[^"]*"[^>]*>([^<]+)/gi,
+          /<p[^>]*class="[^"]*comp[^"]*instruction[^"]*"[^>]*>([^<]+)/gi,
+          /<div[^>]*class="[^"]*recipe-instructions[^"]*"[^>]*>\s*<p>([^<]+)/gi,
+          /<ol[^>]*>\s*<li>([^<]+)/gi  // Ordered list items
+        ];
+        
+        for (const pattern of directionPatterns) {
+          const matches = Array.from(html.matchAll(pattern));
+          // Production build: console.log removed
+          if (matches.length > 0) {
+            recipe.directions = matches.map(match => match[1].trim()).filter(text => text.length > 10);
+            if (recipe.directions.length > 0) {
+              // Production build: console.log removed
+              break;
+            }
+          }
+        }
+      }
+      
+      if (!recipe.directions || recipe.directions.length === 0) {
+        console.warn('[Manual] No directions found with any pattern');
+      }
+      
+      // Extract cooking times
+      // Production build: console.log removed
+      
+      // Strategy 1: Look for "TIME" section with hours/minutes (Saveur style)
+      // Try multiple patterns to match different HTML structures
+      let timeText = null;
+      
+      // Pattern 1: TIME label followed by content (most flexible)
+      let timeSection = html.match(/TIME[^<]{0,20}<\/[^>]+>\s*<[^>]+>([^<]+)/i);
+      if (timeSection) {
+        timeText = timeSection[1].trim();
+        // Production build: console.log removed
+      }
+      
+      // Pattern 2: Direct text search for time format
+      if (!timeText) {
+        const directPattern = html.match(/(\d+\s*hours?\s*\d+\s*minutes?(?:,\s*plus\s*[^<.]+)?)/i);
+        if (directPattern) {
+          timeText = directPattern[1].trim();
+          // Production build: console.log removed
+        }
+      }
+      
+      // Pattern 3: Look around SERVES for TIME
+      if (!timeText) {
+        const servePattern = html.match(/SERVES[^<]*<[^>]*>[\s\S]{0,200}TIME[^<]*<[^>]*>\s*([^<]+)/i);
+        if (servePattern) {
+          timeText = servePattern[1].trim();
+          // Production build: console.log removed
+        }
+      }
+      
+      if (timeText) {
+        // Production build: console.log removed
+        
+        // Parse hours and minutes
+        const hoursMatch = timeText.match(/(\d+)\s*hours?/i);
+        const minutesMatch = timeText.match(/(\d+)\s*minutes?/i);
+        
+        let totalMinutes = 0;
+        if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60;
+        if (minutesMatch) totalMinutes += parseInt(minutesMatch[1]);
+        
+        if (totalMinutes > 0) {
+          const hours = Math.floor(totalMinutes / 60);
+          const mins = totalMinutes % 60;
+          if (hours > 0 && mins > 0) {
+            recipe.total_time = `PT${hours}H${mins}M`;
+          } else if (hours > 0) {
+            recipe.total_time = `PT${hours}H`;
+          } else {
+            recipe.total_time = `PT${mins}M`;
+          }
+          // Production build: console.log removed
+        }
+      } else {
+        // Production build: console.log removed
+      }
+      
+      // Strategy 2: Look for time metadata or structured data
+      if (!recipe.prep_time || !recipe.cook_time || !recipe.total_time) {
+        const prepTimeMatch = html.match(/<meta[^>]*(?:itemprop|property)=["']prepTime["'][^>]*content=["']([^"']+)["']/i);
+        if (prepTimeMatch) {
+          recipe.prep_time = prepTimeMatch[1];
+          // Production build: console.log removed
+        }
+        
+        const cookTimeMatch = html.match(/<meta[^>]*(?:itemprop|property)=["']cookTime["'][^>]*content=["']([^"']+)["']/i);
+        if (cookTimeMatch) {
+          recipe.cook_time = cookTimeMatch[1];
+          // Production build: console.log removed
+        }
+        
+        const totalTimeMatch = html.match(/<meta[^>]*(?:itemprop|property)=["']totalTime["'][^>]*content=["']([^"']+)["']/i);
+        if (totalTimeMatch) {
+          recipe.total_time = totalTimeMatch[1];
+          // Production build: console.log removed
+        }
+      }
+      
+      // Strategy 3: Fallback - Parse times from text
+      if (!recipe.prep_time || !recipe.cook_time || !recipe.total_time) {
+        const timeText = html.match(/(?:prep|preparation)[^<]*?(\d+)\s*(?:hour|hr|minute|min)/i);
+        if (timeText && !recipe.prep_time) {
+          recipe.prep_time = `PT${timeText[1]}M`;
+        }
+        
+        const cookText = html.match(/(?:cook|baking)[^<]*?(\d+)\s*(?:hour|hr|minute|min)/i);
+        if (cookText && !recipe.cook_time) {
+          recipe.cook_time = `PT${cookText[1]}M`;
+        }
+        
+        const totalText = html.match(/(?:total|about)[^<]*?(\d+)\s*(?:hour|hr|minute|min)/i);
+        if (totalText && !recipe.total_time) {
+          recipe.total_time = `PT${totalText[1]}M`;
         }
       }
       

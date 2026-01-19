@@ -12,7 +12,7 @@ export async function fetchNutrition(ingredients: string[], servings: number = 1
   }
 
   try {
-    console.log('[NutritionService] Fetching nutrition for', ingredients.length, 'ingredients, servings:', servings);
+    // Production build: console.log removed
     
     // Spoonacular expects a single string with one ingredient per line
     const ingredientList = ingredients.join('\n');
@@ -34,7 +34,7 @@ export async function fetchNutrition(ingredients: string[], servings: number = 1
     }
     
     const data = await response.json();
-    console.log('[NutritionService] Successfully fetched nutrition data');
+    // Production build: console.log removed
     // The response contains an array of ingredient objects with nutrition info
     return { success: true, data };
   } catch (error: any) {

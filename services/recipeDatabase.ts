@@ -1,4 +1,4 @@
-import { supabase, Recipe, isSupabaseConfigured } from '../lib/supabase';
+import { Recipe, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { DemoStorage } from './demoStorage';
 
 export class RecipeDatabase {
@@ -6,9 +6,6 @@ export class RecipeDatabase {
     try {
       if (!isSupabaseConfigured || !supabase) {
         const result = await DemoStorage.saveRecipe(recipe);
-        if (result.success) {
-        
-        }
         return result;
       }
 
@@ -74,6 +71,35 @@ export class RecipeDatabase {
     }
   }
 
+  static async getRecipeById(id: number): Promise<{ success: boolean; data?: Recipe; error?: string }> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        // Demo storage: find recipe by ID
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const recipe = allRecipes.find(r => r.id === id);
+        if (recipe) {
+          return { success: true, data: recipe };
+        }
+        return { success: false, error: 'Recipe not found' };
+      }
+
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching recipe by ID:', error);
+      return { success: false, error: 'Failed to fetch recipe' };
+    }
+  }
+
   static async getAllRecipes(): Promise<Recipe[]> {
     try {
       if (!isSupabaseConfigured || !supabase) {
@@ -134,7 +160,7 @@ export class RecipeDatabase {
 
   static async deleteRecipe(id: number): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('[RecipeDatabase] Attempting to delete recipe with id:', id);
+      // Production build: console.log removed
       if (!isSupabaseConfigured || !supabase) {
         return { 
           success: false, 

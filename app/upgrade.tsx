@@ -10,11 +10,7 @@ export default function UpgradeScreen() {
 	const router = useRouter();
 
 	const handleCreateAccount = () => {
-		Alert.alert(
-			'Coming Soon',
-			'Account creation will be available in the next update! You\'ll be able to create an account to unlock unlimited recipes and cloud sync.',
-			[{ text: 'OK' }]
-		);
+		router.push('/account');
 	};
 
 	const handleGoBack = () => {

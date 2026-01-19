@@ -136,9 +136,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 			isLoading: false,
 		});
 
-		// Navigate back to auth after sign out
-		router.replace('/(auth)/welcome');
-
 		return success;
 	};
 

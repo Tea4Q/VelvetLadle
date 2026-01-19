@@ -9,7 +9,7 @@ import { formatTimeAgo } from '@/utils/timeFormatter';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
 	Image,
@@ -300,6 +300,7 @@ export default function Index() {
 							styles.profileButton,
 							{ backgroundColor: colors.primaryLight },
 						]}
+						onPress={() => router.push('/account')}
 					>
 						<FontAwesome6 name='user' size={20} color={colors.primary} />
 					</Pressable>

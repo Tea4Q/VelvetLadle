@@ -18,6 +18,7 @@ import { Recipe } from '../lib/supabase';
 import { FavoritesService } from '../services/FavoritesService';
 import { ImageStorageService } from '../services/ImageStorageService';
 import { RecipeDatabase } from '../services/recipeDatabase';
+import { RecipeDeletionService } from '../services/RecipeDeletionService';
 import { RecipeExtractor } from '../services/recipeExtractor';
 import { RecipeFilterService } from '../services/RecipeFilterService';
 import { RecipeValidation } from '../utils/recipeValidation';
@@ -232,58 +233,8 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 	}, []);
 
 
-		// Helper to perform the actual delete
-		const performDelete = async (recipe: Recipe) => {
-			try {
-				const result = await RecipeDatabase.deleteRecipe(recipe.id!);
-				if (result.success) {
-					await ImageStorageService.deleteLocalImage(recipe.id!);
-					handleRefresh();
-				} else {
-					console.error('❌ Error deleting recipe:', result.error);
-					Alert.alert('Error', result.error || 'Failed to delete recipe. Please try again.');
-				}
-			} catch (error) {
-				console.error('❌ Error deleting recipe:', error);
-				Alert.alert('Error', 'Failed to delete recipe. Please try again.');
-			}
-		};
-
 		const handleDelete = useCallback(async (recipe: Recipe) => {
-			const recipeTitle = RecipeValidation.getSafeTitle(recipe);
-			if (!recipe.id) {
-				console.error('❌ Recipe has no ID, cannot delete');
-				return;
-			}
-			if (!recipe.title || recipe.title.trim() === '') {
-				console.warn('⚠️ Recipe has empty title, ID:', recipe.id);
-			}
-			// Use Alert for both web and mobile
-			if (typeof window !== 'undefined' && window.confirm) {
-				if (!window.confirm(
-					`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`
-				)) {
-					return;
-				}
-				await performDelete(recipe);
-			} else {
-				Alert.alert(
-					'Delete Recipe',
-					`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`,
-					[
-						{
-							text: 'Cancel',
-							style: 'cancel',
-							onPress: () => {},
-						},
-						{
-							text: 'Delete',
-							style: 'destructive',
-							onPress: () => performDelete(recipe),
-						}
-					]
-				);
-			}
+			await RecipeDeletionService.deleteRecipeWithConfirmation(recipe, handleRefresh);
 		}, [handleRefresh]);
 
 	useEffect(() => {

@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 
@@ -54,6 +55,10 @@ function TabIcon({ focused, color, iconName, iconLibrary, size = 24 }: TabIconPr
 export default function TabsLayout() {
 	const colors = useColors();
 	const insets = useSafeAreaInsets();
+	const { user } = useAuth();
+	
+	// Check if user is a guest
+	const isGuest = user?.id === 'guest_user';
 	
 	return (
 		<Tabs
@@ -112,6 +117,7 @@ export default function TabsLayout() {
 						/>
 					),
 					tabBarLabel: 'Add',
+					href: isGuest ? null : undefined,
 				}}
 			/>
 			<Tabs.Screen
@@ -127,6 +133,7 @@ export default function TabsLayout() {
 						/>
 					),
 					tabBarLabel: 'Recipes',
+					href: isGuest ? null : undefined,
 				}}
 			/>
 			<Tabs.Screen

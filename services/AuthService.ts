@@ -3,6 +3,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GUEST_USER_ID } from '../constants/limits';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export interface User {
   id: string;
@@ -84,13 +85,10 @@ class AuthService {
     }
   }
 
-  // Sign up with email and password (mock implementation)
+  // Sign up with email and password
   static async signUp(name: string, email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock validation
+      // Validate inputs
       if (!name || !email || !password) {
         return { success: false, error: 'All fields are required' };
       }
@@ -103,15 +101,58 @@ class AuthService {
         return { success: false, error: 'Please enter a valid email address' };
       }
 
-      // Create new user
-      const user: User = {
-        id: `user_${Date.now()}`,
-        name: name.trim(),
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured || !supabase) {
+        // Fallback to mock implementation if Supabase not configured
+        console.warn('Supabase not configured, using mock auth');
+        
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Create mock user
+        const user: User = {
+          id: `user_${Date.now()}`,
+          name: name.trim(),
+          email: email.toLowerCase(),
+          createdAt: new Date(),
+        };
+
+        // Save auth state and user data
+        await AsyncStorage.setItem(this.AUTH_KEY, 'true');
+        await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
+
+        return { success: true, user };
+      }
+
+      // Use Supabase Auth for real account creation
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.toLowerCase(),
-        createdAt: new Date(),
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+          },
+        },
+      });
+
+      if (authError) {
+        console.error('Supabase signup error:', authError);
+        return { success: false, error: authError.message };
+      }
+
+      if (!authData.user) {
+        return { success: false, error: 'Account creation failed. Please try again.' };
+      }
+
+      // Create user object
+      const user: User = {
+        id: authData.user.id,
+        name: name.trim(),
+        email: authData.user.email || email.toLowerCase(),
+        createdAt: new Date(authData.user.created_at),
       };
 
-      // Save auth state and user data
+      // Save auth state and user data locally
       await AsyncStorage.setItem(this.AUTH_KEY, 'true');
       await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
 

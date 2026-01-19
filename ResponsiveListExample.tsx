@@ -239,7 +239,7 @@ export default function ResponsiveListComponent({
             style={[styles.footerButton, { backgroundColor: '#FF9800' }]}
             onPress={() => {
               // Handle bulk actions
-              console.log('Bulk action for:', Array.from(selectedItems));
+              // Production build: console.log removed);
             }}
           >
             <Text style={styles.footerButtonText}>Bulk Action</Text>

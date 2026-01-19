@@ -1,10 +1,11 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import RecipeForm from '../../components/RecipeForm';
 import RecipeList from '../../components/RecipeList';
 import RecipeViewer from '../../components/RecipeViewer';
 import { useColors } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Recipe } from '../../lib/supabase';
 import { RecipeDatabase } from '../../services/recipeDatabase';
 
@@ -14,10 +15,51 @@ export default function RecipesScreen() {
 	const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 	const [refreshKey, setRefreshKey] = useState(0);
 	const colors = useColors();
+	const { user } = useAuth();
 	
-	// Get URL parameters for category filtering and stabilize the value
-	const { category } = useLocalSearchParams();
+	// Check if guest and redirect to account creation
+	useFocusEffect(
+		useCallback(() => {
+			const isGuest = user?.id === 'guest_user';
+			if (isGuest) {
+				Alert.alert(
+					'Account Required',
+					'Please create an account or sign in to view your recipes.',
+					[
+						{
+							text: 'Create Account',
+							onPress: () => router.replace('/account'),
+						},
+						{
+							text: 'Go Back',
+							style: 'cancel',
+							onPress: () => router.replace('/'),
+						},
+					]
+				);
+			}
+		}, [user])
+	);
+	
+	// Get URL parameters for category filtering and recipeId
+	const { category, recipeId } = useLocalSearchParams();
 	const stableCategory = useMemo(() => category as string, [category]);
+
+	// When recipeId is passed via router params, load and display that recipe
+	useEffect(() => {
+		if (recipeId) {
+			const loadRecipe = async () => {
+				const id = parseInt(recipeId as string, 10);
+				if (!isNaN(id)) {
+					const { success, data } = await RecipeDatabase.getRecipeById(id);
+					if (success && data) {
+						setSelectedRecipe(data);
+					}
+				}
+			};
+			loadRecipe();
+		}
+	}, [recipeId]);
 
 	const handleRecipeSelect = (recipe: Recipe) => {
 		setSelectedRecipe(recipe);
@@ -49,13 +91,19 @@ export default function RecipesScreen() {
 			Alert.alert('Error updating recipe', error || 'Unknown error');
 			return;
 		}
+		
+		// Close the edit form and refresh
 		setShowEditForm(false);
 		setEditingRecipe(null);
 		setRefreshKey(prev => prev + 1);
+		
 		// If we're viewing the edited recipe, update the selected recipe
 		if (selectedRecipe && data && data.id === selectedRecipe.id) {
 			setSelectedRecipe(data);
 		}
+		
+		// Show success message
+		Alert.alert('Success', 'Recipe updated successfully!');
 	};
 
 	return (

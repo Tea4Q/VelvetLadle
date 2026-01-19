@@ -8,7 +8,7 @@ import SmartImage from './SmartImage';
 
 interface RecipeFormProps {
   initialRecipe?: Recipe | null;
-  onSave: (recipe: Recipe) => void;
+  onSave: (recipe: Recipe) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -21,6 +21,26 @@ const defaultNutrition = {
   sugar: '',
   sodium: '',
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#faf4eb' },
+  content: { padding: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#00205B', textAlign: 'center' },
+  label: { fontSize: 16, fontWeight: '600', color: '#00205B', marginTop: 10 },
+  input: { borderWidth: 1, borderColor: '#00205B', borderRadius: 8, padding: 10, marginBottom: 10, backgroundColor: '#fff', color: '#00205B' },
+  multiline: { minHeight: 80 },
+  image: { width: '100%', height: 180, borderRadius: 10, marginBottom: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginTop: 20, color: '#00205B' },
+  nutritionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  nutritionLabel: { width: 90, fontSize: 14, color: '#00205B' },
+  nutritionInput: { flex: 1, borderWidth: 1, borderColor: '#00205B', borderRadius: 8, padding: 8, backgroundColor: '#fff', color: '#00205B' },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30, gap: 10 },
+  tabBar: { flexDirection: 'row', backgroundColor: '#e8e8e8', borderBottomWidth: 1, borderBottomColor: '#ccc' },
+  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
+  activeTab: { borderBottomWidth: 3, borderBottomColor: '#00205B', backgroundColor: '#faf4eb' },
+  tabText: { fontSize: 16, color: '#888', fontWeight: '600' },
+  activeTabText: { color: '#00205B', fontWeight: 'bold' },
+});
 
 export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFormProps) {
   const [activeTab, setActiveTab] = useState<'basics' | 'details' | 'nutrition' | 'notes'>('basics');
@@ -36,7 +56,7 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
   const [cuisine, setCuisine] = useState(initialRecipe?.cuisine_type || '');
   const [difficulty, setDifficulty] = useState(initialRecipe?.difficulty_level || '');
   const [nutrition, setNutrition] = useState<any>(initialRecipe?.nutritional_info || defaultNutrition);
-  const [personalNotes, setPersonalNotes] = useState(initialRecipe?.personal_notes || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (initialRecipe) {
@@ -52,11 +72,12 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
       setCuisine(initialRecipe.cuisine_type || '');
       setDifficulty(initialRecipe.difficulty_level || '');
       setNutrition(initialRecipe.nutritional_info || defaultNutrition);
-  setPersonalNotes(initialRecipe?.personal_notes || '');
     }
   }, [initialRecipe]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (isSaving) return; // Prevent double-submit
+    
     if (!title.trim()) {
       Alert.alert('Missing Title', 'Please enter a recipe title.');
       return;
@@ -69,25 +90,40 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
       Alert.alert('Missing Directions', 'Please enter at least one direction.');
       return;
     }
-    const recipe: Recipe = {
-      ...initialRecipe,
-      title: title.trim(),
-      description: description.trim(),
-      image_url: imageUrl.trim(),
-      ingredients: ingredients.split('\n').map(i => i.trim()).filter(Boolean),
-      directions: directions.split('\n').map(d => d.trim()).filter(Boolean),
-      servings: servings ? parseInt(servings) : undefined,
-      prep_time: prepTime.trim(),
-      cook_time: cookTime.trim(),
-      total_time: totalTime.trim(),
-      cuisine_type: cuisine.trim(),
-      difficulty_level: difficulty.trim(),
-      nutritional_info: nutrition,
-  personal_notes: personalNotes.trim(),
-      web_address: initialRecipe?.web_address || '',
-      recipe_source: initialRecipe?.recipe_source || '',
-    };
-    onSave(recipe);
+    
+    setIsSaving(true);
+    try {
+      const recipe: Recipe = {
+        ...initialRecipe,
+        title: title.trim(),
+        description: description.trim(),
+        image_url: imageUrl.trim(),
+        ingredients: ingredients.split('\n').map(i => i.trim()).filter(Boolean),
+        directions: directions.split('\n').map(d => d.trim()).filter(Boolean),
+        servings: servings ? parseInt(servings) : undefined,
+        prep_time: prepTime.trim(),
+        cook_time: cookTime.trim(),
+        total_time: totalTime.trim(),
+        cuisine_type: cuisine.trim(),
+        difficulty_level: difficulty.trim(),
+        nutritional_info: nutrition,
+        web_address: initialRecipe?.web_address || '',
+        recipe_source: initialRecipe?.recipe_source || '',
+      };
+      
+      // Call onSave and wait for it if it's async
+      const result = onSave(recipe);
+      if (result instanceof Promise) {
+        await result;
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      Alert.alert('Error', 'Failed to save recipe. Please try again.');
+      setIsSaving(false);
+      return;
+    }
+    
+    setIsSaving(false);
   };
 
   return (
@@ -99,13 +135,13 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
   <View style={{ flex: 1, minHeight: 0 }}>
       {/* Top Bar: Back, Save, Cancel */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 20, paddingHorizontal: 10, backgroundColor: '#faf4eb', gap: 8, marginBottom: 8 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
+        <TouchableOpacity onPress={onCancel} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
           <Text style={{ fontSize: 20, color: '#00205B', marginRight: 4 }}>←</Text>
           <Text style={{ fontSize: 16, color: '#00205B', fontWeight: '600' }}>Back</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Button label="Save" theme="primary" onPress={handleSave} />
+          <Button label={isSaving ? "Saving..." : "Save"} theme="primary" onPress={handleSave} />
           <Button label="Cancel" onPress={onCancel} />
         </View>
       </View>
@@ -125,7 +161,12 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
         </TouchableOpacity>
       </View>
       {/* Tab Content */}
-  <ScrollView style={[styles.container, { flex: 1 }]} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView 
+        style={{ flex: 1 }} 
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }} 
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
+      >
         {activeTab === 'basics' && (
           <>
             <Text style={styles.label}>Title *</Text>
@@ -136,9 +177,25 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
             <TextInput style={styles.input} value={imageUrl} onChangeText={setImageUrl} />
             {imageUrl ? <SmartImage imageUrl={imageUrl} recipeId={initialRecipe?.id ?? 0} style={styles.image} /> : null}
             <Text style={styles.label}>Ingredients *</Text>
-            <TextInput style={[styles.input, styles.multiline]} value={ingredients} onChangeText={setIngredients} multiline numberOfLines={3} />
+            <TextInput 
+              style={[styles.input, styles.multiline]} 
+              value={ingredients} 
+              onChangeText={setIngredients} 
+              multiline 
+              numberOfLines={8}
+              textAlignVertical="top"
+              placeholder="Enter each ingredient on a new line"
+            />
             <Text style={styles.label}>Directions *</Text>
-            <TextInput style={[styles.input, styles.multiline]} value={directions} onChangeText={setDirections} multiline numberOfLines={3} />
+            <TextInput 
+              style={[styles.input, styles.multiline]} 
+              value={directions} 
+              onChangeText={setDirections} 
+              multiline 
+              numberOfLines={10}
+              textAlignVertical="top"
+              placeholder="Enter each direction on a new line"
+            />
           </>
         )}
         {activeTab === 'details' && (
@@ -174,10 +231,10 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
           </>
         )}
         {activeTab === 'notes' && (
-          <>
-            <Text style={styles.label}>Personal Notes</Text>
-            <TextInput style={[styles.input, styles.multiline]} value={personalNotes} onChangeText={setPersonalNotes} multiline numberOfLines={6} placeholder="Add your personal notes, modifications, or reviews here..." />
-          </>
+          <View style={{ padding: 20 }}>
+            <Text style={{ fontSize: 16, color: '#00205B', textAlign: 'center' }}>Personal notes feature coming soon!</Text>
+            <Text style={{ fontSize: 14, color: '#666', marginTop: 10, textAlign: 'center' }}>This feature requires a database update.</Text>
+          </View>
         )}
         <View style={{ height: 20 }} />
       </ScrollView>
@@ -187,22 +244,3 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#faf4eb' },
-  content: { padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#00205B', textAlign: 'center' },
-  label: { fontSize: 16, fontWeight: '600', color: '#00205B', marginTop: 10 },
-  input: { borderWidth: 1, borderColor: '#00205B', borderRadius: 8, padding: 10, marginBottom: 10, backgroundColor: '#fff', color: '#00205B' },
-  multiline: { minHeight: 80 },
-  image: { width: '100%', height: 180, borderRadius: 10, marginBottom: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginTop: 20, color: '#00205B' },
-  nutritionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  nutritionLabel: { width: 90, fontSize: 14, color: '#00205B' },
-  nutritionInput: { flex: 1, borderWidth: 1, borderColor: '#00205B', borderRadius: 8, padding: 8, backgroundColor: '#fff', color: '#00205B' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30, gap: 10 },
-  tabBar: { flexDirection: 'row', backgroundColor: '#e8e8e8', borderBottomWidth: 1, borderBottomColor: '#ccc' },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  activeTab: { borderBottomWidth: 3, borderBottomColor: '#00205B', backgroundColor: '#faf4eb' },
-  tabText: { fontSize: 16, color: '#888', fontWeight: '600' },
-  activeTabText: { color: '#00205B', fontWeight: 'bold' },
-});

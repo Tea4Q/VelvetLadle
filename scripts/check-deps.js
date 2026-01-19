@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('🔍 VelvetLadle Dependency Checker\n');
+// Production build: console.log removed
 
 // Check if package.json exists
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -30,24 +30,24 @@ const criticalDeps = [
   'typescript'
 ];
 
-console.log('📦 Checking critical dependencies:');
+// Production build: console.log removed
 criticalDeps.forEach(dep => {
   const inDeps = packageJson.dependencies && packageJson.dependencies[dep];
   const inDevDeps = packageJson.devDependencies && packageJson.devDependencies[dep];
   
   if (inDeps || inDevDeps) {
-    console.log(`✅ ${dep}: ${inDeps || inDevDeps}`);
+    // Production build: console.log removed
   } else {
-    console.log(`❌ ${dep}: Missing`);
+    // Production build: console.log removed
   }
 });
 
 // Check if node_modules exists
 const nodeModulesPath = path.join(__dirname, '..', 'node_modules');
 if (!fs.existsSync(nodeModulesPath)) {
-  console.log('\n⚠️  node_modules not found. Run "npm install"');
+  // Production build: console.log removed
 } else {
-  console.log('\n✅ node_modules directory exists');
+  // Production build: console.log removed
 }
 
 // Check TypeScript installation
@@ -55,30 +55,30 @@ try {
   const tsPath = path.join(nodeModulesPath, 'typescript', 'package.json');
   if (fs.existsSync(tsPath)) {
     const tsPackage = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
-    console.log(`✅ TypeScript installed: ${tsPackage.version}`);
+    // Production build: console.log removed
   } else {
-    console.log('❌ TypeScript not found in node_modules');
+    // Production build: console.log removed
   }
 } catch (error) {
-  console.log('⚠️  Could not verify TypeScript installation');
+  // Production build: console.log removed
 }
 
 // Check for problematic packages
 const problematicPackages = ['@types/react-native'];
-console.log('\n🚫 Checking for problematic packages:');
+// Production build: console.log removed
 problematicPackages.forEach(pkg => {
   const inDeps = packageJson.dependencies && packageJson.dependencies[pkg];
   const inDevDeps = packageJson.devDependencies && packageJson.devDependencies[pkg];
   
   if (inDeps || inDevDeps) {
-    console.log(`❌ ${pkg}: Should be removed (types included with react-native)`);
+    // Production build: console.log removed`);
   } else {
-    console.log(`✅ ${pkg}: Not present (good)`);
+    // Production build: console.log removed`);
   }
 });
 
-console.log('\n📋 Summary:');
-console.log('- Remove @types/react-native if present');
-console.log('- Ensure TypeScript is in devDependencies');
-console.log('- Run "npm install" after any package.json changes');
-console.log('- Use "npx expo start" to start the development server');
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed

@@ -2,6 +2,7 @@ import Button from '@/components/buttons';
 import ImageViewer from '@/components/imageViewer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColors } from '@/contexts/ThemeContext';
+import { router } from 'expo-router';
 import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const placeHolderImage = require('../../assets/images/veveltLifeSplashImage.png');
@@ -33,23 +34,18 @@ export default function WelcomeScreen() {
 				{/* Auth Buttons */}
 				<View style={styles.authButtonsContainer}>
 					<Button
-						label='Sign In'
+						label='Create Account'
 						theme='primary'
 						onPress={() => {
-							// TODO: Implement sign in screen
-							// For now, show coming soon and use guest mode
-							// Alert.alert('Coming Soon', 'Sign in will be available in the next update. Using guest mode for now.');
-							signInAsGuest();
+							router.push('/account');
 						}}
 					/>
 					<Button
-						label='Create Account'
+						label='Sign In'
 						theme='secondary'
 						onPress={() => {
-							// TODO: Implement sign up screen
-							// For now, show coming soon and use guest mode
-							// Alert.alert('Coming Soon', 'Account creation will be available in the next update. Using guest mode for now.');
-							signInAsGuest();
+							// TODO: Create dedicated sign in screen or use account screen
+							router.push('/account');
 						}}
 					/>
 					<Pressable
