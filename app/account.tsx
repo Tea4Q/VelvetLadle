@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Button from '../components/buttons';
 import { useAuth } from '../contexts/AuthContext';
 import { useColors, useRadius, useSpacing } from '../contexts/ThemeContext';
@@ -229,6 +229,16 @@ export default function AccountScreen() {
 							/>
 							<Button label="Continue as Guest" onPress={handleGoBack} />
 						</View>
+
+						{/* Sign In Link */}
+						<View style={styles.footer}>
+							<Text style={[styles.footerText, { color: colors.textLight }]}>
+								Already have an account?{' '}
+							</Text>
+							<Pressable onPress={() => router.push('/(auth)/sign-in')}>
+								<Text style={[styles.footerLink, { color: colors.primary }]}>Sign In</Text>
+							</Pressable>
+						</View>
 					</>
 				) : (
 					<>
@@ -345,5 +355,20 @@ const styles = StyleSheet.create({
 	},
 	actions: {
 		gap: 12,
+	},
+	footer: {
+		flexDirection: 'row',
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginTop: 16,
+		flexWrap: 'wrap',
+	},
+	footerText: {
+		fontSize: 14,
+	},
+	footerLink: {
+		fontSize: 14,
+		fontWeight: '600',
+		textDecorationLine: 'underline',
 	},
 });

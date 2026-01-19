@@ -17,6 +17,12 @@ export default function AuthLayout() {
 					title: 'Welcome',
 				}}
 			/>
+			<Stack.Screen
+				name="sign-in"
+				options={{
+					title: 'Sign In',
+				}}
+			/>
 		</Stack>
 	);
 }

@@ -44,8 +44,7 @@ export default function WelcomeScreen() {
 						label='Sign In'
 						theme='secondary'
 						onPress={() => {
-							// TODO: Create dedicated sign in screen or use account screen
-							router.push('/account');
+							router.push('/(auth)/sign-in');
 						}}
 					/>
 					<Pressable
