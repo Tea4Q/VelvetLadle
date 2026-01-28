@@ -42,9 +42,9 @@ export default function UpgradeScreen() {
 					</Text>
 
 					<View style={styles.feature}>
-						<Ionicons name="infinite" size={24} color={colors.primary} />
+						<Ionicons name="pencil" size={24} color={colors.primary} />
 						<Text style={[styles.featureText, { color: colors.textSecondary }]}>
-							Unlimited recipes
+							Full edit & delete access
 						</Text>
 					</View>
 

@@ -22,7 +22,7 @@ export async function checkGuestRecipeLimit(): Promise<boolean> {
     if (allRecipes.length >= GUEST_RECIPE_LIMIT) {
       Alert.alert(
         'Guest Limit Reached',
-        `Guest users can save up to ${GUEST_RECIPE_LIMIT} recipes. Create a free account to save unlimited recipes and sync across devices!`,
+        `Guest users can save up to ${GUEST_RECIPE_LIMIT} recipes. Create a free account for cloud sync, edit/delete access, and secure backup!`,
         [
           { text: 'OK' },
           { 

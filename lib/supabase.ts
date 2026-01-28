@@ -29,13 +29,11 @@ export { isSupabaseConfigured, supabase };
 // Database table structure for recipes with enhanced search fields
 export type Recipe = {
   id?: number;
+  user_id?: string;                  // User who created the recipe (Supabase auth user ID)
   title: string;
   ingredients: string[];
   directions: string[];
   servings?: number;
-  prep_time?: string;
-  cook_time?: string;
-  total_time?: string;
   nutritional_info?: {
     calories?: number;
     protein?: string;

@@ -5,13 +5,11 @@
 -- Create recipes table with enhanced search and filter support
 CREATE TABLE IF NOT EXISTS recipes (
   id BIGSERIAL PRIMARY KEY,
+  user_id TEXT,                               -- User who created the recipe (Supabase auth user ID)
   title TEXT NOT NULL,
   ingredients TEXT[] NOT NULL DEFAULT '{}',
   directions TEXT[] NOT NULL DEFAULT '{}',
   servings INTEGER,
-  prep_time TEXT,
-  cook_time TEXT,
-  total_time TEXT,
   nutritional_info JSONB,
   web_address TEXT NOT NULL,
   recipe_source TEXT, -- Where the recipe came from (e.g., "Grandma's recipe", "Found in old cookbook")

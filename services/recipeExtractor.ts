@@ -5,6 +5,40 @@ import { WebScrapingAPIService } from './webScrapingAPIService';
 
 export class RecipeExtractor {
   /**
+   * Remove duplicate directions (case-insensitive comparison)
+   * Handles recipe sites that repeat instructions in multiple sections (mobile/print views)
+   */
+  private static deduplicateDirections(directions: string[]): string[] {
+    const uniqueDirections: string[] = [];
+    const seenLowerCase = new Set<string>();
+    
+    for (const dir of directions) {
+      const lowerDir = dir.toLowerCase().trim();
+      if (!seenLowerCase.has(lowerDir)) {
+        seenLowerCase.add(lowerDir);
+        uniqueDirections.push(dir);
+      }
+    }
+    
+    return uniqueDirections;
+  }
+
+  /**
+   * Convert ISO 8601 duration (PT30M, PT1H30M, PT2H) to minutes
+   */
+  private static iso8601ToMinutes(duration: string | undefined): number | undefined {
+    if (!duration) return undefined;
+    
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+    if (!match) return undefined;
+    
+    const hours = parseInt(match[1] || '0');
+    const minutes = parseInt(match[2] || '0');
+    const totalMinutes = hours * 60 + minutes;
+    
+    return totalMinutes > 0 ? totalMinutes : undefined;
+  }
+  /**
    * Returns { recipe, error } where only one is set.
    */
   static async extractRecipeFromUrl(url: string): Promise<{ recipe?: Recipe; error?: string }> {
@@ -73,42 +107,19 @@ export class RecipeExtractor {
                 apiRecipe.directions = manualRecipe.directions;
                 // Production build: console.log removed
                 
-                // Also supplement with cook times if API didn't provide them or provided zero values
-                    // Helper to check if a time value is reasonable (not tiny like PT2M for cook time)
-                    const isReasonableTime = (time: string | undefined, minMinutes: number = 10): boolean => {
-                      if (!time) return false;
-                      const match = time.match(/PT(\d+)([HM])|PT(\d+)H(\d+)M/);
-                      if (!match) return false;
-                      // Handle both PT45M and PT6H20M formats
-                      if (match[3]) {
-                        // PT6H20M format
-                        const hours = parseInt(match[3]);
-                        const mins = parseInt(match[4]);
-                        const minutes = hours * 60 + mins;
-                        return minutes >= minMinutes;
-                      } else {
-                        // PT45M or PT6H format
-                        const value = parseInt(match[1]);
-                        const unit = match[2];
-                        const minutes = unit === 'H' ? value * 60 : value;
-                        return minutes >= minMinutes;
-                      }
-                    };
-                    
-                    // Supplement times from HTML extraction
-                    // Prefer HTML times when they're reasonable, as they're often more accurate than API descriptions
-                    if (manualRecipe.prep_time && isReasonableTime(manualRecipe.prep_time, 10)) {
-                      apiRecipe.prep_time = manualRecipe.prep_time;
-                    }
-                    
-                    if (manualRecipe.cook_time && isReasonableTime(manualRecipe.cook_time, 15)) {
-                      apiRecipe.cook_time = manualRecipe.cook_time;
-                    }
-                    
-                    // For total_time: prefer HTML if it's significantly different from API (HTML is usually more accurate)
-                    if (manualRecipe.total_time && isReasonableTime(manualRecipe.total_time, 15)) {
-                      apiRecipe.total_time = manualRecipe.total_time;
-                    }
+                // Also supplement with cook times if API didn't provide them
+                // Prefer HTML times when reasonable, as they're often more accurate than API
+                if (manualRecipe.prep_time_minutes && (!apiRecipe.prep_time_minutes || manualRecipe.prep_time_minutes >= 10)) {
+                  apiRecipe.prep_time_minutes = manualRecipe.prep_time_minutes;
+                }
+                
+                if (manualRecipe.cook_time_minutes && (!apiRecipe.cook_time_minutes || manualRecipe.cook_time_minutes >= 15)) {
+                  apiRecipe.cook_time_minutes = manualRecipe.cook_time_minutes;
+                }
+                
+                if (manualRecipe.total_time_minutes && (!apiRecipe.total_time_minutes || manualRecipe.total_time_minutes >= 15)) {
+                  apiRecipe.total_time_minutes = manualRecipe.total_time_minutes;
+                }
                 
                 return { recipe: apiRecipe };
               }
@@ -714,6 +725,8 @@ export class RecipeExtractor {
           return instruction.text || instruction.name || '';
         })
         .filter((dir: string) => dir.length > 0);
+      
+      recipe.directions = this.deduplicateDirections(recipe.directions);
       // Production build: console.log removed
     } else {
       console.warn('[JSON-LD] No instructions data found in JSON-LD');
@@ -733,10 +746,10 @@ export class RecipeExtractor {
       }
     }
     
-    // Extract times
-    if (data.prepTime) recipe.prep_time = data.prepTime;
-    if (data.cookTime) recipe.cook_time = data.cookTime;
-    if (data.totalTime) recipe.total_time = data.totalTime;
+    // Extract times and convert to minutes
+    if (data.prepTime) recipe.prep_time_minutes = this.iso8601ToMinutes(data.prepTime);
+    if (data.cookTime) recipe.cook_time_minutes = this.iso8601ToMinutes(data.cookTime);
+    if (data.totalTime) recipe.total_time_minutes = this.iso8601ToMinutes(data.totalTime);
     
   // Extract nutritional information using nutritionService
   recipe.nutritional_info = undefined;
@@ -820,6 +833,8 @@ export class RecipeExtractor {
           const content = match.match(/>([^<]+)/);
           return content ? content[1].trim() : '';
         }).filter(text => text.length > 0);
+        
+        recipe.directions = this.deduplicateDirections(recipe.directions);
         // Production build: console.log removed
       }
       
@@ -927,6 +942,8 @@ export class RecipeExtractor {
           return text;
         }).filter(text => text.length > 20);
         
+        recipe.directions = this.deduplicateDirections(recipe.directions);
+        
         if (recipe.directions.length > 0) {
           // Production build: console.log removed
         }
@@ -948,6 +965,8 @@ export class RecipeExtractor {
               const text = p.replace(/<[^>]*>/g, ' ').replace(/&[^;]+;/g, ' ').trim();
               return text;
             }).filter(text => text.length > 20);
+            
+            recipe.directions = this.deduplicateDirections(recipe.directions);
             // Production build: console.log removed
           }
         }
@@ -972,6 +991,9 @@ export class RecipeExtractor {
           // Production build: console.log removed
           if (matches.length > 0) {
             recipe.directions = matches.map(match => match[1].trim()).filter(text => text.length > 10);
+            
+            recipe.directions = this.deduplicateDirections(recipe.directions);
+            
             if (recipe.directions.length > 0) {
               // Production build: console.log removed
               break;
@@ -1028,15 +1050,7 @@ export class RecipeExtractor {
         if (minutesMatch) totalMinutes += parseInt(minutesMatch[1]);
         
         if (totalMinutes > 0) {
-          const hours = Math.floor(totalMinutes / 60);
-          const mins = totalMinutes % 60;
-          if (hours > 0 && mins > 0) {
-            recipe.total_time = `PT${hours}H${mins}M`;
-          } else if (hours > 0) {
-            recipe.total_time = `PT${hours}H`;
-          } else {
-            recipe.total_time = `PT${mins}M`;
-          }
+          recipe.total_time_minutes = totalMinutes;
           // Production build: console.log removed
         }
       } else {
@@ -1044,41 +1058,41 @@ export class RecipeExtractor {
       }
       
       // Strategy 2: Look for time metadata or structured data
-      if (!recipe.prep_time || !recipe.cook_time || !recipe.total_time) {
+      if (!recipe.prep_time_minutes || !recipe.cook_time_minutes || !recipe.total_time_minutes) {
         const prepTimeMatch = html.match(/<meta[^>]*(?:itemprop|property)=["']prepTime["'][^>]*content=["']([^"']+)["']/i);
         if (prepTimeMatch) {
-          recipe.prep_time = prepTimeMatch[1];
+          recipe.prep_time_minutes = this.iso8601ToMinutes(prepTimeMatch[1]);
           // Production build: console.log removed
         }
         
         const cookTimeMatch = html.match(/<meta[^>]*(?:itemprop|property)=["']cookTime["'][^>]*content=["']([^"']+)["']/i);
         if (cookTimeMatch) {
-          recipe.cook_time = cookTimeMatch[1];
+          recipe.cook_time_minutes = this.iso8601ToMinutes(cookTimeMatch[1]);
           // Production build: console.log removed
         }
         
         const totalTimeMatch = html.match(/<meta[^>]*(?:itemprop|property)=["']totalTime["'][^>]*content=["']([^"']+)["']/i);
         if (totalTimeMatch) {
-          recipe.total_time = totalTimeMatch[1];
+          recipe.total_time_minutes = this.iso8601ToMinutes(totalTimeMatch[1]);
           // Production build: console.log removed
         }
       }
       
       // Strategy 3: Fallback - Parse times from text
-      if (!recipe.prep_time || !recipe.cook_time || !recipe.total_time) {
+      if (!recipe.prep_time_minutes || !recipe.cook_time_minutes || !recipe.total_time_minutes) {
         const timeText = html.match(/(?:prep|preparation)[^<]*?(\d+)\s*(?:hour|hr|minute|min)/i);
-        if (timeText && !recipe.prep_time) {
-          recipe.prep_time = `PT${timeText[1]}M`;
+        if (timeText && !recipe.prep_time_minutes) {
+          recipe.prep_time_minutes = parseInt(timeText[1]);
         }
         
         const cookText = html.match(/(?:cook|baking)[^<]*?(\d+)\s*(?:hour|hr|minute|min)/i);
-        if (cookText && !recipe.cook_time) {
-          recipe.cook_time = `PT${cookText[1]}M`;
+        if (cookText && !recipe.cook_time_minutes) {
+          recipe.cook_time_minutes = parseInt(cookText[1]);
         }
         
         const totalText = html.match(/(?:total|about)[^<]*?(\d+)\s*(?:hour|hr|minute|min)/i);
-        if (totalText && !recipe.total_time) {
-          recipe.total_time = `PT${totalText[1]}M`;
+        if (totalText && !recipe.total_time_minutes) {
+          recipe.total_time_minutes = parseInt(totalText[1]);
         }
       }
       

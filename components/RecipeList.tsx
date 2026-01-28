@@ -7,6 +7,7 @@ import {
 	TouchableOpacity,
 	View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
 	useColors,
 	useElevation,
@@ -14,6 +15,7 @@ import {
 	useSpacing,
 	useTypography,
 } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Recipe } from '../lib/supabase';
 import { FavoritesService } from '../services/FavoritesService';
 import { ImageStorageService } from '../services/ImageStorageService';
@@ -40,6 +42,10 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 	const [favoriteStatuses, setFavoriteStatuses] = useState<{
 		[key: number]: boolean;
 	}>({});
+
+	const { user } = useAuth();
+	const router = useRouter();
+	const isGuest = user?.id === 'guest_user';
 
 	// Use ref to prevent multiple simultaneous loads
 	const isLoadingRef = useRef(false);
@@ -714,6 +720,54 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			{/* Guest Signup CTA Banner */}
+			{isGuest && (
+				<View
+					style={[
+						styles.guestBanner,
+						{
+							backgroundColor: colors.secondary,
+							paddingHorizontal: spacing.lg,
+							paddingVertical: spacing.md,
+							borderBottomWidth: 1,
+							borderBottomColor: colors.border,
+						},
+					]}
+				>
+					<Text
+						style={[
+							styles.guestBannerText,
+							{
+								color: colors.primary,
+								fontSize: typography.fontSize.md,
+								fontWeight: typography.fontWeight.semibold,
+								marginBottom: spacing.xs,
+							},
+						]}
+					>
+						👋 Browsing Demo Recipes
+					</Text>
+					<Text
+						style={[
+							styles.guestBannerSubtext,
+							{
+								color: colors.textSecondary,
+								fontSize: typography.fontSize.sm,
+								marginBottom: spacing.sm,
+							},
+						]}
+					>
+						Sign up to add your own recipes and sync across devices!
+					</Text>
+					<Button
+						label='Create Free Account'
+						theme='primary'
+						onPress={() => router.push('/account')}
+						icon='user-plus'
+					/>
+				</View>
+			)}
+			
 			{/* Filter Toggle Button */}
 			<View
 				style={[
@@ -732,7 +786,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 						},
 					]}
 				>
-					My Recipes ({filteredRecipes.length})
+					{isGuest ? 'Demo Recipes' : 'My Recipes'} ({filteredRecipes.length})
 				</Text>
 
 				<Button
@@ -824,6 +878,15 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+	},
+	guestBanner: {
+		// Dynamic styles applied inline
+	},
+	guestBannerText: {
+		// Dynamic styles applied inline
+	},
+	guestBannerSubtext: {
+		// Dynamic styles applied inline
 	},
 	header: {
 		flexDirection: 'row',

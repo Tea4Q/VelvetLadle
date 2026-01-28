@@ -1,26 +1,66 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useState, useEffect } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Button from '../components/buttons';
 import { useAuth } from '../contexts/AuthContext';
 import { useColors, useRadius, useSpacing } from '../contexts/ThemeContext';
-import { RecipeDatabase } from '../services/recipeDatabase';
-import AuthService from '../services/AuthService';
 
 export default function AccountScreen() {
 	const colors = useColors();
 	const spacing = useSpacing();
 	const radius = useRadius();
 	const router = useRouter();
-	const { user, signInAsGuest, signOut } = useAuth();
+	const { mode: urlMode } = useLocalSearchParams();
+	const { user, signInAsGuest, signOut, signUp, signIn } = useAuth();
 
-	const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+	const [mode, setMode] = useState<'signin' | 'signup'>('signup');
+	const [isLoading, setIsLoading] = useState(false);
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 
-	const isGuest = user?.id === 'guest_user';
+	// Set mode from URL parameter
+	useEffect(() => {
+		if (urlMode === 'signin' || urlMode === 'signup') {
+			setMode(urlMode);
+		}
+	}, [urlMode]);
+
+	// Show account creation form if user is guest OR not logged in at all
+	const isGuest = !user || user?.id === 'guest_user';
+
+	const handleSignIn = async () => {
+		if (!email.trim() || !password.trim()) {
+			Alert.alert('Error', 'Please enter email and password');
+			return;
+		}
+
+		setIsLoading(true);
+		try {
+			const result = await signIn(email, password);
+			
+			if (result.success) {
+				Alert.alert(
+					'Welcome Back! 👋',
+					'Successfully signed in to your account.',
+					[
+						{
+							text: 'OK',
+							onPress: () => router.replace('/'),
+						},
+					]
+				);
+			} else {
+				Alert.alert('Error', result.error || 'Failed to sign in. Please check your credentials.');
+			}
+		} catch (error) {
+			console.error('Sign in error:', error);
+			Alert.alert('Error', 'Failed to sign in. Please try again.');
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const handleCreateAccount = async () => {
 		if (!name.trim() || !email.trim() || !password.trim()) {
@@ -33,36 +73,50 @@ export default function AccountScreen() {
 			return;
 		}
 
-		setIsCreatingAccount(true);
+		setIsLoading(true);
 		try {
-			const result = await AuthService.signUp(name, email, password);
+			const result = await signUp(name, email, password);
 			
-				if (result.success && result.user) {
-					Alert.alert(
-						'Account Created! 🎉',
-						'Your account has been created successfully. You can now save unlimited recipes!',
-						[
-							{
-								text: 'OK',
-								onPress: () => {
-									// Refresh auth context by navigating away and back
-									router.replace('/');
-								},
-							},
-						]
-					);
-				} else {
+			if (result.success) {
+				Alert.alert(
+					'Account Created! 🎉',
+					'Your account has been created successfully. You can now save up to 10 recipes!',
+					[
+						{
+							text: 'OK',
+							onPress: () => router.replace('/'),
+						},
+					]
+				);
+			} else {
 				Alert.alert('Error', result.error || 'Failed to create account. Please try again.');
 			}
 		} catch (error) {
 			console.error('Account creation error:', error);
 			Alert.alert('Error', 'Failed to create account. Please try again.');
 		} finally {
-			setIsCreatingAccount(false);
+			setIsLoading(false);
 		}
 	};
 
 	const handleSignOut = async () => {
+		console.log('Sign out button clicked');
+		
+		// For web, Alert.alert may not work properly, so just sign out directly
+		if (Platform.OS === 'web') {
+			try {
+				console.log('Starting sign out (web)');
+				await signOut();
+				console.log('Sign out successful, navigating to welcome');
+				router.replace('/(auth)/welcome');
+			} catch (error) {
+				console.error('Error during sign out:', error);
+				router.replace('/(auth)/welcome');
+			}
+			return;
+		}
+		
+		// For native platforms, show confirmation
 		Alert.alert(
 			'Sign Out',
 			'Are you sure you want to sign out? Your recipes will be saved.',
@@ -73,23 +127,13 @@ export default function AccountScreen() {
 					style: 'destructive',
 					onPress: async () => {
 						try {
-							// Check if user has any recipes
-							const recipes = await RecipeDatabase.getAllRecipes();
-							const hasRecipes = recipes.length > 0;
-							
-							// Sign out using context method (updates auth state properly)
+							console.log('User confirmed sign out');
 							await signOut();
-							
-							// Navigate based on whether recipes exist
-							if (hasRecipes) {
-								router.replace('/recipes');
-							} else {
-								router.replace('/');
-							}
+							console.log('Sign out successful, navigating to welcome');
+							router.replace('/(auth)/welcome');
 						} catch (error) {
 							console.error('Error during sign out:', error);
-							// Fallback to home on error
-							router.replace('/');
+							router.replace('/(auth)/welcome');
 						}
 					},
 				},
@@ -116,38 +160,40 @@ export default function AccountScreen() {
 						<Ionicons name="person" size={48} color={colors.secondary} />
 					</View>
 					<Text style={[styles.title, { color: colors.primary }]}>
-						{isGuest ? 'Create Your Account' : 'Account'}
+						{isGuest ? (mode === 'signin' ? 'Sign In' : 'Create Your Account') : 'Account'}
 					</Text>
 					<Text style={[styles.subtitle, { color: colors.textSecondary }]}>
 						{isGuest
-							? 'Unlock unlimited recipes and cloud sync'
+							? (mode === 'signin' ? 'Welcome back to Velvet Ladle' : 'Unlock cloud sync and more features')
 							: `Welcome, ${user?.name || 'Chef'}!`}
 					</Text>
 				</View>
 
 				{isGuest ? (
 					<>
-						{/* Account Creation Form */}
+						{/* Auth Form */}
 						<View style={styles.form}>
-							<View style={styles.inputGroup}>
-								<Text style={[styles.label, { color: colors.textPrimary }]}>Name</Text>
-								<TextInput
-									style={[
-										styles.input,
-										{
-											backgroundColor: colors.surface,
-											borderColor: colors.border,
-											color: colors.textPrimary,
-											borderRadius: radius.md,
-										},
-									]}
-									placeholder="Your name"
-									placeholderTextColor={colors.textLight}
-									value={name}
-									onChangeText={setName}
-									autoCapitalize="words"
-								/>
-							</View>
+							{mode === 'signup' && (
+								<View style={styles.inputGroup}>
+									<Text style={[styles.label, { color: colors.textPrimary }]}>Name</Text>
+									<TextInput
+										style={[
+											styles.input,
+											{
+												backgroundColor: colors.surface,
+												borderColor: colors.border,
+												color: colors.textPrimary,
+												borderRadius: radius.md,
+											},
+										]}
+										placeholder="Your name"
+										placeholderTextColor={colors.textLight}
+										value={name}
+										onChangeText={setName}
+										autoCapitalize="words"
+									/>
+								</View>
+							)}
 
 							<View style={styles.inputGroup}>
 								<Text style={[styles.label, { color: colors.textPrimary }]}>Email</Text>
@@ -194,40 +240,80 @@ export default function AccountScreen() {
 							</View>
 						</View>
 
-						{/* Benefits */}
-						<View style={[styles.benefitsContainer, { backgroundColor: colors.surface, borderRadius: radius.md }]}>
-							<Text style={[styles.benefitsTitle, { color: colors.primary }]}>
-								With a free account:
-							</Text>
-							<View style={styles.benefit}>
-								<Ionicons name="infinite" size={20} color={colors.primary} />
-								<Text style={[styles.benefitText, { color: colors.textSecondary }]}>
-									Save unlimited recipes
+						{/* Benefits - only show for signup */}
+						{mode === 'signup' && (
+						<View style={styles.benefitsRow}>
+							<View style={[styles.benefitsContainer, { backgroundColor: colors.surface, borderRadius: radius.md }]}>
+								<Text style={[styles.benefitsTitle, { color: colors.primary }]}>
+									With a free account:
 								</Text>
+								<View style={styles.benefit}>
+									<Ionicons name="restaurant" size={20} color={colors.primary} />
+									<Text style={[styles.benefitText, { color: colors.textSecondary }]}>
+										Save up to 10 recipes
+									</Text>
+								</View>
+								<View style={styles.benefit}>
+									<Ionicons name="cloud-upload" size={20} color={colors.primary} />
+									<Text style={[styles.benefitText, { color: colors.textSecondary }]}>
+										Cloud sync across all devices
+									</Text>
+								</View>
+								<View style={styles.benefit}>
+									<Ionicons name="shield-checkmark" size={20} color={colors.primary} />
+									<Text style={[styles.benefitText, { color: colors.textSecondary }]}>
+										Secure backup of your collection
+									</Text>
+								</View>
+								<View style={styles.benefit}>
+									<Ionicons name="star" size={20} color={colors.primary} />
+									<Text style={[styles.benefitText, { color: colors.textSecondary }]}>
+										Favorite recipes and web pages
+									</Text>
+								</View>
 							</View>
-							<View style={styles.benefit}>
-								<Ionicons name="cloud-upload" size={20} color={colors.primary} />
-								<Text style={[styles.benefitText, { color: colors.textSecondary }]}>
-									Cloud sync across all devices
+
+							<View style={[styles.benefitsContainer, { backgroundColor: colors.surface, borderRadius: radius.md }]}>
+								<Text style={[styles.benefitsTitle, { color: colors.primary }]}>
+									Upgrade to paid for:
 								</Text>
-							</View>
-							<View style={styles.benefit}>
-								<Ionicons name="shield-checkmark" size={20} color={colors.primary} />
-								<Text style={[styles.benefitText, { color: colors.textSecondary }]}>
-									Secure backup of your collection
-								</Text>
+								<View style={styles.benefit}>
+									<Ionicons name="infinite" size={20} color={colors.primary} />
+									<Text style={[styles.benefitText, { color: colors.textSecondary, fontWeight: '600' }]}>
+										Save unlimited recipes
+									</Text>
+								</View>
+								<View style={styles.benefit}>
+									<Ionicons name="sparkles" size={20} color={colors.primary} />
+									<Text style={[styles.benefitText, { color: colors.textSecondary, fontWeight: '600' }]}>
+										Advanced features (coming soon)
+									</Text>
+								</View>
 							</View>
 						</View>
+						)}
+
+						{/* Mode Toggle */}
+					<View style={styles.modeToggle}>
+						<Text style={[styles.modeToggleText, { color: colors.textSecondary }]}>
+							{mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
+						</Text>
+						<Button
+							label={mode === 'signin' ? 'Create Account' : 'Sign In'}
+							theme="link"
+							size="sm"
+							onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+						/>
+					</View>
 
 						{/* Actions */}
 						<View style={styles.actions}>
 							<Button
-								label={isCreatingAccount ? 'Creating Account...' : 'Create Free Account'}
+								label={isLoading ? (mode === 'signin' ? 'Signing In...' : 'Creating Account...') : (mode === 'signin' ? 'Sign In' : 'Create Free Account')}
 								theme="primary"
-								onPress={handleCreateAccount}
-								disabled={isCreatingAccount}
+								onPress={mode === 'signin' ? handleSignIn : handleCreateAccount}
+								disabled={isLoading}
 							/>
-							<Button label="Continue as Guest" onPress={handleGoBack} />
 						</View>
 					</>
 				) : (
@@ -308,9 +394,14 @@ const styles = StyleSheet.create({
 		padding: 12,
 		fontSize: 16,
 	},
+	benefitsRow: {
+		flexDirection: 'row',
+		gap: 12,
+		marginBottom: 24,
+	},
 	benefitsContainer: {
 		padding: 16,
-		marginBottom: 24,
+		flex: 1,
 	},
 	benefitsTitle: {
 		fontSize: 16,
@@ -342,6 +433,19 @@ const styles = StyleSheet.create({
 	},
 	infoValue: {
 		fontSize: 14,
+	},
+	modeToggle: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 20,
+		gap: 4,
+	},
+	modeToggleText: {
+		fontSize: 14,
+	},
+	modeToggleLink: {
+		minWidth: 'auto',
 	},
 	actions: {
 		gap: 12,

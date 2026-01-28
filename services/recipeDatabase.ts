@@ -3,13 +3,28 @@ import { DemoStorage } from './demoStorage';
 
 export class RecipeDatabase {
   static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Recipe; error?: string }> {
+    console.log('🔵 saveRecipe called with:', recipe.title);
     try {
+      console.log('🔵 Checking Supabase config:', { isSupabaseConfigured, hasSupabase: !!supabase });
+      
       if (!isSupabaseConfigured || !supabase) {
+        console.log('📦 Using demo storage');
         const result = await DemoStorage.saveRecipe(recipe);
         return result;
       }
 
-    
+      // Get current authenticated user
+      console.log('🔵 Getting authenticated user...');
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔵 User from auth:', user ? `${user.id} (${user.email})` : 'null');
+      
+      if (!user) {
+        console.log('❌ No authenticated user found');
+        return { success: false, error: 'User not authenticated' };
+      }
+      
+      console.log('💾 Attempting to save recipe for user:', user.id);
+      console.log('📝 Recipe title:', recipe.title);
       
       const { data, error } = await supabase
         .from('recipes')
@@ -18,9 +33,9 @@ export class RecipeDatabase {
           ingredients: recipe.ingredients,
           directions: recipe.directions,
           servings: recipe.servings,
-          prep_time: recipe.prep_time,
-          cook_time: recipe.cook_time,
-          total_time: recipe.total_time,
+          prep_time_minutes: recipe.prep_time_minutes,
+          cook_time_minutes: recipe.cook_time_minutes,
+          total_time_minutes: recipe.total_time_minutes,
           nutritional_info: recipe.nutritional_info,
           web_address: recipe.web_address,
           recipe_source: recipe.recipe_source,
@@ -28,6 +43,7 @@ export class RecipeDatabase {
           description: recipe.description,
           cuisine_type: recipe.cuisine_type,
           difficulty_level: recipe.difficulty_level,
+          user_id: user.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
@@ -35,9 +51,12 @@ export class RecipeDatabase {
         .single();
 
       if (error) {
-        console.error('Error saving recipe:', error);
+        console.error('❌ Error saving recipe:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return { success: false, error: error.message };
       }
+      
+      console.log('✅ Recipe saved successfully with ID:', data?.id);
 
      
       return { success: true, data };
@@ -103,25 +122,42 @@ export class RecipeDatabase {
   static async getAllRecipes(): Promise<Recipe[]> {
     try {
       if (!isSupabaseConfigured || !supabase) {
+        console.log('📦 Using demo storage (Supabase not configured)');
         const recipes = await DemoStorage.getAllRecipes();
         // Initialize demo recipes if storage is empty
         if (recipes.length === 0) {
+          console.log('🔧 Creating demo recipes...');
           await DemoStorage.createDemoRecipesWithCategories();
           return await DemoStorage.getAllRecipes();
         }
         return recipes;
       }
 
-      const { data, error } = await supabase
+      // Check if user is authenticated in Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
         .from('recipes')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      if (user) {
+        // Authenticated Supabase users see their own recipes
+        console.log('👤 Loading recipes for authenticated user:', user.id);
+        query = query.eq('user_id', user.id);
+      } else {
+        // Guests (no Supabase auth) see demo recipes (recipes with no user_id)
+        console.log('👋 Loading demo recipes for guest');
+        query = query.is('user_id', null);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching recipes:', error);
         return [];
       }
 
+      console.log(`📚 Found ${data?.length || 0} recipes`);
       return data || [];
     } catch (error) {
       console.error('Unexpected error fetching recipes:', error);
@@ -136,6 +172,12 @@ export class RecipeDatabase {
         return await DemoStorage.updateRecipe(id, updates);
       }
 
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
+      }
+
       const { data, error } = await supabase
         .from('recipes')
         .update({
@@ -143,6 +185,7 @@ export class RecipeDatabase {
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -237,12 +280,22 @@ export class RecipeDatabase {
       }
 
       // Supabase: query most recent recipe
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
         .from('recipes')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
+      
+      // Filter by user_id if authenticated, otherwise get demo recipes
+      if (user) {
+        query = query.eq('user_id', user.id);
+      } else {
+        query = query.is('user_id', null);
+      }
+      
+      const { data, error } = await query.single();
 
       if (error) {
         console.error('Error fetching most recent recipe:', error);

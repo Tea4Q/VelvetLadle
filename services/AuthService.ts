@@ -51,13 +51,10 @@ class AuthService {
     }
   }
 
-  // Sign in with email and password (mock implementation)
+  // Sign in with email and password
   static async signIn(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock validation (in real app, this would be server-side)
+      // Validate inputs
       if (!email || !password) {
         return { success: false, error: 'Email and password are required' };
       }
@@ -66,15 +63,62 @@ class AuthService {
         return { success: false, error: 'Password must be at least 6 characters' };
       }
 
-      // Create mock user
-      const user: User = {
-        id: `user_${Date.now()}`,
-        name: this.getNameFromEmail(email),
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured || !supabase) {
+        // Fallback to mock implementation if Supabase not configured
+        console.warn('Supabase not configured, using mock auth');
+        
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Create mock user
+        const user: User = {
+          id: `user_${Date.now()}`,
+          name: this.getNameFromEmail(email),
+          email: email.toLowerCase(),
+          createdAt: new Date(),
+        };
+
+        // Save auth state and user data
+        await AsyncStorage.setItem(this.AUTH_KEY, 'true');
+        await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
+
+        return { success: true, user };
+      }
+
+      // Use Supabase Auth for real sign in
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
-        createdAt: new Date(),
+        password: password,
+      });
+
+      if (authError) {
+        console.error('Supabase signin error:', authError);
+        
+        // Provide more helpful error messages
+        if (authError.message.includes('Email not confirmed')) {
+          return { success: false, error: 'Please check your email and click the confirmation link before signing in.' };
+        }
+        if (authError.message.includes('Invalid login credentials')) {
+          return { success: false, error: 'Invalid email or password. Please try again.' };
+        }
+        
+        return { success: false, error: authError.message };
+      }
+
+      if (!authData.user) {
+        return { success: false, error: 'Sign in failed. Please try again.' };
+      }
+
+      // Create user object
+      const user: User = {
+        id: authData.user.id,
+        name: authData.user.user_metadata?.name || this.getNameFromEmail(authData.user.email || email),
+        email: authData.user.email || email.toLowerCase(),
+        createdAt: new Date(authData.user.created_at),
       };
 
-      // Save auth state and user data
+      // Save auth state and user data locally
       await AsyncStorage.setItem(this.AUTH_KEY, 'true');
       await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
 
@@ -187,6 +231,15 @@ class AuthService {
   // Sign out
   static async signOut(): Promise<boolean> {
     try {
+      // Sign out from Supabase if configured
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('Supabase sign out error:', error);
+        }
+      }
+      
+      // Clear local storage
       await AsyncStorage.removeItem(this.AUTH_KEY);
       await AsyncStorage.removeItem(this.USER_KEY);
       return true;

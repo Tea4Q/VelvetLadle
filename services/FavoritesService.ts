@@ -14,6 +14,22 @@ export class FavoritesService {
   static async addRecipeToFavorites(recipe: Recipe): Promise<void> {
     try {
       if (isSupabaseConfigured && supabase) {
+        // Get current authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          // Fallback to local storage for unauthenticated users
+          await this.addToLocalFavorites({
+            type: 'recipe',
+            recipe_id: recipe.id,
+            title: recipe.title,
+            description: recipe.description,
+            image_url: recipe.image_url,
+            url: undefined,
+            created_at: new Date().toISOString()
+          });
+          return;
+        }
+
         // Update recipe in database
         await supabase
           .from('recipes')
@@ -27,6 +43,7 @@ export class FavoritesService {
         const favorite: Favorite = {
           type: 'recipe',
           recipe_id: recipe.id,
+          user_id: user.id,
           title: recipe.title,
           description: recipe.description,
           image_url: recipe.image_url,
@@ -125,17 +142,34 @@ export class FavoritesService {
     tags?: string[]
   ): Promise<void> {
     try {
-      const favorite: Favorite = {
-        type: 'url',
-        url,
-        title,
-        description,
-        image_url: imageUrl,
-        tags,
-        created_at: new Date().toISOString()
-      };
-
       if (isSupabaseConfigured && supabase) {
+        // Get current authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          // Fallback to local storage for unauthenticated users
+          await this.addToLocalFavorites({
+            type: 'url',
+            url,
+            title,
+            description,
+            image_url: imageUrl,
+            tags,
+            created_at: new Date().toISOString()
+          });
+          return;
+        }
+
+        const favorite: Favorite = {
+          type: 'url',
+          url,
+          user_id: user.id,
+          title,
+          description,
+          image_url: imageUrl,
+          tags,
+          created_at: new Date().toISOString()
+        };
+
         // First check if URL already exists
         const { data: existing } = await supabase
           .from('favorites')

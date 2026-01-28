@@ -1,5 +1,5 @@
-import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocalSearchParams, router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import RecipeForm from '../../components/RecipeForm';
 import RecipeList from '../../components/RecipeList';
@@ -17,29 +17,7 @@ export default function RecipesScreen() {
 	const colors = useColors();
 	const { user } = useAuth();
 	
-	// Check if guest and redirect to account creation
-	useFocusEffect(
-		useCallback(() => {
-			const isGuest = user?.id === 'guest_user';
-			if (isGuest) {
-				Alert.alert(
-					'Account Required',
-					'Please create an account or sign in to view your recipes.',
-					[
-						{
-							text: 'Create Account',
-							onPress: () => router.replace('/account'),
-						},
-						{
-							text: 'Go Back',
-							style: 'cancel',
-							onPress: () => router.replace('/'),
-						},
-					]
-				);
-			}
-		}, [user])
-	);
+	const isGuest = user?.id === 'guest_user';
 	
 	// Get URL parameters for category filtering and recipeId
 	const { category, recipeId } = useLocalSearchParams();
@@ -112,7 +90,7 @@ export default function RecipesScreen() {
 				<RecipeViewer
 					recipe={selectedRecipe}
 					onBack={handleBack}
-					onEdit={handleEdit}
+					onEdit={isGuest ? undefined : handleEdit}
 				/>
 			) : (
 				<RecipeList

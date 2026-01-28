@@ -111,9 +111,12 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 		}
 	};
 
-	const formatTime = (time?: string) => {
-		if (!time) return null;
-		return time.replace(/PT|H|M/g, '').replace(/(\d+)(\d{2})/, '$1h $2m');
+	const formatTime = (minutes?: number) => {
+		if (!minutes) return null;
+		if (minutes < 60) return `${minutes} min`;
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 	};
 
 	return (
@@ -254,19 +257,19 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 							<View style={[styles.infoItem, { backgroundColor: colors.background }]}>
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Prep Time </Text>
 								<Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-									{formatTime(recipe.prep_time) || recipe.prep_time || "15 min"}
+								{formatTime(recipe.prep_time_minutes) || "–"}
 								</Text>
 							</View>
 							<View style={[styles.infoItem, { backgroundColor: colors.background }]}>
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Cook Time</Text>
 								<Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-									{formatTime(recipe.cook_time) || recipe.cook_time || "30 min"}
+								{formatTime(recipe.cook_time_minutes) || "–"}
 								</Text>
 							</View>
 							<View style={[styles.infoItem, { backgroundColor: colors.background }]}> 
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Total Time</Text>
 								<Text style={[styles.infoValue, { color: colors.textPrimary }]}> 
-									{formatTime(recipe.total_time) || recipe.total_time || "45 min"}
+								{formatTime(recipe.total_time_minutes) || "–"}
 								</Text>
 							</View>
 							{recipe.difficulty_level && (

@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Recipe } from '@/lib/supabase';
 import AuthService from '@/services/AuthService';
 import { RecipeDatabase } from '@/services/recipeDatabase';
-import { GUEST_RECIPE_LIMIT } from '@/constants/limits';
+import { GUEST_RECIPE_LIMIT, FREE_ACCOUNT_RECIPE_LIMIT } from '@/constants/limits';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -55,11 +55,25 @@ export default function AddScreen() {
 					return;
 				}
 				
-				// Check recipe limit for authenticated users
+				// Check recipe limit for free accounts (authenticated users)
 				const allRecipes = await RecipeDatabase.getAllRecipes();
-				if (allRecipes.length >= GUEST_RECIPE_LIMIT) {
-					// Redirect to upgrade screen if needed
-					router.replace('/upgrade');
+				if (allRecipes.length >= FREE_ACCOUNT_RECIPE_LIMIT) {
+					// Redirect to upgrade screen - they've hit the free account limit
+					Alert.alert(
+						'Recipe Limit Reached',
+						`Free accounts can save up to ${FREE_ACCOUNT_RECIPE_LIMIT} recipes. Upgrade to a paid subscription for unlimited recipes!`,
+						[
+							{
+								text: 'Upgrade',
+								onPress: () => router.replace('/upgrade'),
+							},
+							{
+								text: 'Go Back',
+								style: 'cancel',
+								onPress: () => router.replace('/'),
+							},
+						]
+					);
 				}
 			}
 			checkAccess();

@@ -9,7 +9,6 @@ const placeHolderImage = require('../../assets/images/veveltLifeSplashImage.png'
 
 export default function WelcomeScreen() {
 	const colors = useColors();
-	const { signInAsGuest } = useAuth();
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -27,44 +26,27 @@ export default function WelcomeScreen() {
 						Welcome to Velvet Ladle
 					</Text>
 					<Text style={[styles.brandSubtitle, { color: colors.textLight }]}>
-						Your personal recipe collection & discovery platform
+						Your personal recipe collection & cuisine discovery platform
 					</Text>
 				</View>
 
 				{/* Auth Buttons */}
 				<View style={styles.authButtonsContainer}>
 					<Button
-						label='Create Account'
+						label='Sign In'
 						theme='primary'
 						onPress={() => {
-							router.push('/account');
+							router.push('/account?mode=signin');
 						}}
 					/>
 					<Button
-						label='Sign In'
+						label='Create Account'
 						theme='secondary'
 						onPress={() => {
-							// TODO: Create dedicated sign in screen or use account screen
-							router.push('/account');
+							router.push('/account?mode=signup');
 						}}
 					/>
-					<Pressable
-						style={styles.guestButton}
-						onPress={() => signInAsGuest()}
-					>
-						<Text
-							style={[styles.guestButtonText, { color: colors.textLight }]}
-						>
-							Continue as Guest
-						</Text>
-					</Pressable>
-				</View>
 
-				{/* Features Preview */}
-				<View style={styles.featuresPreview}>
-					<Text style={[styles.featuresTitle, { color: colors.textPrimary }]}>
-						✨ What you can do:
-					</Text>
 					<View style={styles.featuresList}>
 						<Text style={[styles.featureItem, { color: colors.textLight }]}>
 							🌐 Save recipes from any website

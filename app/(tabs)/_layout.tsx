@@ -123,7 +123,7 @@ export default function TabsLayout() {
 			<Tabs.Screen
 				name='recipes'
 				options={{
-					headerTitle: 'My Recipes',
+					headerTitle: isGuest ? 'Demo Recipes' : 'My Recipes',
 					tabBarIcon: ({ focused, color }) => (
 						<TabIcon
 							focused={focused}
@@ -133,7 +133,6 @@ export default function TabsLayout() {
 						/>
 					),
 					tabBarLabel: 'Recipes',
-					href: isGuest ? null : undefined,
 				}}
 			/>
 			<Tabs.Screen

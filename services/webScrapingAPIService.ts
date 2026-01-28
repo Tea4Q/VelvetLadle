@@ -137,9 +137,9 @@ export class WebScrapingAPIService {
         ingredients: recipe.extendedIngredients?.map((ing: any) => ing.original) || [],
         directions: recipe.analyzedInstructions?.[0]?.steps?.map((step: any) => step.step) || [],
         servings: recipe.servings,
-        prep_time: `PT${recipe.preparationMinutes || 0}M`,
-        cook_time: `PT${recipe.cookingMinutes || 0}M`,
-        total_time: `PT${recipe.readyInMinutes || 0}M`,
+        prep_time_minutes: recipe.preparationMinutes || undefined,
+        cook_time_minutes: recipe.cookingMinutes || undefined,
+        total_time_minutes: recipe.readyInMinutes || undefined,
         image_url: recipe.image,
         description: recipe.summary?.replace(/<[^>]*>/g, ''),
         web_address: url,
@@ -167,10 +167,10 @@ export class WebScrapingAPIService {
           // Production build: console.log removed
         }
         
-        // Also try to extract cook time from description
+        // Also try to extract total time from description
         const timeMatch = recipe.summary.match(/(?:in|around|about)\s+(?:around\s+)?(\d+)\s*minutes?/i);
-        if (timeMatch && (!result.total_time || result.total_time === 'PT0M')) {
-          result.total_time = `PT${timeMatch[1]}M`;
+        if (timeMatch && !result.total_time_minutes) {
+          result.total_time_minutes = parseInt(timeMatch[1]);
           // Production build: console.log removed
         }
       } else {
