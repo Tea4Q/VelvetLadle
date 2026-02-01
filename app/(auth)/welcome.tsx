@@ -1,20 +1,22 @@
 import Button from "@/components/buttons";
 import ImageViewer from "@/components/imageViewer";
 import { useColors } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { router } from "expo-router";
 import {
-	KeyboardAvoidingView,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 const placeHolderImage = require("../../assets/images/veveltLifeSplashImage.png");
 
 export default function WelcomeScreen() {
   const colors = useColors();
+  const { signInAsGuest } = useAuth();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

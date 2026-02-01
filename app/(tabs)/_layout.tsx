@@ -1,170 +1,72 @@
+import React from 'react';
+import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { Tabs } from 'expo-router';
-import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useColors } from '../../contexts/ThemeContext';
 
+export default function TabLayout() {
+  const { user } = useAuth();
+  const colors = useColors();
 
+  // Critical auth guard - redirect to welcome screen if no user
+  if (!user) {
+    console.log('TabLayout: No user found, redirecting to welcome');
+    return <Redirect href="/(auth)/welcome" />;
+  }
 
+  console.log('TabLayout: User authenticated, showing tabs for:', user.email);
 
-interface TabIconProps {
-	focused: boolean;
-	color: string;
-	iconName: string;
-	iconLibrary: 'FontAwesome6' | 'Ionicons';
-	size?: number;
-}
-
-function TabIcon({ focused, color, iconName, iconLibrary, size = 24 }: TabIconProps) {
-	const iconSize = focused ? size + 4 : size;
-	const IconComponent = iconLibrary === 'FontAwesome6' ? FontAwesome6 : Ionicons;
-
-	return (
-		<View style={{ 
-			alignItems: 'center',
-			justifyContent: 'center',
-			position: 'relative',
-		}}>
-			<IconComponent
-				name={iconName as any}
-				size={iconSize}
-				color={color}
-				style={{ 
-					opacity: focused ? 1 : 0.7,
-					textShadowColor: focused ? color : 'transparent',
-					textShadowOffset: { width: 0, height: 0 },
-					textShadowRadius: focused ? 2 : 0,
-				}}
-			/>
-			{focused && (
-				<View style={{
-					position: 'absolute',
-					bottom: -8,
-					width: iconSize + 8,
-					height: 2,
-					backgroundColor: color,
-					borderRadius: 1,
-				}} />
-			)}
-		</View>
-	);
-}
-
-export default function TabsLayout() {
-	const colors = useColors();
-	const insets = useSafeAreaInsets();
-	const { user } = useAuth();
-	
-	// Check if user is a guest
-	const isGuest = user?.id === 'guest_user';
-	
-	return (
-		<Tabs
-			screenOptions={{
-				tabBarActiveTintColor: colors.secondary,
-				tabBarInactiveTintColor: colors.textLight,
-				headerStyle: { backgroundColor: colors.primary },
-				headerTintColor: colors.textInverse,
-				headerShadowVisible: false,
-				tabBarStyle: {
-					backgroundColor: colors.primary,
-					borderTopColor: colors.primaryLight,
-					paddingBottom: Math.max(insets.bottom, 8),
-					paddingTop: 8,
-					height: 80 + Math.max(insets.bottom - 8, 0),
-					position: 'absolute',
-					bottom: 0,
-				},
-				tabBarLabelStyle: {
-					fontSize: 11,
-					fontWeight: '600',
-					marginTop: 4,
-					marginBottom: 2,
-				},
-				tabBarItemStyle: {
-					paddingVertical: 4,
-					paddingHorizontal: 2,
-				},
-			}}
-		>
-			<Tabs.Screen
-				name='index'
-				options={{
-					headerTitle: 'Velvet Ladle',
-					tabBarIcon: ({ focused, color }) => (
-						<TabIcon
-							focused={focused}
-							color={color}
-							iconName='kitchen-set'
-							iconLibrary='FontAwesome6'
-						/>
-					),
-					tabBarLabel: 'Dashboard',
-				}}
-			/>
-			<Tabs.Screen
-				name='add'
-				options={{
-					headerTitle: 'Add Recipe',
-					tabBarIcon: ({ focused, color }) => (
-						<TabIcon
-							focused={focused}
-							color={color}
-							iconName='plus'
-							iconLibrary='FontAwesome6'
-						/>
-					),
-					tabBarLabel: 'Add',
-					href: isGuest ? null : undefined,
-				}}
-			/>
-			<Tabs.Screen
-				name='recipes'
-				options={{
-					headerTitle: isGuest ? 'Demo Recipes' : 'My Recipes',
-					tabBarIcon: ({ focused, color }) => (
-						<TabIcon
-							focused={focused}
-							color={color}
-							iconName='utensils'
-							iconLibrary='FontAwesome6'
-						/>
-					),
-					tabBarLabel: 'Recipes',
-				}}
-			/>
-			<Tabs.Screen
-				name='favorites'
-				options={{
-					headerTitle: 'My Favorites',
-					tabBarIcon: ({ focused, color }) => (
-						<TabIcon
-							focused={focused}
-							color={color}
-							iconName={focused ? 'star' : 'star-outline'}
-							iconLibrary='Ionicons'
-						/>
-					),
-					tabBarLabel: 'Favorites',
-				}}
-			/>
-			<Tabs.Screen
-				name='test-images'
-				options={{
-					headerTitle: 'Image Tests',
-					tabBarIcon: ({ focused, color }) => (
-						<TabIcon
-							focused={focused}
-							color={color}
-							iconName='flask'
-							iconLibrary='Ionicons'
-						/>
-					),
-					tabBarLabel: 'Tests',
-				}}
-			/>
-		</Tabs>
-	);
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textLight,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
+        headerStyle: {
+          backgroundColor: colors.surface,
+        },
+        headerTintColor: colors.textPrimary,
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Dashboard',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: 'Add Recipe',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="recipes"
+        options={{
+          title: 'Recipes',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Favorites',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="heart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
 }

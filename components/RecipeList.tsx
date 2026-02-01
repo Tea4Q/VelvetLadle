@@ -583,7 +583,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					</View>
 				)}
 
-				{recipe.total_time && (
+				{recipe.prep_time_minutes && (
 					<Text
 						style={[
 							styles.timeText,
@@ -593,7 +593,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 							},
 						]}
 					>
-						⏰ {recipe.total_time}
+						⏰ {recipe.prep_time_minutes}
 					</Text>
 				)}
 			</View>
@@ -739,7 +739,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 							styles.guestBannerText,
 							{
 								color: colors.primary,
-								fontSize: typography.fontSize.md,
+								fontSize: typography.fontSize.base,
 								fontWeight: typography.fontWeight.semibold,
 								marginBottom: spacing.xs,
 							},

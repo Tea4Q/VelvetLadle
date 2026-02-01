@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS recipes (
   prep_time_minutes INTEGER,                  -- Numeric prep time for filtering
   cook_time_minutes INTEGER,                  -- Numeric cook time for filtering
   total_time_minutes INTEGER,                 -- Numeric total time for filtering
-  source_website TEXT,                        -- Domain name for source tracking
   recipe_yield TEXT,                          -- "4 servings", "12 muffins", etc.
   
   -- Favorites system

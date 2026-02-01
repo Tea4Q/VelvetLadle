@@ -38,7 +38,7 @@ const testAccounts = [
 ];
 
 async function createAccounts() {
-  console.log('🚀 Creating test accounts...\n');
+  // Production build: console.log removed
 
   for (const account of testAccounts) {
     try {
@@ -50,31 +50,32 @@ async function createAccounts() {
             name: account.name,
             account_type: account.accountType,
           },
+          emailRedirectTo: undefined, // Disable email confirmation redirect
         },
       });
 
       if (error) {
         if (error.message.includes('already registered')) {
-          console.log(`⚠️  ${account.accountType.toUpperCase()}: ${account.email} already exists`);
+          // Production build: console.log removed}: ${account.email} already exists`);
         } else {
           console.error(`❌ ${account.accountType.toUpperCase()}: ${error.message}`);
         }
       } else {
-        console.log(`✅ ${account.accountType.toUpperCase()}: Created ${account.email}`);
-        console.log(`   Password: ${account.password}`);
-        console.log(`   User ID: ${data.user?.id}\n`);
+        // Production build: console.log removed}: Created ${account.email}`);
+        // Production build: console.log removed
+        // Production build: console.log removed
       }
     } catch (err) {
       console.error(`❌ Error creating ${account.accountType}:`, err.message);
     }
   }
 
-  console.log('\n📝 Test Account Credentials:');
-  console.log('═══════════════════════════════════════════════');
+  // Production build: console.log removed
+  // Production build: console.log removed
   testAccounts.forEach(acc => {
-    console.log(`${acc.accountType.toUpperCase().padEnd(6)} → ${acc.email} / ${acc.password}`);
+    // Production build: console.log removed.padEnd(6)} → ${acc.email} / ${acc.password}`);
   });
-  console.log('═══════════════════════════════════════════════\n');
+  // Production build: console.log removed
 }
 
 createAccounts()

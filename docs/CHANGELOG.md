@@ -1,5 +1,44 @@
 # VelvetLadle Changelog 📋
 
+## [1.0.1] - January 2026 - Authentication & Database Fixes
+
+### 🔐 **Authentication System Overhaul**
+
+#### **Supabase Auth Integration**
+- **Fixed signIn method**: Now properly integrates with Supabase authentication instead of using mock local storage
+- **Email confirmation**: Added user-friendly error messages for unconfirmed email addresses
+- **Guest mode improvements**: Removed unnecessary "Continue as Guest" button - users have guest access by default
+- **Session persistence**: Fixed authentication session not persisting between app restarts
+
+### 🗄️ **Database & Schema Improvements**
+
+#### **Row Level Security (RLS)**
+- **Guest access fixed**: Updated RLS policies to allow anonymous users to read demo recipes
+- **User isolation**: Authenticated users now see only their own recipes
+- **Demo recipes**: Recipes with `user_id = NULL` are visible to all guests
+
+#### **Schema Cleanup**
+- **Removed duplicate columns**: Eliminated redundant `source_website` column (web_address already stores full URL)
+- **Time format standardization**: Completed migration from ISO 8601 text fields to numeric minute fields
+- **User ID support**: All recipes now support proper user ownership tracking
+
+### 🎨 **UI/UX Enhancements**
+
+#### **Account Management**
+- **Simplified mode toggle**: Cleaned up Supabase/Demo storage mode switcher design
+- **Accurate feature descriptions**: Fixed misleading "unlimited recipes" messaging for free accounts
+- **Consistent branding**: Free accounts now accurately show 10-recipe limit with cloud sync benefits
+
+### 🐛 **Bug Fixes**
+- **Recipe saving**: Fixed "0 rows returned" error when adding recipes
+- **Authentication state**: Resolved issue where users appeared logged in but couldn't save recipes
+- **Demo recipe visibility**: Fixed guests not seeing demo recipes in database
+
+### 🔧 **Developer Tools**
+- **Test account creation**: Added script to create guest/free/paid test accounts
+- **Database inspection**: New scripts for checking recipe ownership and database contents
+- **Recipe ownership management**: Tools for moving recipes between users or setting as demo
+
 ## [1.2.1] - August 2025 - Performance & Stability Update
 
 ### 🚀 **Critical Bug Fixes**

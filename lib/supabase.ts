@@ -60,7 +60,6 @@ export type Recipe = {
   prep_time_minutes?: number;        // Numeric prep time for filtering
   cook_time_minutes?: number;        // Numeric cook time for filtering
   total_time_minutes?: number;       // Numeric total time for filtering
-  source_website?: string;           // Domain name for source tracking
   recipe_yield?: string;             // "4 servings", "12 muffins", etc.
   
   // Favorites system
@@ -89,3 +88,27 @@ export type Favorite = {
   created_at?: string;
   updated_at?: string;
 };
+
+// Add this function for testing
+export const testSupabaseConnection = async () => {
+  try {
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+    
+    const { data, error } = await supabase.from('recipes').select('count').limit(1);
+    console.log('Supabase connection test:', { data, error });
+    
+    return { success: !error, error: error?.message };
+  } catch (error) {
+    console.error('Supabase connection test failed:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Add this debugging at the top
+console.log('Environment check:', {
+  supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET',
+  supabaseKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET',
+  actualUrl: process.env.EXPO_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...',
+});

@@ -3,28 +3,28 @@ import { DemoStorage } from './demoStorage';
 
 export class RecipeDatabase {
   static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Recipe; error?: string }> {
-    console.log('🔵 saveRecipe called with:', recipe.title);
+    // Production build: console.log removed
     try {
-      console.log('🔵 Checking Supabase config:', { isSupabaseConfigured, hasSupabase: !!supabase });
+      // Production build: console.log removed
       
       if (!isSupabaseConfigured || !supabase) {
-        console.log('📦 Using demo storage');
+        // Production build: console.log removed
         const result = await DemoStorage.saveRecipe(recipe);
         return result;
       }
 
       // Get current authenticated user
-      console.log('🔵 Getting authenticated user...');
+      // Production build: console.log removed
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('🔵 User from auth:', user ? `${user.id} (${user.email})` : 'null');
+      // Production build: console.log removed` : 'null');
       
       if (!user) {
-        console.log('❌ No authenticated user found');
+        // Production build: console.log removed
         return { success: false, error: 'User not authenticated' };
       }
       
-      console.log('💾 Attempting to save recipe for user:', user.id);
-      console.log('📝 Recipe title:', recipe.title);
+      // Production build: console.log removed
+      // Production build: console.log removed
       
       const { data, error } = await supabase
         .from('recipes')
@@ -56,7 +56,7 @@ export class RecipeDatabase {
         return { success: false, error: error.message };
       }
       
-      console.log('✅ Recipe saved successfully with ID:', data?.id);
+      // Production build: console.log removed
 
      
       return { success: true, data };
@@ -122,11 +122,11 @@ export class RecipeDatabase {
   static async getAllRecipes(): Promise<Recipe[]> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        console.log('📦 Using demo storage (Supabase not configured)');
+        // Production build: console.log removed');
         const recipes = await DemoStorage.getAllRecipes();
         // Initialize demo recipes if storage is empty
         if (recipes.length === 0) {
-          console.log('🔧 Creating demo recipes...');
+          // Production build: console.log removed
           await DemoStorage.createDemoRecipesWithCategories();
           return await DemoStorage.getAllRecipes();
         }
@@ -142,11 +142,11 @@ export class RecipeDatabase {
       
       if (user) {
         // Authenticated Supabase users see their own recipes
-        console.log('👤 Loading recipes for authenticated user:', user.id);
+        // Production build: console.log removed
         query = query.eq('user_id', user.id);
       } else {
         // Guests (no Supabase auth) see demo recipes (recipes with no user_id)
-        console.log('👋 Loading demo recipes for guest');
+        // Production build: console.log removed
         query = query.is('user_id', null);
       }
       
@@ -157,7 +157,7 @@ export class RecipeDatabase {
         return [];
       }
 
-      console.log(`📚 Found ${data?.length || 0} recipes`);
+      // Production build: console.log removed
       return data || [];
     } catch (error) {
       console.error('Unexpected error fetching recipes:', error);

@@ -1,15 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
-	Alert,
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	StyleSheet,
-	Text,
-	TextInput,
-	View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import Button from "../components/buttons";
 import { useAuth } from "../contexts/AuthContext";
@@ -28,18 +29,31 @@ export default function AccountScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showUserInfo, setShowUserInfo] = useState(false);
 
-  // Set mode from URL parameter
+  // Handle URL mode parameter
   useEffect(() => {
     if (urlMode === "signin" || urlMode === "signup") {
-      setMode(urlMode);
+      setMode(urlMode as "signin" | "signup");
     }
   }, [urlMode]);
 
-  // Show account creation form if user is guest OR not logged in at all
-  const isGuest = !user || user?.id === "guest_user";
+  // Critical auth guard - handle authenticated users properly
+  useEffect(() => {
+    if (user) {
+      // If user exists and we're in auth flow, show user info instead of redirect loop
+      console.log(
+        "Account screen: User logged in, showing account info for:",
+        user.email,
+      );
+      setShowUserInfo(true);
+    } else {
+      setShowUserInfo(false);
+    }
+  }, [user]);
 
-  const handleSignIn = async () => {
+  const handleSignIn = useCallback(async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Please enter email and password");
       return;
@@ -47,34 +61,33 @@ export default function AccountScreen() {
 
     setIsLoading(true);
     try {
+      console.log("Attempting sign in with:", {
+        email,
+        hasPassword: !!password,
+      });
       const result = await signIn(email, password);
 
       if (result.success) {
-        Alert.alert(
-          "Welcome Back! 👋",
-          "Successfully signed in to your account.",
-          [
-            {
-              text: "OK",
-              onPress: () => router.replace("/"),
-            },
-          ],
-        );
+        console.log("Sign in successful, navigating to tabs");
+        // Clear form
+        setEmail("");
+        setPassword("");
+        setName("");
+        // Navigate directly to tabs instead of going through auth gate
+        router.replace("/(tabs)");
       } else {
-        Alert.alert(
-          "Error",
-          result.error || "Failed to sign in. Please check your credentials.",
-        );
+        console.error("Sign in failed:", result.error);
+        Alert.alert("Sign In Failed", result.error || "Please try again.");
       }
     } catch (error) {
-      console.error("Sign in error:", error);
-      Alert.alert("Error", "Failed to sign in. Please try again.");
+      console.error("Unexpected sign in error:", error);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [email, password, signIn, router]);
 
-  const handleCreateAccount = async () => {
+  const handleCreateAccount = useCallback(async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
       Alert.alert("Error", "Please fill in all fields");
       return;
@@ -87,18 +100,22 @@ export default function AccountScreen() {
 
     setIsLoading(true);
     try {
-      const result = await signUp(name, email, password);
+      console.log("Attempting sign up with:", {
+        name,
+        email,
+        hasPassword: !!password,
+      });
+      const result = await signUp(email, password, name);
 
       if (result.success) {
+        // Clear form
+        setEmail("");
+        setPassword("");
+        setName("");
         Alert.alert(
           "Account Created! 🎉",
-          "Your account has been created successfully. You can now save up to 10 recipes!",
-          [
-            {
-              text: "OK",
-              onPress: () => router.replace("/"),
-            },
-          ],
+          "Your account has been created successfully. Welcome to VelvetLadle!",
+          [{ text: "Continue", onPress: () => router.replace("/(tabs)") }],
         );
       } else {
         Alert.alert(
@@ -112,54 +129,103 @@ export default function AccountScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [name, email, password, signUp, router]);
 
-  const handleSignOut = async () => {
-    console.log("Sign out button clicked");
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOut();
+      // Reset component state
+      setShowUserInfo(false);
+      setMode("signin");
+      setEmail("");
+      setPassword("");
+      setName("");
 
-    // For web, Alert.alert may not work properly, so just sign out directly
-    if (Platform.OS === "web") {
-      try {
-        console.log("Starting sign out (web)");
-        await signOut();
-        console.log("Sign out successful, navigating to welcome");
-        router.replace("/(auth)/welcome");
-      } catch (error) {
-        console.error("Error during sign out:", error);
-        router.replace("/(auth)/welcome");
-      }
-      return;
+      // Stay on account screen but show sign-in form
+      console.log("User signed out, showing sign-in form");
+    } catch (error) {
+      console.error("Error during sign out:", error);
     }
+  }, [signOut]);
 
-    // For native platforms, show confirmation
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out? Your recipes will be saved.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign Out",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              console.log("User confirmed sign out");
-              await signOut();
-              console.log("Sign out successful, navigating to welcome");
-              router.replace("/(auth)/welcome");
-            } catch (error) {
-              console.error("Error during sign out:", error);
-              router.replace("/(auth)/welcome");
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const handleGoBack = () => {
+  const handleGoBack = useCallback(() => {
     router.replace("/");
-  };
+  }, [router]);
 
+  // If user is logged in, show account info
+  if (showUserInfo && user) {
+    return (
+      <KeyboardAvoidingView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.content, { padding: spacing.lg }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View
+              style={[styles.profileIcon, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="person" size={48} color={colors.secondary} />
+            </View>
+            <Text style={[styles.title, { color: colors.primary }]}>
+              Account
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Welcome, {user.name || "Chef"}!
+            </Text>
+          </View>
+
+          {/* Account Info */}
+          <View
+            style={[
+              styles.infoContainer,
+              { backgroundColor: colors.surface, borderRadius: radius.md },
+            ]}
+          >
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textLight }]}>
+                Email:
+              </Text>
+              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+                {user.email || "Not set"}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textLight }]}>
+                Account Type:
+              </Text>
+              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+                Free
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textLight }]}>
+                Member Since:
+              </Text>
+              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+                {new Date().toLocaleDateString()}
+              </Text>
+            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actions}>
+            <Button
+              label="Sign Out"
+              theme="secondary"
+              onPress={handleSignOut}
+            />
+            <Button label="Back to Dashboard" onPress={handleGoBack} />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  // Show auth form if no user or after sign out
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -177,316 +243,147 @@ export default function AccountScreen() {
             <Ionicons name="person" size={48} color={colors.secondary} />
           </View>
           <Text style={[styles.title, { color: colors.primary }]}>
-            {isGuest
-              ? mode === "signin"
-                ? "Sign In"
-                : "Create Your Account"
-              : "Account"}
+            {mode === "signin" ? "Sign In" : "Create Your Account"}
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {isGuest
-              ? mode === "signin"
-                ? "Welcome back to Velvet Ladle"
-                : "Unlock cloud sync and more features"
-              : `Welcome, ${user?.name || "Chef"}!`}
+            {mode === "signin"
+              ? "Welcome back to Velvet Ladle"
+              : "Unlock cloud sync and more features"}
           </Text>
         </View>
 
-        {isGuest ? (
-          <>
-            {/* Auth Form */}
-            <View style={styles.form}>
-              {mode === "signup" && (
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: colors.textPrimary }]}>
-                    Name
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                        color: colors.textPrimary,
-                        borderRadius: radius.md,
-                      },
-                    ]}
-                    placeholder="Your name"
-                    placeholderTextColor={colors.textLight}
-                    value={name}
-                    onChangeText={setName}
-                    autoCapitalize="words"
-                  />
-                </View>
-              )}
-
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.textPrimary }]}>
-                  Email
-                </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: colors.border,
-                      color: colors.textPrimary,
-                      borderRadius: radius.md,
-                    },
-                  ]}
-                  placeholder="your.email@example.com"
-                  placeholderTextColor={colors.textLight}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.textPrimary }]}>
-                  Password
-                </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: colors.border,
-                      color: colors.textPrimary,
-                      borderRadius: radius.md,
-                    },
-                  ]}
-                  placeholder="At least 6 characters"
-                  placeholderTextColor={colors.textLight}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-            </View>
-
-            {/* Benefits - only show for signup */}
-            {mode === "signup" && (
-              <View style={styles.benefitsRow}>
-                <View
-                  style={[
-                    styles.benefitsContainer,
-                    {
-                      backgroundColor: colors.surface,
-                      borderRadius: radius.md,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.benefitsTitle, { color: colors.primary }]}
-                  >
-                    With a free account:
-                  </Text>
-                  <View style={styles.benefit}>
-                    <Ionicons
-                      name="restaurant"
-                      size={20}
-                      color={colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.benefitText,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Save up to 10 recipes
-                    </Text>
-                  </View>
-                  <View style={styles.benefit}>
-                    <Ionicons
-                      name="cloud-upload"
-                      size={20}
-                      color={colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.benefitText,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Cloud sync across all devices
-                    </Text>
-                  </View>
-                  <View style={styles.benefit}>
-                    <Ionicons
-                      name="shield-checkmark"
-                      size={20}
-                      color={colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.benefitText,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Secure backup of your collection
-                    </Text>
-                  </View>
-                  <View style={styles.benefit}>
-                    <Ionicons name="star" size={20} color={colors.primary} />
-                    <Text
-                      style={[
-                        styles.benefitText,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Favorite recipes and web pages
-                    </Text>
-                  </View>
-                </View>
-
-                <View
-                  style={[
-                    styles.benefitsContainer,
-                    {
-                      backgroundColor: colors.surface,
-                      borderRadius: radius.md,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.benefitsTitle, { color: colors.primary }]}
-                  >
-                    Upgrade to paid for:
-                  </Text>
-                  <View style={styles.benefit}>
-                    <Ionicons
-                      name="infinite"
-                      size={20}
-                      color={colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.benefitText,
-                        { color: colors.textSecondary, fontWeight: "600" },
-                      ]}
-                    >
-                      Save unlimited recipes
-                    </Text>
-                  </View>
-                  <View style={styles.benefit}>
-                    <Ionicons
-                      name="sparkles"
-                      size={20}
-                      color={colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.benefitText,
-                        { color: colors.textSecondary, fontWeight: "600" },
-                      ]}
-                    >
-                      Advanced features (coming soon)
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Mode Toggle */}
-            <View style={styles.modeToggle}>
-              <Text
-                style={[styles.modeToggleText, { color: colors.textSecondary }]}
-              >
-                {mode === "signin"
-                  ? "Don't have an account?"
-                  : "Already have an account?"}
+        {/* Auth Form */}
+        <View style={styles.form}>
+          {mode === "signup" && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>
+                Name
               </Text>
-              <Button
-                label={mode === "signin" ? "Create Account" : "Sign In"}
-                theme="link"
-                size="sm"
-                onPress={() => setMode(mode === "signin" ? "signup" : "signin")}
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                    borderRadius: radius.md,
+                  },
+                ]}
+                placeholder="Enter your name"
+                placeholderTextColor={colors.textLight}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
               />
             </View>
+          )}
 
-            {/* Actions */}
-            <View style={styles.actions}>
-              <Button
-                label={
-                  isLoading
-                    ? mode === "signin"
-                      ? "Signing In..."
-                      : "Creating Account..."
-                    : mode === "signin"
-                      ? "Sign In"
-                      : "Create Free Account"
-                }
-                theme="primary"
-                onPress={mode === "signin" ? handleSignIn : handleCreateAccount}
-                disabled={isLoading}
-              />
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>
+              Email
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                  borderRadius: radius.md,
+                },
+              ]}
+              placeholder="Enter your email"
+              placeholderTextColor={colors.textLight}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
 
-            {/* Sign In Link */}
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: colors.textLight }]}>
-                Already have an account?{" "}
-              </Text>
-              <Pressable onPress={() => router.push("/(auth)/sign-in")}>
-                <Text style={[styles.footerLink, { color: colors.primary }]}>
-                  Sign In
-                </Text>
-              </Pressable>
-            </View>
-          </>
-        ) : (
-          <>
-            {/* Account Info */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>
+              Password
+            </Text>
             <View
               style={[
-                styles.infoContainer,
-                { backgroundColor: colors.surface, borderRadius: radius.md },
+                styles.passwordInputContainer,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderRadius: radius.md,
+                },
               ]}
             >
-              <View style={styles.infoRow}>
-                <Text style={[styles.infoLabel, { color: colors.textLight }]}>
-                  Email:
-                </Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  {user?.email || "Not set"}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={[styles.infoLabel, { color: colors.textLight }]}>
-                  Account Type:
-                </Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  Free
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={[styles.infoLabel, { color: colors.textLight }]}>
-                  Member Since:
-                </Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  {user?.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString()
-                    : "N/A"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Actions */}
-            <View style={styles.actions}>
-              <Button
-                label="Sign Out"
-                theme="secondary"
-                onPress={handleSignOut}
+              <TextInput
+                style={[styles.passwordInput, { color: colors.textPrimary }]}
+                placeholder="At least 6 characters"
+                placeholderTextColor={colors.textLight}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
               />
-              <Button label="Back to Dashboard" onPress={handleGoBack} />
+              <Pressable
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color={colors.textLight}
+                />
+              </Pressable>
             </View>
-          </>
-        )}
+          </View>
+        </View>
+
+        {/* Mode Toggle */}
+        <View style={styles.modeToggle}>
+          <Text
+            style={[styles.modeToggleText, { color: colors.textSecondary }]}
+          >
+            {mode === "signin"
+              ? "Don't have an account?"
+              : "Already have an account?"}
+          </Text>
+          <Button
+            label={mode === "signin" ? "Create Account" : "Sign In"}
+            theme="link"
+            size="sm"
+            onPress={() => setMode(mode === "signin" ? "signup" : "signin")}
+          />
+        </View>
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <Button
+            label={
+              isLoading
+                ? mode === "signin"
+                  ? "Signing In..."
+                  : "Creating Account..."
+                : mode === "signin"
+                  ? "Sign In"
+                  : "Create Free Account"
+            }
+            theme="primary"
+            onPress={mode === "signin" ? handleSignIn : handleCreateAccount}
+            disabled={isLoading}
+          />
+
+          <Button
+            label="Continue as Guest"
+            theme="link"
+            onPress={() => {
+              signInAsGuest();
+              router.replace("/");
+            }}
+          />
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -536,29 +433,23 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
-  benefitsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 24,
-  },
-  benefitsContainer: {
-    padding: 16,
-    flex: 1,
-  },
-  benefitsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  benefit: {
+  passwordInputContainer: {
+    borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
-    gap: 12,
+    paddingRight: 12,
   },
-  benefitText: {
-    fontSize: 14,
+  passwordInput: {
     flex: 1,
+    padding: 12,
+    fontSize: 16,
+  },
+  passwordToggle: {
+    padding: 8,
+    minWidth: 32,
+    minHeight: 32,
+    justifyContent: "center",
+    alignItems: "center",
   },
   infoContainer: {
     padding: 16,
@@ -586,25 +477,7 @@ const styles = StyleSheet.create({
   modeToggleText: {
     fontSize: 14,
   },
-  modeToggleLink: {
-    minWidth: "auto",
-  },
   actions: {
     gap: 12,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 16,
-    flexWrap: "wrap",
-  },
-  footerText: {
-    fontSize: 14,
-  },
-  footerLink: {
-    fontSize: 14,
-    fontWeight: "600",
-    textDecorationLine: "underline",
   },
 });

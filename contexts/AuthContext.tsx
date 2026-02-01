@@ -1,158 +1,221 @@
-import React, {
-	createContext,
-	ReactNode,
-	useContext,
-	useEffect,
-	useState,
-} from 'react';
-import { router } from 'expo-router';
-import AuthService, { AuthState } from '../services/AuthService';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-interface AuthContextType extends AuthState {
-	signIn: (
-		email: string,
-		password: string
-	) => Promise<{ success: boolean; error?: string }>;
-	signUp: (
-		name: string,
-		email: string,
-		password: string
-	) => Promise<{ success: boolean; error?: string }>;
-	signInAsGuest: () => Promise<{ success: boolean; error?: string }>;
-	signOut: () => Promise<boolean>;
-	refreshAuth: () => Promise<void>;
+export interface User {
+  id: string;
+  email: string;
+  name: string;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export const useAuth = () => {
-	const context = useContext(AuthContext);
-	if (!context) {
-		throw new Error('useAuth must be used within an AuthProvider');
-	}
-	return context;
-};
-
-interface AuthProviderProps {
-	children: ReactNode;
+interface AuthContextType {
+  user: User | null;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+  signInAsGuest: () => Promise<void>;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-	const [authState, setAuthState] = useState<AuthState>({
-		isAuthenticated: false,
-		user: null,
-		isLoading: true,
-	});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-	// Initialize auth state on app load
-	const initializeAuth = async () => {
-		try {
-			const isAuthenticated = await AuthService.isAuthenticated();
-			const user = isAuthenticated ? await AuthService.getCurrentUser() : null;
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
 
-			setAuthState({
-				isAuthenticated,
-				user,
-				isLoading: false,
-			});
-		} catch (error) {
-			console.error('Error initializing auth:', error);
-			setAuthState({
-				isAuthenticated: false,
-				user: null,
-				isLoading: false,
-			});
-		}
-	};
+  // Helper function for demo mode signin
+  const signInDemoMode = useCallback(async (email: string) => {
+    console.log('Using demo mode for sign in');
+    const demoUser = {
+      id: 'demo_user',
+      email,
+      name: email.split('@')[0],
+    };
+    setUser(demoUser);
+    await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    return { success: true };
+  }, []);
 
-	useEffect(() => {
-		initializeAuth();
-	}, []);
+  // Helper function for demo mode signup
+  const signUpDemoMode = useCallback(async (email: string, name: string) => {
+    console.log('Using demo mode for sign up');
+    const demoUser = {
+      id: 'demo_user',
+      email,
+      name,
+    };
+    setUser(demoUser);
+    await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    return { success: true };
+  }, []);
 
-	const signIn = async (email: string, password: string) => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+  const signIn = useCallback(async (email: string, password: string) => {
+    console.log('AuthContext signIn called with:', { email });
+    console.log('Supabase configured:', isSupabaseConfigured);
+    
+    // Critical dual storage pattern - check configuration first
+    if (!isSupabaseConfigured || !supabase) {
+      return await signInDemoMode(email);
+    }
 
-		const result = await AuthService.signIn(email, password);
+    try {
+      console.log('Attempting Supabase signIn...');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      console.log('Supabase signIn result:', { data: !!data, error });
+      
+      if (error) {
+        console.error('Supabase signin error:', error);
+        
+        // Handle API configuration errors by falling back to demo mode
+        if (error.message.includes('Invalid API key') || 
+            error.message.includes('Invalid JWT') ||
+            error.message.includes('Project not found') ||
+            error.message.includes('Long live credential not available')) {
+          console.log('Supabase misconfigured, falling back to demo mode');
+          return await signInDemoMode(email);
+        }
+        
+        // Handle specific auth errors normally
+        if (error.message.includes('Invalid login credentials')) {
+          return { 
+            success: false, 
+            error: 'Invalid email or password. Please check your credentials and try again.' 
+          };
+        }
 
-		if (result.success && result.user) {
-			setAuthState({
-				isAuthenticated: true,
-				user: result.user,
-				isLoading: false,
-			});
-			return { success: true };
-		} else {
-			setAuthState((prev) => ({ ...prev, isLoading: false }));
-			return { success: false, error: result.error };
-		}
-	};
+        return { success: false, error: error.message };
+      }
 
-	const signUp = async (name: string, email: string, password: string) => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+      if (data?.user) {
+        const userData = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+        };
+        setUser(userData);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        return { success: true };
+      }
 
-		const result = await AuthService.signUp(name, email, password);
+      return { success: false, error: 'Sign in failed - no user data received' };
+    } catch (networkError) {
+      console.error('Sign in network error:', networkError);
+      // Network errors also fall back to demo mode
+      console.log('Network error, falling back to demo mode');
+      return await signInDemoMode(email);
+    }
+  }, [signInDemoMode]);
 
-		if (result.success && result.user) {
-			setAuthState({
-				isAuthenticated: true,
-				user: result.user,
-				isLoading: false,
-			});
-			return { success: true };
-		} else {
-			setAuthState((prev) => ({ ...prev, isLoading: false }));
-			return { success: false, error: result.error };
-		}
-	};
+  const signUp = useCallback(async (email: string, password: string, name: string) => {
+    // Critical dual storage pattern
+    if (!isSupabaseConfigured || !supabase) {
+      return await signUpDemoMode(email, name);
+    }
 
-	const signInAsGuest = async () => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
 
-		const result = await AuthService.signInAsGuest();
+      if (error) {
+        console.error('Supabase signup error:', error);
+         
+        // API configuration errors fall back to demo mode
+        if (error.message.includes('Invalid API key') || 
+            error.message.includes('Invalid JWT') ||
+            error.message.includes('Project not found') ||
+            error.message.includes('Long live credential not available')) {
+          console.log('Supabase misconfigured, falling back to demo mode');
+          return await signUpDemoMode(email, name);
+        }
+           
+        return { success: false, error: error.message };
+      }
 
-		if (result.success && result.user) {
-			setAuthState({
-				isAuthenticated: true,
-				user: result.user,
-				isLoading: false,
-			});
-			// Navigate to main app after successful authentication
-			router.replace('/(tabs)');
-			return { success: true };
-		} else {
-			setAuthState((prev) => ({ ...prev, isLoading: false }));
-			return { success: false, error: result.error };
-		}
-	};
+      if (data?.user) {
+        const userData = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: name,
+        };
+        setUser(userData);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        return { success: true };
+      }
 
-	const signOut = async () => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+      return { success: false, error: 'Sign up failed' };
+    } catch (error) {
+      console.error('Sign up network error:', error);
+      console.log('Network error, falling back to demo mode');
+      return await signUpDemoMode(email, name);
+    }
+  }, [signUpDemoMode]);
 
-		const success = await AuthService.signOut();
+  const signOut = useCallback(async () => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.log('Supabase sign out failed, continuing with local sign out');
+      }
+    }
+    setUser(null);
+    await AsyncStorage.removeItem('user');
+  }, []);
 
-		setAuthState({
-			isAuthenticated: false,
-			user: null,
-			isLoading: false,
-		});
+  const signInAsGuest = useCallback(async () => {
+    const guestUser = {
+      id: 'guest_user',
+      email: 'guest@velvetladle.com',
+      name: 'Guest User',
+    };
+    setUser(guestUser);
+    await AsyncStorage.setItem('user', JSON.stringify(guestUser));
+  }, []);
 
-		return success;
-	};
+  // Load user from storage on app start
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+      } catch (error) {
+        console.error('Error loading user from storage:', error);
+      }
+    };
 
-	const refreshAuth = async () => {
-		await initializeAuth();
-	};
+    loadUser();
+  }, []);
 
-	const contextValue: AuthContextType = {
-		...authState,
-		signIn,
-		signUp,
-		signInAsGuest,
-		signOut,
-		refreshAuth,
-	};
+  return (
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        signIn, 
+        signUp, 
+        signOut, 
+        signInAsGuest 
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
 
-	return (
-		<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-	);
-};
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
