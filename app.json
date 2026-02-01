@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velvet Ladle",
     "slug": "VelvetLadle",
-    "version": "1.0.1",
+    "version": "2.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/favicon_velveltLadle_large_128x128.png",
     "scheme": "velvetladle",

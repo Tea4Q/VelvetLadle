@@ -10,11 +10,11 @@ export default function TabLayout() {
 
   // Critical auth guard - redirect to welcome screen if no user
   if (!user) {
-    console.log('TabLayout: No user found, redirecting to welcome');
+    // Production build: console.log removed
     return <Redirect href="/(auth)/welcome" />;
   }
 
-  console.log('TabLayout: User authenticated, showing tabs for:', user.email);
+  // Production build: console.log removed
 
   return (
     <Tabs

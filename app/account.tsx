@@ -43,10 +43,7 @@ export default function AccountScreen() {
   useEffect(() => {
     if (user) {
       // If user exists and we're in auth flow, show user info instead of redirect loop
-      console.log(
-        "Account screen: User logged in, showing account info for:",
-        user.email,
-      );
+      // Production build: console.log removed
       setShowUserInfo(true);
     } else {
       setShowUserInfo(false);
@@ -61,14 +58,11 @@ export default function AccountScreen() {
 
     setIsLoading(true);
     try {
-      console.log("Attempting sign in with:", {
-        email,
-        hasPassword: !!password,
-      });
+      // Production build: console.log removed
       const result = await signIn(email, password);
 
       if (result.success) {
-        console.log("Sign in successful, navigating to tabs");
+        // Production build: console.log removed
         // Clear form
         setEmail("");
         setPassword("");
@@ -100,11 +94,7 @@ export default function AccountScreen() {
 
     setIsLoading(true);
     try {
-      console.log("Attempting sign up with:", {
-        name,
-        email,
-        hasPassword: !!password,
-      });
+      // Production build: console.log removed
       const result = await signUp(email, password, name);
 
       if (result.success) {
@@ -142,7 +132,7 @@ export default function AccountScreen() {
       setName("");
 
       // Stay on account screen but show sign-in form
-      console.log("User signed out, showing sign-in form");
+      // Production build: console.log removed
     } catch (error) {
       console.error("Error during sign out:", error);
     }

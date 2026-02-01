@@ -97,7 +97,7 @@ export const testSupabaseConnection = async () => {
     }
     
     const { data, error } = await supabase.from('recipes').select('count').limit(1);
-    console.log('Supabase connection test:', { data, error });
+    // Production build: console.log removed
     
     return { success: !error, error: error?.message };
   } catch (error) {
@@ -107,8 +107,5 @@ export const testSupabaseConnection = async () => {
 };
 
 // Add this debugging at the top
-console.log('Environment check:', {
-  supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET',
-  supabaseKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET',
-  actualUrl: process.env.EXPO_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...',
+// Production build: console.log removed + '...',
 });

@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Helper function for demo mode signin
   const signInDemoMode = useCallback(async (email: string) => {
-    console.log('Using demo mode for sign in');
+    // Production build: console.log removed
     const demoUser = {
       id: 'demo_user',
       email,
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Helper function for demo mode signup
   const signUpDemoMode = useCallback(async (email: string, name: string) => {
-    console.log('Using demo mode for sign up');
+    // Production build: console.log removed
     const demoUser = {
       id: 'demo_user',
       email,
@@ -48,8 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    console.log('AuthContext signIn called with:', { email });
-    console.log('Supabase configured:', isSupabaseConfigured);
+    // Production build: console.log removed
+    // Production build: console.log removed
     
     // Critical dual storage pattern - check configuration first
     if (!isSupabaseConfigured || !supabase) {
@@ -57,13 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('Attempting Supabase signIn...');
+      // Production build: console.log removed
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      console.log('Supabase signIn result:', { data: !!data, error });
+      // Production build: console.log removed
       
       if (error) {
         console.error('Supabase signin error:', error);
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             error.message.includes('Invalid JWT') ||
             error.message.includes('Project not found') ||
             error.message.includes('Long live credential not available')) {
-          console.log('Supabase misconfigured, falling back to demo mode');
+          // Production build: console.log removed
           return await signInDemoMode(email);
         }
         
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (networkError) {
       console.error('Sign in network error:', networkError);
       // Network errors also fall back to demo mode
-      console.log('Network error, falling back to demo mode');
+      // Production build: console.log removed
       return await signInDemoMode(email);
     }
   }, [signInDemoMode]);
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             error.message.includes('Invalid JWT') ||
             error.message.includes('Project not found') ||
             error.message.includes('Long live credential not available')) {
-          console.log('Supabase misconfigured, falling back to demo mode');
+          // Production build: console.log removed
           return await signUpDemoMode(email, name);
         }
            
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: 'Sign up failed' };
     } catch (error) {
       console.error('Sign up network error:', error);
-      console.log('Network error, falling back to demo mode');
+      // Production build: console.log removed
       return await signUpDemoMode(email, name);
     }
   }, [signUpDemoMode]);
@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await supabase.auth.signOut();
       } catch (error) {
-        console.log('Supabase sign out failed, continuing with local sign out');
+        // Production build: console.log removed
       }
     }
     setUser(null);
