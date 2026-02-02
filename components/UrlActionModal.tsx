@@ -280,7 +280,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 				 !extractedRecipe.nutritional_info.carbs)) {
 				missingFields.push('Nutritional Info');
 			}
-			if (!extractedRecipe.prep_time && !extractedRecipe.cook_time) {
+			if (!extractedRecipe.prep_time_minutes && !extractedRecipe.cook_time_minutes) {
 				missingFields.push('Cooking Times');
 			}
 			if (!extractedRecipe.description) {

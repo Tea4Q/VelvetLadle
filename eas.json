@@ -47,11 +47,6 @@
       "ios": {
         "buildConfiguration": "Release"
       }
-    },
-    "production": {
-      "releaseChannel": "production",
-      "cache": { "disabled": false },
-      "env": { "NODE_ENV": "production" }
     }
   },
   "submit": {

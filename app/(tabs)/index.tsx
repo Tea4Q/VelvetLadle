@@ -167,7 +167,7 @@ export default function Index() {
 
   const loadFavoriteCount = useCallback(async () => {
     try {
-      const favorites = await FavoritesService.getFavoriteRecipes();
+      const favorites = await FavoritesService.getAllFavorites();
       setFavoriteCount(favorites.length);
     } catch (error) {
       console.error("Error loading favorite count:", error);

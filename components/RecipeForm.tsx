@@ -50,9 +50,9 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
   const [ingredients, setIngredients] = useState(initialRecipe?.ingredients?.join('\n') || '');
   const [directions, setDirections] = useState(initialRecipe?.directions?.join('\n') || '');
   const [servings, setServings] = useState(initialRecipe?.servings?.toString() || '');
-  const [prepTime, setPrepTime] = useState(initialRecipe?.prep_time || '');
-  const [cookTime, setCookTime] = useState(initialRecipe?.cook_time || '');
-  const [totalTime, setTotalTime] = useState(initialRecipe?.total_time || '');
+	const [prepTime, setPrepTime] = useState(initialRecipe?.prep_time_minutes?.toString() || '');
+	const [cookTime, setCookTime] = useState(initialRecipe?.cook_time_minutes?.toString() || '');
+	const [totalTime, setTotalTime] = useState(initialRecipe?.total_time_minutes?.toString() || '');
   const [cuisine, setCuisine] = useState(initialRecipe?.cuisine_type || '');
   const [difficulty, setDifficulty] = useState(initialRecipe?.difficulty_level || '');
   const [nutrition, setNutrition] = useState<any>(initialRecipe?.nutritional_info || defaultNutrition);
@@ -66,9 +66,9 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
       setIngredients(initialRecipe.ingredients?.join('\n') || '');
       setDirections(initialRecipe.directions?.join('\n') || '');
       setServings(initialRecipe.servings?.toString() || '');
-      setPrepTime(initialRecipe.prep_time || '');
-      setCookTime(initialRecipe.cook_time || '');
-      setTotalTime(initialRecipe.total_time || '');
+      setPrepTime(initialRecipe.prep_time_minutes?.toString() || '');
+      setCookTime(initialRecipe.cook_time_minutes?.toString() || '');
+      setTotalTime(initialRecipe.total_time_minutes?.toString() || '');
       setCuisine(initialRecipe.cuisine_type || '');
       setDifficulty(initialRecipe.difficulty_level || '');
       setNutrition(initialRecipe.nutritional_info || defaultNutrition);
@@ -101,9 +101,9 @@ export default function RecipeForm({ initialRecipe, onSave, onCancel }: RecipeFo
         ingredients: ingredients.split('\n').map(i => i.trim()).filter(Boolean),
         directions: directions.split('\n').map(d => d.trim()).filter(Boolean),
         servings: servings ? parseInt(servings) : undefined,
-        prep_time: prepTime.trim(),
-        cook_time: cookTime.trim(),
-        total_time: totalTime.trim(),
+        prep_time_minutes: prepTime.trim() ? parseInt(prepTime.trim()) : undefined,
+        cook_time_minutes: cookTime.trim() ? parseInt(cookTime.trim()) : undefined,
+        total_time_minutes: totalTime.trim() ? parseInt(totalTime.trim()) : undefined,
         cuisine_type: cuisine.trim(),
         difficulty_level: difficulty.trim(),
         nutritional_info: nutrition,
