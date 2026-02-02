@@ -10,6 +10,8 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -20,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Helper function for demo mode signin
   const signInDemoMode = useCallback(async (email: string) => {
@@ -31,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setUser(demoUser);
     await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    setIsLoading(false);
     return { success: true };
   }, []);
 
@@ -44,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setUser(demoUser);
     await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    setIsLoading(false);
     return { success: true };
   }, []);
 
@@ -51,10 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Production build: console.log removed
     // Production build: console.log removed
     
-    // Critical dual storage pattern - check configuration first
-    if (!isSupabaseConfigured || !supabase) {
-      return await signInDemoMode(email);
-    }
+    setIsLoading(true);
+    
+    try {
+      // Critical dual storage pattern - check configuration first
+      if (!isSupabaseConfigured || !supabase) {
+        const result = await signInDemoMode(email);
+        return result;
+      }
 
     try {
       // Production build: console.log removed
@@ -104,17 +113,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Sign in network error:', networkError);
       // Network errors also fall back to demo mode
       // Production build: console.log removed
-      return await signInDemoMode(email);
+      const result = await signInDemoMode(email);
+      return result;
+    } finally {
+      setIsLoading(false);
     }
+  } catch (outerError) {
+    console.error('Outer try block error:', outerError);
+    setIsLoading(false);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
   }, [signInDemoMode]);
 
   const signUp = useCallback(async (email: string, password: string, name: string) => {
-    // Critical dual storage pattern
-    if (!isSupabaseConfigured || !supabase) {
-      return await signUpDemoMode(email, name);
-    }
-
+    setIsLoading(true);
+    
     try {
+      // Critical dual storage pattern
+      if (!isSupabaseConfigured || !supabase) {
+        const result = await signUpDemoMode(email, name);
+        return result;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -134,7 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             error.message.includes('Project not found') ||
             error.message.includes('Long live credential not available')) {
           // Production build: console.log removed
-          return await signUpDemoMode(email, name);
+          const result = await signUpDemoMode(email, name);
+          return result;
         }
            
         return { success: false, error: error.message };
@@ -155,20 +176,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Sign up network error:', error);
       // Production build: console.log removed
-      return await signUpDemoMode(email, name);
+      const result = await signUpDemoMode(email, name);
+      return result;
+    } finally {
+      setIsLoading(false);
     }
   }, [signUpDemoMode]);
 
   const signOut = useCallback(async () => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.signOut();
-      } catch (error) {
-        // Production build: console.log removed
+    setIsLoading(true);
+    
+    try {
+      if (isSupabaseConfigured && supabase) {
+        try {
+          await supabase.auth.signOut();
+        } catch (error) {
+          // Production build: console.log removed
+        }
       }
+      setUser(null);
+      await AsyncStorage.removeItem('user');
+    } finally {
+      setIsLoading(false);
     }
-    setUser(null);
-    await AsyncStorage.removeItem('user');
   }, []);
 
   const signInAsGuest = useCallback(async () => {
@@ -191,6 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error loading user from storage:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -201,6 +233,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider 
       value={{ 
         user, 
+        isAuthenticated: !!user,
+        isLoading,
         signIn, 
         signUp, 
         signOut, 

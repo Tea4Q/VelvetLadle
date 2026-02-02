@@ -1,5 +1,45 @@
 # VelvetLadle Changelog 📋
 
+## [1.2.2] - February 2026 - Google Play Store Release 🚀
+
+### 🎯 **Navigation & User Experience Fixes**
+
+#### **Authentication & Navigation**
+- **Fixed "Back to Dashboard" navigation**: Now properly returns to home screen instead of sign-in page
+- **Enhanced AuthContext**: Added missing `isAuthenticated` and `isLoading` properties for better state management
+- **Improved session handling**: Resolved authentication flow edge cases and navigation bugs
+
+#### **Recent Recipes System**
+- **Fixed timing logic**: Recent recipes now properly displays recipes from the last 7 days (limited to 3 items)
+- **Corrected Recents card navigation**: Now filters to show only recent recipes instead of redirecting to all recipes
+- **Enhanced user experience**: Clear visual distinction between all recipes and recent recipes
+
+### 📱 **Mobile Interface Improvements**
+
+#### **Scrollable Filters**
+- **Enhanced filter UX**: Recipe filters are now fully scrollable for better mobile experience
+- **Unified scrolling**: Single scroll context from filters through to recipes list
+- **Pull-to-refresh**: Added refresh functionality integrated throughout the interface
+
+### 🔐 **Data Privacy & User Isolation**
+
+#### **User-Specific Data Display**
+- **Fixed Quick Categories**: Now shows only current user's recipes instead of mixing data from all users
+- **Enhanced database queries**: Added proper user filtering to `getRecipesByCategory` and `getAvailableCategories` methods
+- **Data integrity**: Ensured all user-facing features respect authentication boundaries
+
+#### **Clean Filter Data**
+- **Cuisine filter cleanup**: Removed contamination from non-cuisine fields (eliminated "recipe", "manual", "entered" values)
+- **Improved data validation**: Added `isValidCuisineType` method to filter out metadata from cuisine options
+- **Focused filtering**: Cuisine filters now only pull from `cuisine_type` database column
+
+### 🚀 **Performance & Stability**
+- **Optimized render performance**: Continued improvements to eliminate render loops and memory issues
+- **Stable callback functions**: Enhanced component re-render prevention with proper `useCallback` usage
+- **Production-ready optimizations**: Comprehensive testing and optimization for store release
+
+---
+
 ## [1.0.1] - January 2026 - Authentication & Database Fixes
 
 ### 🔐 **Authentication System Overhaul**

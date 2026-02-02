@@ -207,12 +207,15 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - Background image caching
 - Minimal re-renders
 
-**Recent Optimizations (v1.2.1):**
-- Fixed "Maximum update depth exceeded" errors
-- Eliminated infinite render loops
-- Stabilized search and filter operations
-- Improved list scrolling performance
-- Reduced memory footprint
+**Recent Optimizations (v1.2.2 - Google Play Store Release):**
+- **Fixed Navigation Issues**: Resolved "Back to Dashboard" incorrectly redirecting to sign-in
+- **Enhanced Authentication**: Added missing `isAuthenticated` and `isLoading` properties to AuthContext
+- **Improved Recent Recipes**: Fixed timing logic to properly show recipes from last 7 days (limit 3)
+- **Fixed Recents Card Navigation**: Now properly filters to recent recipes instead of showing all recipes
+- **Scrollable Filter Interface**: Made recipe filters fully scrollable for better mobile UX
+- **Fixed User Data Isolation**: Quick Categories now shows only current user's recipes, not all users
+- **Clean Cuisine Filtering**: Removed contamination from non-cuisine fields (no more "recipe", "manual", "entered")
+- **Performance Optimizations**: Eliminated render loops, stabilized callbacks, improved list performance
 
 ---
 

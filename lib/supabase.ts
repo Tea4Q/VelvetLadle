@@ -102,10 +102,9 @@ export const testSupabaseConnection = async () => {
     return { success: !error, error: error?.message };
   } catch (error) {
     console.error('Supabase connection test failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
   }
 };
 
 // Add this debugging at the top
-// Production build: console.log removed + '...',
-});
+// Production build: console.log removed

@@ -228,30 +228,46 @@ export class RecipeDatabase {
     }
   }
 
-  static async getRecentRecipes(days: number = 7): Promise<Recipe[]> {
+  static async getRecentRecipes(days: number = 7, limit: number = 5): Promise<Recipe[]> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        // Demo storage: filter by creation date
+        // Demo storage: filter by creation date and limit results
         const allRecipes = await DemoStorage.getAllRecipes();
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
         
-        return allRecipes.filter(recipe => {
+        const recentRecipes = allRecipes.filter(recipe => {
           if (!recipe.created_at) return false;
           const recipeDate = new Date(recipe.created_at);
           return recipeDate >= cutoffDate;
         });
+        
+        // Sort by creation date (newest first) and limit results
+        return recentRecipes
+          .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+          .slice(0, limit);
       }
 
-      // Supabase: query recent recipes
+      // Supabase: query recent recipes with user filtering
+      const { data: { user } } = await supabase.auth.getUser();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('recipes')
         .select('*')
         .gte('created_at', cutoffDate.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      // Filter by user_id if authenticated, otherwise get demo recipes
+      if (user) {
+        query = query.eq('user_id', user.id);
+      } else {
+        query = query.is('user_id', null);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching recent recipes:', error);
@@ -318,9 +334,17 @@ export class RecipeDatabase {
           .slice(0, limit);
       }
 
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated for getRecipesByCategory');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('recipes')
         .select('*')
+        .eq('user_id', user.id)
         .ilike('cuisine_type', cuisineType)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -349,9 +373,17 @@ export class RecipeDatabase {
         return categories;
       }
 
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated for getAvailableCategories');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('recipes')
         .select('cuisine_type')
+        .eq('user_id', user.id)
         .not('cuisine_type', 'is', null);
 
       if (error) {

@@ -19,9 +19,10 @@ export default function RecipesScreen() {
 	
 	const isGuest = user?.id === 'guest_user';
 	
-	// Get URL parameters for category filtering and recipeId
-	const { category, recipeId } = useLocalSearchParams();
+	// Get URL parameters for category filtering, filterType, and recipeId
+	const { category, filterType, recipeId } = useLocalSearchParams();
 	const stableCategory = useMemo(() => category as string, [category]);
+	const stableFilterType = useMemo(() => filterType as string, [filterType]);
 
 	// When recipeId is passed via router params, load and display that recipe
 	useEffect(() => {
@@ -94,9 +95,10 @@ export default function RecipesScreen() {
 				/>
 			) : (
 				<RecipeList
-					key={`recipes-list-${refreshKey}-${stableCategory || 'all'}`} // Include category in key to force re-render
+					key={`recipes-list-${refreshKey}-${stableCategory || 'all'}-${stableFilterType || 'none'}`} // Include both category and filterType in key
 					onRecipeSelect={handleRecipeSelect}
 					initialCategoryFilter={stableCategory}
+					initialFilterType={stableFilterType}
 				/>
 			)}
 			

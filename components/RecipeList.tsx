@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	Alert,
 	FlatList,
+	RefreshControl,
+	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
@@ -31,14 +33,15 @@ import SmartImage from './SmartImage';
 type Props = {
 	onRecipeSelect?: (recipe: Recipe) => void;
 	initialCategoryFilter?: string;
+	initialFilterType?: string;
 };
 
-export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Props) {
+export default function RecipeList({ onRecipeSelect, initialCategoryFilter, initialFilterType }: Props) {
 	const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 	const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
-	const [showFilters, setShowFilters] = useState(!!initialCategoryFilter);
+	const [showFilters, setShowFilters] = useState(!!initialCategoryFilter || !!initialFilterType);
 	const [favoriteStatuses, setFavoriteStatuses] = useState<{
 		[key: number]: boolean;
 	}>({});
@@ -102,18 +105,33 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 
 			setAllRecipes(cleanRecipes);
 			
-			// Apply current category filter if provided
+			// Apply filters if provided
+			let recipesToShow = cleanRecipes;
+			
+			// Apply filterType (e.g., 'recent')
+			if (initialFilterType === 'recent') {
+				// Filter to recent recipes (last 7 days)
+				const sevenDaysAgo = new Date();
+				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+				
+				recipesToShow = cleanRecipes.filter(recipe => {
+					if (!recipe.created_at) return false;
+					const recipeDate = new Date(recipe.created_at);
+					return recipeDate >= sevenDaysAgo;
+				}).sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+			}
+			
+			// Apply category filter if provided (after filterType)
 			if (stableCategoryFilter.current) {
-				const filtered = RecipeFilterService.filterRecipes(
-					cleanRecipes,
+				recipesToShow = RecipeFilterService.filterRecipes(
+					recipesToShow,
 					'',
 					[],
 					[stableCategoryFilter.current]
 				);
-				setFilteredRecipes(filtered);
-			} else {
-				setFilteredRecipes(cleanRecipes);
 			}
+			
+			setFilteredRecipes(recipesToShow);
 			
 			// Load favorite statuses
 			const statuses: { [key: number]: boolean } = {};
@@ -179,18 +197,59 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		selectedIngredients: string[],
 		selectedCuisines: string[]
 	) => {
+		// Start with all recipes, then apply initial filterType if present
+		let baseRecipes = allRecipes;
+		
+		// Apply filterType (e.g., 'recent') first if present
+		if (initialFilterType === 'recent') {
+			const sevenDaysAgo = new Date();
+			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+			
+			baseRecipes = allRecipes.filter(recipe => {
+				if (!recipe.created_at) return false;
+				const recipeDate = new Date(recipe.created_at);
+				return recipeDate >= sevenDaysAgo;
+			}).sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+		}
+		
+		// Then apply search/filter on the base set
 		const filtered = RecipeFilterService.filterRecipes(
-			allRecipes,
+			baseRecipes,
 			searchTerm,
 			selectedIngredients,
 			selectedCuisines
 		);
 		setFilteredRecipes(filtered);
-	}, [allRecipes]);
+	}, [allRecipes, initialFilterType]);
 
 	const handleClearSearch = useCallback(() => {
-		setFilteredRecipes(allRecipes);
-	}, [allRecipes]);
+		// When clearing search, restore to the initial filtered state (if any)
+		let recipesToShow = allRecipes;
+		
+		// Apply filterType (e.g., 'recent') if present
+		if (initialFilterType === 'recent') {
+			const sevenDaysAgo = new Date();
+			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+			
+			recipesToShow = allRecipes.filter(recipe => {
+				if (!recipe.created_at) return false;
+				const recipeDate = new Date(recipe.created_at);
+				return recipeDate >= sevenDaysAgo;
+			}).sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+		}
+		
+		// Apply category filter if provided (after filterType)
+		if (stableCategoryFilter.current) {
+			recipesToShow = RecipeFilterService.filterRecipes(
+				recipesToShow,
+				'',
+				[],
+				[stableCategoryFilter.current]
+			);
+		}
+		
+		setFilteredRecipes(recipesToShow);
+	}, [allRecipes, initialFilterType]);
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
@@ -860,16 +919,23 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					/>
 				</View>
 			) : (
-				<FlatList
-					data={filteredRecipes}
-					renderItem={renderRecipe}
-					keyExtractor={(item) => item.id?.toString() || item.title}
-					refreshing={refreshing}
-					onRefresh={handleRefresh}
+				<ScrollView 
 					showsVerticalScrollIndicator={false}
+					refreshControl={
+						<RefreshControl
+							refreshing={refreshing}
+							onRefresh={handleRefresh}
+							tintColor={colors.primary}
+						/>
+					}
 					contentContainerStyle={{ paddingBottom: spacing.xl }}
-
-				/>
+				>
+					{filteredRecipes.map((recipe, index) => 
+						<View key={recipe.id?.toString() || `${recipe.title}-${index}`}>
+							{renderRecipe({ item: recipe })}
+						</View>
+					)}
+				</ScrollView>
 			)}
 		</View>
 	);

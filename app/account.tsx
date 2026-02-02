@@ -139,7 +139,7 @@ export default function AccountScreen() {
   }, [signOut]);
 
   const handleGoBack = useCallback(() => {
-    router.replace("/");
+    router.replace("/(tabs)");
   }, [router]);
 
   // If user is logged in, show account info

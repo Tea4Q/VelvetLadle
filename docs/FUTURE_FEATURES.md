@@ -98,6 +98,29 @@ substitutionOptions: {
 - Weekly meal planning integration
 - Shopping list generation
 - Leftover tracking and suggestions
+- Calendar view for meal planning
+- Automatic grocery list generation from selected recipes
+- Meal prep scheduling and reminders
+- Nutritional balance tracking across planned meals
+
+### Web Newsletter Integration
+- Subscribe to curated recipe newsletters and cooking publications
+- Filter newsletter content by ingredients and dietary preferences  
+- Smart recipe discovery from newsletter sources
+- Meal inspiration based on seasonal ingredients
+- Weekly/monthly recipe collections delivered via email
+- Integration with popular food blogs and cooking websites
+- Personalized newsletter recommendations based on user preferences
+- Extract and save recipes directly from newsletter content
+
+### Advanced Meal Planning Features
+- **Smart Meal Scheduling**: AI-powered meal suggestions based on prep time, ingredients, and dietary goals
+- **Batch Cooking Optimizer**: Identify recipes that can share ingredients or preparation steps
+- **Leftover Integration**: Suggest recipes that use ingredients from previous meals
+- **Budget-Conscious Planning**: Meal planning with cost optimization and ingredient reuse
+- **Family Meal Coordination**: Plan meals considering different family member preferences and restrictions
+- **Seasonal Meal Planning**: Adjust meal suggestions based on seasonal ingredient availability
+- **Prep Time Optimization**: Schedule meals based on available cooking time throughout the week
 
 ### Nutrition Tracking
 - Detailed macro/micro nutrient analysis
