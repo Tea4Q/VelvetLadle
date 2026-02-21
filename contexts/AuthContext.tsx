@@ -16,6 +16,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,64 +66,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return result;
       }
 
-    try {
-      // Production build: console.log removed
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      // Production build: console.log removed
-      
-      if (error) {
-        console.error('Supabase signin error:', error);
+      try {
+        // Production build: console.log removed
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         
-        // Handle API configuration errors by falling back to demo mode
-        if (error.message.includes('Invalid API key') || 
-            error.message.includes('Invalid JWT') ||
-            error.message.includes('Project not found') ||
-            error.message.includes('Long live credential not available')) {
-          // Production build: console.log removed
-          return await signInDemoMode(email);
+        // Production build: console.log removed
+        
+        if (error) {
+          console.error('Supabase signin error:', error);
+          
+          // Handle API configuration errors by falling back to demo mode
+          if (error.message.includes('Invalid API key') || 
+              error.message.includes('Invalid JWT') ||
+              error.message.includes('Project not found') ||
+              error.message.includes('Long live credential not available') ||
+              error.message.includes('network') ||
+              error.message.includes('fetch') ||
+              error.message.includes('NetworkError') ||
+              error.message.toLowerCase().includes('failed to fetch')) {
+            // Production build: console.log removed
+            return await signInDemoMode(email);
+          }
+          
+          // Handle specific auth errors normally
+          if (error.message.includes('Invalid login credentials')) {
+            return { 
+              success: false, 
+              error: 'Invalid email or password. Please check your credentials and try again.' 
+            };
+          }
+
+          return { success: false, error: error.message };
         }
-        
-        // Handle specific auth errors normally
-        if (error.message.includes('Invalid login credentials')) {
-          return { 
-            success: false, 
-            error: 'Invalid email or password. Please check your credentials and try again.' 
+
+        if (data?.user) {
+          const userData = {
+            id: data.user.id,
+            email: data.user.email || '',
+            name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
           };
+          setUser(userData);
+          await AsyncStorage.setItem('user', JSON.stringify(userData));
+          return { success: true };
         }
 
-        return { success: false, error: error.message };
+        return { success: false, error: 'Sign in failed - no user data received' };
+      } catch (networkError) {
+        console.error('Sign in network error:', networkError);
+        // Network errors also fall back to demo mode
+        // Production build: console.log removed
+        const result = await signInDemoMode(email);
+        return result;
       }
-
-      if (data?.user) {
-        const userData = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-        };
-        setUser(userData);
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-        return { success: true };
+    } catch (outerError) {
+      console.error('Outer try block error:', outerError);
+      // Also fallback to demo mode on any unexpected error
+      try {
+        const result = await signInDemoMode(email);
+        return result;
+      } catch (demoError) {
+        console.error('Demo mode fallback failed:', demoError);
+        return { success: false, error: 'An unexpected error occurred' };
       }
-
-      return { success: false, error: 'Sign in failed - no user data received' };
-    } catch (networkError) {
-      console.error('Sign in network error:', networkError);
-      // Network errors also fall back to demo mode
-      // Production build: console.log removed
-      const result = await signInDemoMode(email);
-      return result;
     } finally {
       setIsLoading(false);
     }
-  } catch (outerError) {
-    console.error('Outer try block error:', outerError);
-    setIsLoading(false);
-    return { success: false, error: 'An unexpected error occurred' };
-  }
   }, [signInDemoMode]);
 
   const signUp = useCallback(async (email: string, password: string, name: string) => {
@@ -211,6 +222,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('user', JSON.stringify(guestUser));
   }, []);
 
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      // If Supabase is not configured, show appropriate message for demo mode
+      if (!isSupabaseConfigured || !supabase) {
+        return { 
+          success: false, 
+          error: 'Password reset is not available in demo mode. Please use demo@example.com with any password to sign in.' 
+        };
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://your-app.com/reset-password', // This would need to be configured for your app
+      });
+
+      if (error) {
+        console.error('Password reset error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Failed to send password reset email' 
+        };
+      }
+
+      return { 
+        success: true 
+      };
+    } catch (error) {
+      console.error('Reset password network error:', error);
+      return { 
+        success: false, 
+        error: 'Network error. Please check your connection and try again.' 
+      };
+    }
+  }, []);
+
   // Load user from storage on app start
   useEffect(() => {
     const loadUser = async () => {
@@ -238,7 +283,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn, 
         signUp, 
         signOut, 
-        signInAsGuest 
+        signInAsGuest,
+        resetPassword 
       }}
     >
       {children}
