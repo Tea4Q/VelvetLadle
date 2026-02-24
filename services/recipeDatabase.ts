@@ -1,6 +1,17 @@
 import { Recipe, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { DemoStorage } from './demoStorage';
 
+const isNetworkFetchError = (error: unknown): boolean => {
+  const message = String((error as any)?.message ?? error ?? '').toLowerCase();
+  return (
+    message.includes('networkerror when attempting to fetch resource') ||
+    message.includes('network request failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('typeerror: networkerror') ||
+    message.includes('attempting to fetch resource')
+  );
+};
+
 export class RecipeDatabase {
   static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Recipe; error?: string }> {
     // Production build: console.log removed
@@ -153,6 +164,15 @@ export class RecipeDatabase {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          console.warn('Supabase fetch failed, falling back to demo storage:', error);
+          const recipes = await DemoStorage.getAllRecipes();
+          if (recipes.length === 0) {
+            await DemoStorage.createDemoRecipesWithCategories();
+            return await DemoStorage.getAllRecipes();
+          }
+          return recipes;
+        }
         console.error('Error fetching recipes:', error);
         return [];
       }
@@ -160,6 +180,15 @@ export class RecipeDatabase {
       // Production build: console.log removed
       return data || [];
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        console.warn('Supabase request threw network error, falling back to demo storage:', error);
+        const recipes = await DemoStorage.getAllRecipes();
+        if (recipes.length === 0) {
+          await DemoStorage.createDemoRecipesWithCategories();
+          return await DemoStorage.getAllRecipes();
+        }
+        return recipes;
+      }
       console.error('Unexpected error fetching recipes:', error);
       return [];
     }

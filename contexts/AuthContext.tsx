@@ -1,6 +1,24 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
+// import { DemoStorage } from './demoStorage';
+
+const isNetworkFetchError = (error: unknown): boolean => {
+  const message = String((error as any)?.message ?? error ?? '').toLowerCase();
+  return (
+    message.includes('networkerror when attempting to fetch resource') ||
+    message.includes('network request failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('typeerror: networkerror') ||
+    message.includes('attempting to fetch resource')
+  );
+};
 
 export interface User {
   id: string;
@@ -12,12 +30,23 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  signUp: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
-  resetPasswordRequest: (email: string) => Promise<{ success: boolean; error?: string }>;
-  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  resetPasswordRequest: (
+    email: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (
+    newPassword: string,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,12 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInDemoMode = useCallback(async (email: string) => {
     // Production build: console.log removed
     const demoUser = {
-      id: 'demo_user',
+      id: "demo_user",
       email,
-      name: email.split('@')[0],
+      name: email.split("@")[0],
     };
     setUser(demoUser);
-    await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    await AsyncStorage.setItem("user", JSON.stringify(demoUser));
     setIsLoading(false);
     return { success: true };
   }, []);
@@ -44,150 +73,172 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUpDemoMode = useCallback(async (email: string, name: string) => {
     // Production build: console.log removed
     const demoUser = {
-      id: 'demo_user',
+      id: "demo_user",
       email,
       name,
     };
     setUser(demoUser);
-    await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    await AsyncStorage.setItem("user", JSON.stringify(demoUser));
     setIsLoading(false);
     return { success: true };
   }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    // Production build: console.log removed
-    // Production build: console.log removed
-    
-    setIsLoading(true);
-    
-    try {
-      // Critical dual storage pattern - check configuration first
-      if (!isSupabaseConfigured || !supabase) {
-        const result = await signInDemoMode(email);
-        return result;
-      }
-
-    try {
+  
+  const signIn = useCallback(
+    async (email: string, password: string) => {
       // Production build: console.log removed
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
       // Production build: console.log removed
-      
-      if (error) {
-        console.error('Supabase signin error:', error);
-        
-        // Handle API configuration errors by falling back to demo mode
-        if (error.message.includes('Invalid API key') || 
-            error.message.includes('Invalid JWT') ||
-            error.message.includes('Project not found') ||
-            error.message.includes('Long live credential not available')) {
-          // Production build: console.log removed
-          return await signInDemoMode(email);
+
+      setIsLoading(true);
+
+      try {
+        // Critical dual storage pattern - check configuration first
+        if (!isSupabaseConfigured || !supabase) {
+          const result = await signInDemoMode(email);
+          return result;
         }
-        
-        // Handle specific auth errors normally
-        if (error.message.includes('Invalid login credentials')) {
-          return { 
-            success: false, 
-            error: 'Invalid email or password. Please check your credentials and try again.' 
+
+        try {
+          // Production build: console.log removed
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          // Production build: console.log removed
+
+          if (error) {
+            console.error("Supabase signin error:", error);
+
+            // Handle API configuration errors by falling back to demo mode
+            if (
+              isNetworkFetchError(error) ||
+              error.message.includes("Invalid API key") ||
+              error.message.includes("Invalid JWT") ||
+              error.message.includes("Project not found") ||
+              error.message.includes("Long live credential not available")
+            ) {
+              // Production build: console.log removed
+              return await signInDemoMode(email);
+            }
+
+            // Handle specific auth errors normally
+            if (error.message.includes("Invalid login credentials")) {
+              return {
+                success: false,
+                error:
+                  "Invalid email or password. Please check your credentials and try again.",
+              };
+            }
+
+            return { success: false, error: error.message };
+          }
+
+          if (data?.user) {
+            const userData = {
+              id: data.user.id,
+              email: data.user.email || "",
+              name:
+                data.user.user_metadata?.name ||
+                data.user.email?.split("@")[0] ||
+                "User",
+            };
+            setUser(userData);
+            await AsyncStorage.setItem("user", JSON.stringify(userData));
+            return { success: true };
+          }
+
+          return {
+            success: false,
+            error: "Sign in failed - no user data received",
           };
+        } catch (networkError) {
+          console.error("Sign in network error:", networkError);
+          if (isNetworkFetchError(networkError)) {
+            const result = await signInDemoMode(email);
+            return result;
+          }
+          return { success: false, error: "An unexpected error occurred during sign in" };
+        } finally {
+          setIsLoading(false);
         }
-
-        return { success: false, error: error.message };
+      } catch (outerError) {
+        console.error("Outer try block error:", outerError);
+        setIsLoading(false);
+        return { success: false, error: "An unexpected error occurred" };
       }
+    },
+    [signInDemoMode],
+  );
 
-      if (data?.user) {
-        const userData = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-        };
-        setUser(userData);
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-        return { success: true };
-      }
+  const signUp = useCallback(
+    async (email: string, password: string, name: string) => {
+      setIsLoading(true);
 
-      return { success: false, error: 'Sign in failed - no user data received' };
-    } catch (networkError) {
-      console.error('Sign in network error:', networkError);
-      // Network errors also fall back to demo mode
-      // Production build: console.log removed
-      const result = await signInDemoMode(email);
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  } catch (outerError) {
-    console.error('Outer try block error:', outerError);
-    setIsLoading(false);
-    return { success: false, error: 'An unexpected error occurred' };
-  }
-  }, [signInDemoMode]);
-
-  const signUp = useCallback(async (email: string, password: string, name: string) => {
-    setIsLoading(true);
-    
-    try {
-      // Critical dual storage pattern
-      if (!isSupabaseConfigured || !supabase) {
-        const result = await signUpDemoMode(email, name);
-        return result;
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Supabase signup error:', error);
-         
-        // API configuration errors fall back to demo mode
-        if (error.message.includes('Invalid API key') || 
-            error.message.includes('Invalid JWT') ||
-            error.message.includes('Project not found') ||
-            error.message.includes('Long live credential not available')) {
-          // Production build: console.log removed
+      try {
+        // Critical dual storage pattern
+        if (!isSupabaseConfigured || !supabase) {
           const result = await signUpDemoMode(email, name);
           return result;
         }
-           
-        return { success: false, error: error.message };
-      }
 
-      if (data?.user) {
-        const userData = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: name,
-        };
-        setUser(userData);
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-        return { success: true };
-      }
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name,
+            },
+          },
+        });
 
-      return { success: false, error: 'Sign up failed' };
-    } catch (error) {
-      console.error('Sign up network error:', error);
-      // Production build: console.log removed
-      const result = await signUpDemoMode(email, name);
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [signUpDemoMode]);
+        if (error) {
+          console.error("Supabase signup error:", error);
+
+          // API configuration errors fall back to demo mode
+          if (
+            isNetworkFetchError(error) ||
+            error.message.includes("Invalid API key") ||
+            error.message.includes("Invalid JWT") ||
+            error.message.includes("Project not found") ||
+            error.message.includes("Long live credential not available")
+          ) {
+            // Production build: console.log removed
+            const result = await signUpDemoMode(email, name);
+            return result;
+          }
+
+          return { success: false, error: error.message };
+        }
+
+        if (data?.user) {
+          const userData = {
+            id: data.user.id,
+            email: data.user.email || "",
+            name: name,
+          };
+          setUser(userData);
+          await AsyncStorage.setItem("user", JSON.stringify(userData));
+          return { success: true };
+        }
+
+        return { success: false, error: "Sign up failed" };
+      } catch (error) {
+        console.error("Sign up network error:", error);
+        if (isNetworkFetchError(error)) {
+          const result = await signUpDemoMode(email, name);
+          return result;
+        }
+        return { success: false, error: "An unexpected error occurred during sign up" };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [signUpDemoMode],
+  );
 
   const signOut = useCallback(async () => {
     setIsLoading(true);
-    
+
     try {
       if (isSupabaseConfigured && supabase) {
         try {
@@ -197,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setUser(null);
-      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem("user");
     } finally {
       setIsLoading(false);
     }
@@ -205,12 +256,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInAsGuest = useCallback(async () => {
     const guestUser = {
-      id: 'guest_user',
-      email: 'guest@velvetladle.com',
-      name: 'Guest User',
+      id: "guest_user",
+      email: "guest@velvetladle.com",
+      name: "Guest User",
     };
     setUser(guestUser);
-    await AsyncStorage.setItem('user', JSON.stringify(guestUser));
+    await AsyncStorage.setItem("user", JSON.stringify(guestUser));
   }, []);
 
   const resetPasswordRequest = useCallback(async (email: string) => {
@@ -219,25 +270,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isSupabaseConfigured || !supabase) {
         return {
           success: false,
-          error: 'Password reset requires Supabase configuration. This feature is not available in demo mode.',
+          error:
+            "Password reset requires Supabase configuration. This feature is not available in demo mode.",
         };
       }
 
       // Send password reset email
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'velvetladle://reset-password',
+        redirectTo: "velvetladle://reset-password",
       });
 
       if (error) {
-        console.error('Password reset request error:', error);
+        console.error("Password reset request error:", error);
         return { success: false, error: error.message };
       }
 
       // Always return success even if email doesn't exist (security best practice)
       return { success: true };
     } catch (error) {
-      console.error('Password reset network error:', error);
-      return { success: false, error: 'Network error. Please check your connection and try again.' };
+      console.error("Password reset network error:", error);
+      return {
+        success: false,
+        error: "Network error. Please check your connection and try again.",
+      };
     }
   }, []);
 
@@ -247,7 +302,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isSupabaseConfigured || !supabase) {
         return {
           success: false,
-          error: 'Password update requires Supabase configuration.',
+          error: "Password update requires Supabase configuration.",
         };
       }
 
@@ -257,14 +312,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        console.error('Password update error:', error);
+        console.error("Password update error:", error);
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Password update network error:', error);
-      return { success: false, error: 'Network error. Please try again.' };
+      console.error("Password update network error:", error);
+      return { success: false, error: "Network error. Please try again." };
     }
   }, []);
 
@@ -272,12 +327,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const userData = await AsyncStorage.getItem('user');
+        const userData = await AsyncStorage.getItem("user");
         if (userData) {
           setUser(JSON.parse(userData));
         }
       } catch (error) {
-        console.error('Error loading user from storage:', error);
+        console.error("Error loading user from storage:", error);
       } finally {
         setIsLoading(false);
       }
@@ -287,17 +342,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
+    <AuthContext.Provider
+      value={{
+        user,
         isAuthenticated: !!user,
         isLoading,
-        signIn, 
-        signUp, 
-        signOut, 
+        signIn,
+        signUp,
+        signOut,
         signInAsGuest,
         resetPasswordRequest,
-        updatePassword
+        updatePassword,
       }}
     >
       {children}
@@ -308,7 +363,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

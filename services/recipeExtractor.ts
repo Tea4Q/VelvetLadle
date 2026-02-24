@@ -38,6 +38,38 @@ export class RecipeExtractor {
     
     return totalMinutes > 0 ? totalMinutes : undefined;
   }
+
+  /**
+   * Parse calories value - extract number only
+   * Examples: "765", "765 kcal", "765 calories" -> 765
+   */
+  private static parseCalories(value: any): number | undefined {
+    if (!value) return undefined;
+    
+    const str = String(value);
+    const match = str.match(/(\d+(?:\.\d+)?)/);
+    if (match) {
+      return Math.round(parseFloat(match[1]));
+    }
+    return undefined;
+  }
+
+  /**
+   * Parse nutrition string value - ensure format with units
+   * Examples: "44.0", "44", "44g", "44.0 g" -> "44g"
+   */
+  private static parseNutritionValue(value: any): string | undefined {
+    if (!value) return undefined;
+    
+    const str = String(value);
+    const match = str.match(/(\d+(?:\.\d+)?)\s*(g|mg|mcg|µg)?/i);
+    if (match) {
+      const number = parseFloat(match[1]);
+      const unit = match[2] || 'g';
+      return `${Math.round(number)}${unit}`;
+    }
+    return undefined;
+  }
   /**
    * Returns { recipe, error } where only one is set.
    */
@@ -314,14 +346,29 @@ export class RecipeExtractor {
               const parsed = this.parseJsonLdRecipe(item);
               // Production build: console.log removed
               if (item.nutrition) {
+                const rawNutrition = item.nutrition;
                 parsed.nutritional_info = {
-                  calories: item.nutrition.calories || item.nutrition.caloriesContent || item.nutrition["calories"],
-                  protein: item.nutrition.proteinContent || item.nutrition.protein,
-                  carbs: item.nutrition.carbohydrateContent || item.nutrition.carbs || item.nutrition.carbohydrates,
-                  fat: item.nutrition.fatContent || item.nutrition.fat || item.nutrition.totalFat,
-                  fiber: item.nutrition.fiberContent || item.nutrition.fiber || item.nutrition.dietaryFiber,
-                  sugar: item.nutrition.sugarContent || item.nutrition.sugar || item.nutrition.sugars,
-                  sodium: item.nutrition.sodiumContent || item.nutrition.sodium || item.nutrition.salt,
+                  calories: this.parseCalories(
+                    rawNutrition.calories || rawNutrition.caloriesContent || rawNutrition["calories"]
+                  ),
+                  protein: this.parseNutritionValue(
+                    rawNutrition.proteinContent || rawNutrition.protein
+                  ),
+                  carbs: this.parseNutritionValue(
+                    rawNutrition.carbohydrateContent || rawNutrition.carbs || rawNutrition.carbohydrates
+                  ),
+                  fat: this.parseNutritionValue(
+                    rawNutrition.fatContent || rawNutrition.fat || rawNutrition.totalFat
+                  ),
+                  fiber: this.parseNutritionValue(
+                    rawNutrition.fiberContent || rawNutrition.fiber || rawNutrition.dietaryFiber
+                  ),
+                  sugar: this.parseNutritionValue(
+                    rawNutrition.sugarContent || rawNutrition.sugar || rawNutrition.sugars
+                  ),
+                  sodium: this.parseNutritionValue(
+                    rawNutrition.sodiumContent || rawNutrition.sodium || rawNutrition.salt
+                  ),
                 };
               }
               return parsed;
@@ -860,24 +907,27 @@ export class RecipeExtractor {
         // Extract calories
         const caloriesMatch = nutritionSection.match(/itemprop=["']calories["'][^>]*>([^<]+)/i);
         if (caloriesMatch) {
-          recipe.nutritional_info.calories = parseInt(caloriesMatch[1].replace(/\D/g, ''));
+          recipe.nutritional_info.calories = this.parseCalories(caloriesMatch[1]);
         }
         
         // Extract other nutrition facts
         const proteinMatch = nutritionSection.match(/itemprop=["']proteinContent["'][^>]*>([^<]+)/i);
-        if (proteinMatch) recipe.nutritional_info.protein = proteinMatch[1].trim();
+        if (proteinMatch) recipe.nutritional_info.protein = this.parseNutritionValue(proteinMatch[1]);
         
         const carbsMatch = nutritionSection.match(/itemprop=["']carbohydrateContent["'][^>]*>([^<]+)/i);
-        if (carbsMatch) recipe.nutritional_info.carbs = carbsMatch[1].trim();
+        if (carbsMatch) recipe.nutritional_info.carbs = this.parseNutritionValue(carbsMatch[1]);
         
         const fatMatch = nutritionSection.match(/itemprop=["']fatContent["'][^>]*>([^<]+)/i);
-        if (fatMatch) recipe.nutritional_info.fat = fatMatch[1].trim();
+        if (fatMatch) recipe.nutritional_info.fat = this.parseNutritionValue(fatMatch[1]);
         
         const fiberMatch = nutritionSection.match(/itemprop=["']fiberContent["'][^>]*>([^<]+)/i);
-        if (fiberMatch) recipe.nutritional_info.fiber = fiberMatch[1].trim();
+        if (fiberMatch) recipe.nutritional_info.fiber = this.parseNutritionValue(fiberMatch[1]);
         
         const sugarMatch = nutritionSection.match(/itemprop=["']sugarContent["'][^>]*>([^<]+)/i);
-        if (sugarMatch) recipe.nutritional_info.sugar = sugarMatch[1].trim();
+        if (sugarMatch) recipe.nutritional_info.sugar = this.parseNutritionValue(sugarMatch[1]);
+        
+        const sodiumMatch = nutritionSection.match(/itemprop=["']sodiumContent["'][^>]*>([^<]+)/i);
+        if (sodiumMatch) recipe.nutritional_info.sodium = this.parseNutritionValue(sodiumMatch[1]);
       }
       
       return recipe.title && recipe.ingredients && recipe.ingredients.length > 0 ? recipe : null;

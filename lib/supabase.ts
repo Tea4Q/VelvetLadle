@@ -1,11 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Use environment variables for security
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project-id.supabase.co';
-const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key-here';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+const hasValidSupabaseUrl =
+  typeof supabaseUrl === 'string' &&
+  supabaseUrl.startsWith('https://') &&
+  supabaseUrl.includes('.supabase.co') &&
+  !supabaseUrl.includes('your-project-id');
+
+const hasValidSupabaseKey =
+  typeof supabaseKey === 'string' &&
+  supabaseKey.trim().length > 20 &&
+  !supabaseKey.includes('your-anon-key');
 
 // Check if Supabase credentials are configured
-const isSupabaseConfigured = !!supabaseUrl && !!supabaseKey;
+const isSupabaseConfigured = hasValidSupabaseUrl && hasValidSupabaseKey;
 
 // Create Supabase client with validation
 let supabase: any = null;
@@ -20,7 +31,7 @@ if (isSupabaseConfigured) {
     console.error('Please check your Supabase configuration in lib/supabase.ts');
   }
 } else {
-  console.warn('⚠️  Supabase not configured. Please update lib/supabase.ts with your credentials.');
+  console.warn('⚠️  Supabase not configured. Please set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
   console.warn('📖 See SUPABASE_SETUP.md for setup instructions.');
 }
 

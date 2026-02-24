@@ -1,8 +1,9 @@
 import {
+	faArrowsRotate,
 	faBook,
 	faHeart,
 	faLightbulb,
-	faNoteSticky
+	faNoteSticky,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
@@ -25,6 +26,7 @@ import {
 import { Recipe } from "../lib/supabase";
 import { FavoritesService } from "../services/FavoritesService";
 import { RecipeDeletionService } from "../services/RecipeDeletionService";
+import { RecipeRefreshService } from "../services/recipeRefreshService";
 import IngredientList from "./IngredientList";
 import SmartImage from "./SmartImage";
 
@@ -32,11 +34,19 @@ type Props = {
   recipe: Recipe;
   onBack?: () => void;
   onEdit?: (recipe: Recipe) => void;
+  onRefresh?: (updatedRecipe: Recipe) => void; // Add this prop
 };
 
-export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
+export default function RecipeViewer({
+  recipe,
+  onBack,
+  onEdit,
+  onRefresh,
+}: Props) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentRecipe, setCurrentRecipe] = useState(recipe);
   const [activeTab, setActiveTab] = useState<
     "overview" | "cooking-tips" | "notes"
   >("overview");
@@ -54,6 +64,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
   const radius = useRadius();
 
   useEffect(() => {
+    setCurrentRecipe(recipe);
     const checkFavoriteStatus = async () => {
       if (recipe.id) {
         const favorited = await FavoritesService.isRecipeFavorited(recipe.id);
@@ -121,6 +132,51 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
       }
     });
   };
+
+  const handleRefresh = async () => {
+    if (!currentRecipe.id) return;
+
+    Alert.alert(
+      "Refresh Recipe",
+      "Re-extract this recipe from its source URL? This will update ingredients, directions, and nutrition info.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Refresh",
+          style: "default",
+          onPress: async () => {
+            setRefreshing(true);
+            try {
+              const result =
+                await RecipeRefreshService.refreshRecipeFromUrl(currentRecipe);
+              if (result.success && result.data) {
+                setCurrentRecipe(result.data);
+                // Notify parent component of the update
+                if (onRefresh) {
+                  onRefresh(result.data);
+                }
+                Alert.alert("✅ Success", "Recipe refreshed with latest data!");
+              } else {
+                Alert.alert(
+                  "❌ Error",
+                  result.error || "Failed to refresh recipe",
+                );
+              }
+            } catch (error: any) {
+              console.error("Error refreshing recipe:", error);
+              Alert.alert(
+                "❌ Error",
+                error.message || "Failed to refresh recipe",
+              );
+            } finally {
+              setRefreshing(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const openWebAddress = async () => {
     if (recipe.web_address && recipe.web_address !== "manually-entered") {
       try {
@@ -216,6 +272,34 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
               {isFavorited ? "Favorited" : "Favorite"}
             </Text>
           </TouchableOpacity>
+
+          {RecipeRefreshService.canRefresh(currentRecipe) && (
+            <TouchableOpacity
+              onPress={handleRefresh}
+              disabled={refreshing}
+              style={[
+                styles.headerButton,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: radius.full,
+                  opacity: refreshing ? 0.5 : 1,
+                },
+              ]}
+            >
+              <FontAwesomeIcon
+                icon={faArrowsRotate}
+                size={16}
+                color={colors.primary}
+              />
+              <Text
+                style={[styles.headerButtonText, { color: colors.primary }]}
+              >
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {onEdit && (
             <TouchableOpacity
@@ -316,11 +400,11 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
       {activeTab === "overview" && (
         <>
           {/* Recipe Image */}
-          {recipe.image_url && recipe.id && (
+          {currentRecipe.image_url && currentRecipe.id && (
             <View style={styles.imageContainer}>
               <SmartImage
-                imageUrl={recipe.image_url}
-                recipeId={recipe.id}
+                imageUrl={currentRecipe.image_url}
+                recipeId={currentRecipe.id}
                 style={styles.recipeImage}
                 resizeMode="cover"
                 fallbackIcon="🍽️"
@@ -338,9 +422,9 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            {recipe.description && (
+            {currentRecipe.description && (
               <Text style={[styles.description, { color: colors.textPrimary }]}>
-                {recipe.description}
+                {currentRecipe.description}
               </Text>
             )}
 
@@ -482,9 +566,9 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 
           {/* Ingredients */}
           <IngredientList
-            ingredients={recipe.ingredients}
+            ingredients={currentRecipe.ingredients}
             servings={servingAdjustment}
-            originalServings={recipe.servings}
+            originalServings={currentRecipe.servings}
           />
 
           {/* Enhanced Directions with Checkboxes */}
@@ -495,9 +579,9 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
             ]}
           >
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Directions ({recipe.directions.length} steps)
+              Directions ({currentRecipe.directions.length} steps)
             </Text>
-            {recipe.directions.map((direction, index) => (
+            {currentRecipe.directions.map((direction, index) => (
               <TouchableOpacity
                 key={index}
                 onPress={() => toggleStepCompletion(index)}
@@ -629,11 +713,11 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
       {activeTab === "overview" && (
         <>
           {/* Nutritional Information - Only show if data exists */}
-          {recipe.nutritional_info &&
-            (recipe.nutritional_info.calories ||
-              recipe.nutritional_info.protein ||
-              recipe.nutritional_info.carbs ||
-              recipe.nutritional_info.fat) && (
+          {currentRecipe.nutritional_info &&
+            (currentRecipe.nutritional_info.calories ||
+              currentRecipe.nutritional_info.protein ||
+              currentRecipe.nutritional_info.carbs ||
+              currentRecipe.nutritional_info.fat) && (
               <View
                 style={[
                   styles.section,
@@ -658,7 +742,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                 </Text>
 
                 <View style={styles.nutritionGrid}>
-                  {recipe.nutritional_info?.calories && (
+                  {currentRecipe.nutritional_info?.calories && (
                     <View style={[styles.nutritionItem, styles.caloriesItem]}>
                       <Text style={styles.nutritionIcon}>🔥</Text>
                       <Text
@@ -672,7 +756,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                       <Text
                         style={[styles.nutritionValue, styles.caloriesValue]}
                       >
-                        {Math.round(recipe.nutritional_info.calories)}
+                        {Math.round(currentRecipe.nutritional_info.calories)}
                       </Text>
                       <Text
                         style={[
@@ -685,7 +769,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                     </View>
                   )}
 
-                  {recipe.nutritional_info?.protein && (
+                  {currentRecipe.nutritional_info?.protein && (
                     <View
                       style={[
                         styles.nutritionItem,
@@ -710,12 +794,12 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                           { color: colors.textPrimary },
                         ]}
                       >
-                        {recipe.nutritional_info.protein}
+                        {currentRecipe.nutritional_info.protein}
                       </Text>
                     </View>
                   )}
 
-                  {recipe.nutritional_info?.carbs && (
+                  {currentRecipe.nutritional_info?.carbs && (
                     <View
                       style={[
                         styles.nutritionItem,
@@ -740,12 +824,12 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                           { color: colors.textPrimary },
                         ]}
                       >
-                        {recipe.nutritional_info.carbs}
+                        {currentRecipe.nutritional_info.carbs}
                       </Text>
                     </View>
                   )}
 
-                  {recipe.nutritional_info?.fat && (
+                  {currentRecipe.nutritional_info?.fat && (
                     <View
                       style={[
                         styles.nutritionItem,
@@ -770,12 +854,12 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                           { color: colors.textPrimary },
                         ]}
                       >
-                        {recipe.nutritional_info.fat}
+                        {currentRecipe.nutritional_info.fat}
                       </Text>
                     </View>
                   )}
 
-                  {recipe.nutritional_info?.fiber && (
+                  {currentRecipe.nutritional_info?.fiber && (
                     <View
                       style={[
                         styles.nutritionItem,
@@ -800,12 +884,12 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                           { color: colors.textPrimary },
                         ]}
                       >
-                        {recipe.nutritional_info.fiber}
+                        {currentRecipe.nutritional_info.fiber}
                       </Text>
                     </View>
                   )}
 
-                  {recipe.nutritional_info?.sugar && (
+                  {currentRecipe.nutritional_info?.sugar && (
                     <View
                       style={[
                         styles.nutritionItem,
@@ -830,14 +914,14 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                           { color: colors.textPrimary },
                         ]}
                       >
-                        {recipe.nutritional_info.sugar}
+                        {currentRecipe.nutritional_info.sugar}
                       </Text>
                     </View>
                   )}
                 </View>
 
                 {/* Nutritional Notes */}
-                {recipe.nutritional_info?.calories && (
+                {currentRecipe.nutritional_info?.calories && (
                   <View
                     style={[
                       styles.nutritionNotes,
@@ -857,11 +941,11 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                     >
                       • This recipe provides{" "}
                       {Math.round(
-                        (recipe.nutritional_info.calories / 2000) * 100,
+                        (currentRecipe.nutritional_info.calories / 2000) * 100,
                       )}
                       % of daily calories (based on 2000 cal/day)
                     </Text>
-                    {recipe.nutritional_info.protein && (
+                    {currentRecipe.nutritional_info.protein && (
                       <Text
                         style={[
                           styles.noteText,
@@ -871,7 +955,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
                         • Good source of protein for muscle health and satiety
                       </Text>
                     )}
-                    {recipe.nutritional_info.fiber && (
+                    {currentRecipe.nutritional_info.fiber && (
                       <Text
                         style={[
                           styles.noteText,
