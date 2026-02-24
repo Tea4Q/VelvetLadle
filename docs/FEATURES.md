@@ -159,6 +159,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - 📈 Unlimited recipe capacity
 - 🌐 Access from anywhere
 - 🔐 Personal account with authentication
+- 🔑 Secure password reset via email
 
 **Seamless Switching:**
 - App works identically in both modes
@@ -216,6 +217,14 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - **Fixed User Data Isolation**: Quick Categories now shows only current user's recipes, not all users
 - **Clean Cuisine Filtering**: Removed contamination from non-cuisine fields (no more "recipe", "manual", "entered")
 - **Performance Optimizations**: Eliminated render loops, stabilized callbacks, improved list performance
+
+**New Features (v1.3.0):**
+- **Password Reset Flow**: Complete forgot password feature with email-based reset links
+  - "Forgot Password?" link on sign-in screen
+  - Email-based password recovery via Supabase Auth
+  - Secure deep linking to reset password screen
+  - Works seamlessly with existing authentication system
+  - Demo mode gracefully handles unavailable feature
 
 ---
 

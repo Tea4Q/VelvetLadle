@@ -58,6 +58,10 @@ export default function SignInScreen() {
 		router.back();
 	};
 
+	const handleForgotPassword = () => {
+		router.push('/forgot-password' as any);
+	};
+
 	return (
 		<KeyboardAvoidingView
 			style={[styles.container, { backgroundColor: colors.background }]}
@@ -127,6 +131,15 @@ export default function SignInScreen() {
 							editable={!isSigningIn}
 							onSubmitEditing={handleSignIn}
 						/>
+					</View>
+
+					{/* Forgot Password Link */}
+					<View style={styles.forgotPasswordContainer}>
+						<Pressable onPress={handleForgotPassword} disabled={isSigningIn}>
+							<Text style={[styles.forgotPasswordText, { color: colors.primary }]}>
+								Forgot Password?
+							</Text>
+						</Pressable>
 					</View>
 				</View>
 
@@ -204,6 +217,15 @@ const styles = StyleSheet.create({
 	actions: {
 		gap: 12,
 		marginBottom: 24,
+	},
+	forgotPasswordContainer: {
+		alignItems: 'flex-end',
+		marginTop: 8,
+	},
+	forgotPasswordText: {
+		fontSize: 14,
+		fontWeight: '600',
+		textDecorationLine: 'underline',
 	},
 	footer: {
 		flexDirection: 'row',

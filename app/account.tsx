@@ -329,6 +329,25 @@ export default function AccountScreen() {
               </Pressable>
             </View>
           </View>
+
+          {/* Forgot Password Link - Only show in sign-in mode */}
+          {mode === "signin" && (
+            <View style={styles.forgotPasswordContainer}>
+              <Pressable
+                onPress={() => router.push("/forgot-password" as any)}
+                disabled={isLoading}
+              >
+                <Text
+                  style={[
+                    styles.forgotPasswordText,
+                    { color: colors.primary },
+                  ]}
+                >
+                  Forgot Password?
+                </Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
         {/* Mode Toggle */}
@@ -469,5 +488,14 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
+  },
+  forgotPasswordContainer: {
+    alignItems: "flex-end",
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

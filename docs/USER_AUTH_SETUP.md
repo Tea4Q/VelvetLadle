@@ -26,7 +26,114 @@ This adds:
 - **Disable confirmation** for testing: Settings → Authentication → Email Auth → Uncheck "Enable email confirmations"
 - **Enable confirmation** for production: Users will need to verify email before access
 
-## Step 3: Code Changes Needed
+### Verify Password Reset Email Template
+1. Go to **Authentication** → **Email Templates** in Supabase dashboard
+2. Locate the **Reset Password** template
+3. Verify the template contains the reset link: `{{ .ConfirmationURL }}`
+4. Customize the email subject, body, and styling if desired (optional)
+5. The default template works out-of-the-box for password resets
+
+**Note**: Supabase automatically provides SMTP service for password reset emails. No custom SMTP configuration is required.
+
+## Step 3: Password Reset Feature
+
+### How It Works
+VelvetLadle now includes a complete password reset flow:
+
+1. **User initiates reset**: Clicks "Forgot Password?" on sign-in screen
+2. **Email sent**: User enters email, Supabase sends reset link
+3. **Link clicked**: User clicks link in email, app opens to reset password screen
+4. **Password updated**: User enters new password, account is updated
+
+### User Flow
+```
+Sign In Screen
+    ↓ (click "Forgot Password?")
+Forgot Password Screen (enter email)
+    ↓ (email sent)
+Check Email Inbox
+    ↓ (click reset link)
+Reset Password Screen (enter new password)
+    ↓ (password updated)
+Sign In Screen (with new password)
+```
+
+### Testing Password Reset
+
+#### Prerequisites
+- Supabase Email provider is enabled (Step 2)
+- Valid email address for testing (must be real to receive emails)
+
+#### Test Steps
+1. **Open VelvetLadle** with Supabase configured
+2. **Navigate to Sign In** screen
+3. **Click "Forgot Password?"** link below password field
+4. **Enter your email address** and click "Send Reset Link"
+5. **Check email inbox** for message from Supabase
+   - Subject: "Reset Your Password" (or customized subject)
+   - Sender: `noreply@mail.app.supabase.io` (or custom domain)
+6. **Click reset link** in email
+   - Should open VelvetLadle app to reset password screen
+   - iOS/Android: App opens automatically
+   - Web: Opens in browser
+7. **Enter new password** (minimum 6 characters) twice
+8. **Click "Reset Password"**
+9. **Verify success** - should see confirmation and navigate to sign-in
+10. **Sign in with new password** to confirm it works
+
+### Demo Mode Behavior
+When Supabase is **not** configured (demo mode):
+- "Forgot Password?" link still appears on sign-in screen
+- Clicking it shows an alert: "Password reset requires Supabase configuration. This feature is not available in demo mode."
+- Users must set up Supabase to use password reset
+
+### Deep Linking Configuration
+VelvetLadle uses the URL scheme `velvetladle://` for password reset deep links:
+- **Already configured** in `app.config.js`: `scheme: "velvetladle"`
+- Reset link format: `velvetladle://reset-password`
+- No additional setup required
+
+### Customizing Password Reset Emails (Optional)
+
+To match VelvetLadle branding:
+1. Go to Supabase Dashboard → **Authentication** → **Email Templates**
+2. Select **Reset Password** template
+3. Customize:
+   - **Subject**: e.g., "Reset Your VelvetLadle Password"
+   - **Body**: Add VelvetLadle logo, brand colors
+   - **Button text**: e.g., "Reset My Password"
+4. Keep `{{ .ConfirmationURL }}` variable in button href
+5. Save changes
+
+### Troubleshooting Password Reset
+
+#### Email not received
+- **Check spam folder** - Supabase emails may be filtered
+- **Verify email provider is enabled** in Supabase dashboard
+- **Check Supabase logs**: Dashboard → Logs → Filter by "auth"
+- **Wait a few minutes** - email delivery can be delayed
+
+#### "Failed to send reset link" error
+- Supabase not configured - check environment variables
+- Network error - verify internet connection
+- Invalid email format - check for typos
+
+#### Reset link doesn't open app
+- **iOS/Android**: Verify app is installed
+- **Custom URL scheme**: Check `app.config.js` has `scheme: "velvetladle"`
+- **Fallback**: Manually open app and navigate to reset password screen
+
+#### "Reset failed" or "Link expired"
+- Reset links expire after 1 hour (Supabase default)
+- Click "Request New Link" to send another email
+- Check URL wasn't truncated by email client
+
+#### Password update fails
+- Check minimum 6 characters
+- Verify passwords match
+- Session may have expired - request new reset link
+
+## Step 4: Code Changes Needed
 
 ### A. Update AuthService.ts
 

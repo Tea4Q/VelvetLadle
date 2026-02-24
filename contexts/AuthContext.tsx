@@ -16,6 +16,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   signInAsGuest: () => Promise<void>;
+  resetPasswordRequest: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -211,6 +213,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('user', JSON.stringify(guestUser));
   }, []);
 
+  const resetPasswordRequest = useCallback(async (email: string) => {
+    try {
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured || !supabase) {
+        return {
+          success: false,
+          error: 'Password reset requires Supabase configuration. This feature is not available in demo mode.',
+        };
+      }
+
+      // Send password reset email
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'velvetladle://reset-password',
+      });
+
+      if (error) {
+        console.error('Password reset request error:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Always return success even if email doesn't exist (security best practice)
+      return { success: true };
+    } catch (error) {
+      console.error('Password reset network error:', error);
+      return { success: false, error: 'Network error. Please check your connection and try again.' };
+    }
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    try {
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured || !supabase) {
+        return {
+          success: false,
+          error: 'Password update requires Supabase configuration.',
+        };
+      }
+
+      // Update password for currently authenticated user
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        console.error('Password update error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Password update network error:', error);
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  }, []);
+
   // Load user from storage on app start
   useEffect(() => {
     const loadUser = async () => {
@@ -238,7 +295,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn, 
         signUp, 
         signOut, 
-        signInAsGuest 
+        signInAsGuest,
+        resetPasswordRequest,
+        updatePassword
       }}
     >
       {children}
