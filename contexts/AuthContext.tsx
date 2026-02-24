@@ -1,161 +1,301 @@
-import React, {
-	createContext,
-	ReactNode,
-	useContext,
-	useEffect,
-	useState,
-} from 'react';
-import { router } from 'expo-router';
-import AuthService, { AuthState } from '../services/AuthService';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-interface AuthContextType extends AuthState {
-	signIn: (
-		email: string,
-		password: string
-	) => Promise<{ success: boolean; error?: string }>;
-	signUp: (
-		name: string,
-		email: string,
-		password: string
-	) => Promise<{ success: boolean; error?: string }>;
-	signInAsGuest: () => Promise<{ success: boolean; error?: string }>;
-	signOut: () => Promise<boolean>;
-	refreshAuth: () => Promise<void>;
+export interface User {
+  id: string;
+  email: string;
+  name: string;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export const useAuth = () => {
-	const context = useContext(AuthContext);
-	if (!context) {
-		throw new Error('useAuth must be used within an AuthProvider');
-	}
-	return context;
-};
-
-interface AuthProviderProps {
-	children: ReactNode;
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+  signInAsGuest: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-	const [authState, setAuthState] = useState<AuthState>({
-		isAuthenticated: false,
-		user: null,
-		isLoading: true,
-	});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-	// Initialize auth state on app load
-	const initializeAuth = async () => {
-		try {
-			const isAuthenticated = await AuthService.isAuthenticated();
-			const user = isAuthenticated ? await AuthService.getCurrentUser() : null;
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-			setAuthState({
-				isAuthenticated,
-				user,
-				isLoading: false,
-			});
-		} catch (error) {
-			console.error('Error initializing auth:', error);
-			setAuthState({
-				isAuthenticated: false,
-				user: null,
-				isLoading: false,
-			});
-		}
-	};
+  // Helper function for demo mode signin
+  const signInDemoMode = useCallback(async (email: string) => {
+    // Production build: console.log removed
+    const demoUser = {
+      id: 'demo_user',
+      email,
+      name: email.split('@')[0],
+    };
+    setUser(demoUser);
+    await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    setIsLoading(false);
+    return { success: true };
+  }, []);
 
-	useEffect(() => {
-		initializeAuth();
-	}, []);
+  // Helper function for demo mode signup
+  const signUpDemoMode = useCallback(async (email: string, name: string) => {
+    // Production build: console.log removed
+    const demoUser = {
+      id: 'demo_user',
+      email,
+      name,
+    };
+    setUser(demoUser);
+    await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+    setIsLoading(false);
+    return { success: true };
+  }, []);
 
-	const signIn = async (email: string, password: string) => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+  const signIn = useCallback(async (email: string, password: string) => {
+    // Production build: console.log removed
+    // Production build: console.log removed
+    
+    setIsLoading(true);
+    
+    try {
+      // Critical dual storage pattern - check configuration first
+      if (!isSupabaseConfigured || !supabase) {
+        const result = await signInDemoMode(email);
+        return result;
+      }
 
-		const result = await AuthService.signIn(email, password);
+      try {
+        // Production build: console.log removed
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        // Production build: console.log removed
+        
+        if (error) {
+          console.error('Supabase signin error:', error);
+          
+          // Handle API configuration errors by falling back to demo mode
+          if (error.message.includes('Invalid API key') || 
+              error.message.includes('Invalid JWT') ||
+              error.message.includes('Project not found') ||
+              error.message.includes('Long live credential not available') ||
+              error.message.includes('network') ||
+              error.message.includes('fetch') ||
+              error.message.includes('NetworkError') ||
+              error.message.toLowerCase().includes('failed to fetch')) {
+            // Production build: console.log removed
+            return await signInDemoMode(email);
+          }
+          
+          // Handle specific auth errors normally
+          if (error.message.includes('Invalid login credentials')) {
+            return { 
+              success: false, 
+              error: 'Invalid email or password. Please check your credentials and try again.' 
+            };
+          }
 
-		if (result.success && result.user) {
-			setAuthState({
-				isAuthenticated: true,
-				user: result.user,
-				isLoading: false,
-			});
-			return { success: true };
-		} else {
-			setAuthState((prev) => ({ ...prev, isLoading: false }));
-			return { success: false, error: result.error };
-		}
-	};
+          return { success: false, error: error.message };
+        }
 
-	const signUp = async (name: string, email: string, password: string) => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+        if (data?.user) {
+          const userData = {
+            id: data.user.id,
+            email: data.user.email || '',
+            name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+          };
+          setUser(userData);
+          await AsyncStorage.setItem('user', JSON.stringify(userData));
+          return { success: true };
+        }
 
-		const result = await AuthService.signUp(name, email, password);
+        return { success: false, error: 'Sign in failed - no user data received' };
+      } catch (networkError) {
+        console.error('Sign in network error:', networkError);
+        // Network errors also fall back to demo mode
+        // Production build: console.log removed
+        const result = await signInDemoMode(email);
+        return result;
+      }
+    } catch (outerError) {
+      console.error('Outer try block error:', outerError);
+      // Also fallback to demo mode on any unexpected error
+      try {
+        const result = await signInDemoMode(email);
+        return result;
+      } catch (demoError) {
+        console.error('Demo mode fallback failed:', demoError);
+        return { success: false, error: 'An unexpected error occurred' };
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [signInDemoMode]);
 
-		if (result.success && result.user) {
-			setAuthState({
-				isAuthenticated: true,
-				user: result.user,
-				isLoading: false,
-			});
-			return { success: true };
-		} else {
-			setAuthState((prev) => ({ ...prev, isLoading: false }));
-			return { success: false, error: result.error };
-		}
-	};
+  const signUp = useCallback(async (email: string, password: string, name: string) => {
+    setIsLoading(true);
+    
+    try {
+      // Critical dual storage pattern
+      if (!isSupabaseConfigured || !supabase) {
+        const result = await signUpDemoMode(email, name);
+        return result;
+      }
 
-	const signInAsGuest = async () => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
 
-		const result = await AuthService.signInAsGuest();
+      if (error) {
+        console.error('Supabase signup error:', error);
+         
+        // API configuration errors fall back to demo mode
+        if (error.message.includes('Invalid API key') || 
+            error.message.includes('Invalid JWT') ||
+            error.message.includes('Project not found') ||
+            error.message.includes('Long live credential not available')) {
+          // Production build: console.log removed
+          const result = await signUpDemoMode(email, name);
+          return result;
+        }
+           
+        return { success: false, error: error.message };
+      }
 
-		if (result.success && result.user) {
-			setAuthState({
-				isAuthenticated: true,
-				user: result.user,
-				isLoading: false,
-			});
-			// Navigate to main app after successful authentication
-			router.replace('/(tabs)');
-			return { success: true };
-		} else {
-			setAuthState((prev) => ({ ...prev, isLoading: false }));
-			return { success: false, error: result.error };
-		}
-	};
+      if (data?.user) {
+        const userData = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: name,
+        };
+        setUser(userData);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        return { success: true };
+      }
 
-	const signOut = async () => {
-		setAuthState((prev) => ({ ...prev, isLoading: true }));
+      return { success: false, error: 'Sign up failed' };
+    } catch (error) {
+      console.error('Sign up network error:', error);
+      // Production build: console.log removed
+      const result = await signUpDemoMode(email, name);
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [signUpDemoMode]);
 
-		const success = await AuthService.signOut();
+  const signOut = useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      if (isSupabaseConfigured && supabase) {
+        try {
+          await supabase.auth.signOut();
+        } catch (error) {
+          // Production build: console.log removed
+        }
+      }
+      setUser(null);
+      await AsyncStorage.removeItem('user');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-		setAuthState({
-			isAuthenticated: false,
-			user: null,
-			isLoading: false,
-		});
+  const signInAsGuest = useCallback(async () => {
+    const guestUser = {
+      id: 'guest_user',
+      email: 'guest@velvetladle.com',
+      name: 'Guest User',
+    };
+    setUser(guestUser);
+    await AsyncStorage.setItem('user', JSON.stringify(guestUser));
+  }, []);
 
-		// Navigate back to auth after sign out
-		router.replace('/(auth)/welcome');
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      // If Supabase is not configured, show appropriate message for demo mode
+      if (!isSupabaseConfigured || !supabase) {
+        return { 
+          success: false, 
+          error: 'Password reset is not available in demo mode. Please use demo@example.com with any password to sign in.' 
+        };
+      }
 
-		return success;
-	};
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://your-app.com/reset-password', // This would need to be configured for your app
+      });
 
-	const refreshAuth = async () => {
-		await initializeAuth();
-	};
+      if (error) {
+        console.error('Password reset error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Failed to send password reset email' 
+        };
+      }
 
-	const contextValue: AuthContextType = {
-		...authState,
-		signIn,
-		signUp,
-		signInAsGuest,
-		signOut,
-		refreshAuth,
-	};
+      return { 
+        success: true 
+      };
+    } catch (error) {
+      console.error('Reset password network error:', error);
+      return { 
+        success: false, 
+        error: 'Network error. Please check your connection and try again.' 
+      };
+    }
+  }, []);
 
-	return (
-		<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-	);
-};
+  // Load user from storage on app start
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+      } catch (error) {
+        console.error('Error loading user from storage:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
+
+  return (
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isAuthenticated: !!user,
+        isLoading,
+        signIn, 
+        signUp, 
+        signOut, 
+        signInAsGuest,
+        resetPassword 
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

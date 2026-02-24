@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { parseIngredients, scaleIngredients } from '../utils/ingredientParser';
 import { useColors } from '../contexts/ThemeContext';
@@ -12,6 +12,13 @@ interface IngredientListProps {
 export default function IngredientList({ ingredients, servings, originalServings }: IngredientListProps) {
   const colors = useColors();
   const [currentServings, setCurrentServings] = useState(servings || originalServings || 4);
+
+  // Sync with parent servings changes
+  useEffect(() => {
+    if (servings !== undefined) {
+      setCurrentServings(servings);
+    }
+  }, [servings]);
 
   // Parse ingredients into structured format
   const parsedIngredients = parseIngredients(ingredients);

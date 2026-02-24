@@ -4,6 +4,7 @@ import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpaci
 import { useColors, useRadius, useSpacing, useTypography } from '../contexts/ThemeContext';
 import { Recipe } from '../lib/supabase';
 import { FavoritesService } from '../services/FavoritesService';
+import { RecipeDeletionService } from '../services/RecipeDeletionService';
 import IngredientList from './IngredientList';
 import SmartImage from './SmartImage';
 
@@ -19,7 +20,7 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 	const [activeTab, setActiveTab] = useState<'overview' | 'cooking-tips' | 'notes'>('overview');
 	const [servingAdjustment, setServingAdjustment] = useState(recipe.servings || 4);
 	const [completedSteps, setCompletedSteps] = useState<boolean[]>([]);
-	const [personalNotes, setPersonalNotes] = useState('');
+	const [personalNotes, setPersonalNotes] = useState(recipe.personal_notes || '');
 	
 	const colors = useColors();
 	const spacing = useSpacing();
@@ -84,6 +85,17 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 			setLoading(false);
 		}
 	};
+	
+	const handleDelete = async () => {
+		if (!recipe.id) return;
+		
+		await RecipeDeletionService.deleteRecipeWithConfirmation(recipe, () => {
+			// After successful deletion, navigate back if handler provided
+			if (onBack) {
+				onBack();
+			}
+		});
+	};
 	const openWebAddress = async () => {
 		if (recipe.web_address && recipe.web_address !== 'manually-entered') {
 			try {
@@ -99,21 +111,23 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 		}
 	};
 
-	const formatTime = (time?: string) => {
-		if (!time) return null;
-		return time.replace(/PT|H|M/g, '').replace(/(\d+)(\d{2})/, '$1h $2m');
+	const formatTime = (minutes?: number) => {
+		if (!minutes) return null;
+		if (minutes < 60) return `${minutes} min`;
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 	};
 
 	return (
 		<ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-			{/* Header */}
+			{/* Header Buttons */}
 			<ScrollView
-						horizontal
-						showsHorizontalScrollIndicator={false}
-						style={[styles.tabContainer, { marginTop: spacing.md }]}
-						contentContainerStyle={{ paddingLeft: spacing.md, paddingRight: spacing.md }}
-					>
-			
+				horizontal
+				showsHorizontalScrollIndicator={false}
+				style={[styles.tabContainer, { marginTop: spacing.md, marginBottom: spacing.md }]}
+				contentContainerStyle={{ paddingLeft: spacing.md, paddingRight: spacing.md }}
+			>
 				<View style={styles.headerTop}>
 					{onBack && (
 						<TouchableOpacity
@@ -158,73 +172,53 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 						</TouchableOpacity>
 					)}
 				
-
-				{/* Navigation Tabs */}
-									
-						{[
-							{ key: 'overview', label: '📖 Overview', icon: 'book' },
-							{ key: 'cooking-tips', label: '💡 Tips', icon: 'lightbulb' },
-							{ key: 'notes', label: '📝 Notes', icon: 'note-sticky' }
-						].map((tab) => (
-							<TouchableOpacity
-								key={tab.key}
-								onPress={() => setActiveTab(tab.key as any)}
-								style={[
-									styles.tab,
-									{
-										backgroundColor: activeTab === tab.key ? colors.primary : colors.background,
-										borderRadius: radius.full,
-										paddingHorizontal: spacing.md,
-										paddingVertical: spacing.sm,
-										marginRight: spacing.sm,
-									}
-								]}
-							>
-								<Text style={[
-									styles.tabText,
-									{
-										color: activeTab === tab.key ? colors.textInverse : colors.textPrimary,
-										fontSize: typography.fontSize.sm,
-										fontWeight: activeTab === tab.key ? typography.fontWeight.semibold : typography.fontWeight.normal,
-									}
-								]}>
-									{tab.label}
-								</Text>
-							</TouchableOpacity>
-						))}
-
+					<TouchableOpacity
+						onPress={handleDelete}
+						style={[styles.headerButton, { 
+							backgroundColor: '#dc2626',
+							borderRadius: radius.full 
+						}]}
+					>
+						<FontAwesome6 name="trash" size={16} color={colors.textInverse} />
+						<Text style={[styles.headerButtonText, { color: colors.textInverse }]}>Delete</Text>
+					</TouchableOpacity>
 				</View>
-				
-		
 			</ScrollView>
 
-			{/* Recipe Title */}
-			<Text style={[styles.title, { color: colors.textPrimary, marginBottom: spacing.lg }]}>
-				{recipe.title}
-			</Text>
-
-			{/* Serving Adjuster
-			{activeTab === 'overview' && (
-				<View style={[styles.servingAdjuster, { backgroundColor: colors.surface, borderRadius: radius.md }]}>
+			{/* Navigation Tabs */}
+			<View style={{ flexDirection: 'row', marginBottom: spacing.md, paddingHorizontal: spacing.md }}>
+				{[
+					{ key: 'overview', label: '📖 Overview', icon: 'book' },
+					{ key: 'cooking-tips', label: '💡 Tips', icon: 'lightbulb' },
+					{ key: 'notes', label: '📝 Notes', icon: 'note-sticky' }
+				].map((tab) => (
 					<TouchableOpacity
-						onPress={() => adjustServings(servingAdjustment - 1)}
-						style={[styles.servingButton, { backgroundColor: colors.primary }]}
+						key={tab.key}
+						onPress={() => setActiveTab(tab.key as any)}
+						style={[
+							styles.tab,
+							{
+								backgroundColor: activeTab === tab.key ? colors.primary : colors.background,
+								borderRadius: radius.full,
+								paddingHorizontal: spacing.md,
+								paddingVertical: spacing.sm,
+								marginRight: spacing.sm,
+							}
+						]}
 					>
-						<Text style={styles.servingButtonText}>-</Text>
+						<Text style={[
+							styles.tabText,
+							{
+								color: activeTab === tab.key ? colors.textInverse : colors.textPrimary,
+								fontSize: typography.fontSize.sm,
+								fontWeight: activeTab === tab.key ? typography.fontWeight.semibold : typography.fontWeight.normal,
+							}
+						]}>
+							{tab.label}
+						</Text>
 					</TouchableOpacity>
-					
-					<Text style={[styles.servingText, { color: colors.textPrimary }]}>
-						{servingAdjustment} servings
-					</Text>
-					
-					<TouchableOpacity
-						onPress={() => adjustServings(servingAdjustment + 1)}
-						style={[styles.servingButton, { backgroundColor: colors.primary }]}
-					>
-						<Text style={styles.servingButtonText}>+</Text>
-					</TouchableOpacity>
-				</View>
-			)} */}
+				))}
+			</View>
 
 			{/* Tabbed Content */}
 			{activeTab === 'overview' && (
@@ -263,19 +257,19 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 							<View style={[styles.infoItem, { backgroundColor: colors.background }]}>
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Prep Time </Text>
 								<Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-									{formatTime(recipe.prep_time) || recipe.prep_time || "15 min"}
+								{formatTime(recipe.prep_time_minutes) || "–"}
 								</Text>
 							</View>
 							<View style={[styles.infoItem, { backgroundColor: colors.background }]}>
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Cook Time</Text>
 								<Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-									{formatTime(recipe.cook_time) || recipe.cook_time || "30 min"}
+								{formatTime(recipe.cook_time_minutes) || "–"}
 								</Text>
 							</View>
 							<View style={[styles.infoItem, { backgroundColor: colors.background }]}> 
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Total Time</Text>
 								<Text style={[styles.infoValue, { color: colors.textPrimary }]}> 
-									{formatTime(recipe.total_time) || recipe.total_time || "45 min"}
+								{formatTime(recipe.total_time_minutes) || "–"}
 								</Text>
 							</View>
 							{recipe.difficulty_level && (
@@ -415,7 +409,13 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 			{/* Overview Tab Only - Show remaining sections */}
 			{activeTab === 'overview' && (
 				<>
-					{/* Nutritional Information */}
+					{/* Nutritional Information - Only show if data exists */}
+					{recipe.nutritional_info && (
+						recipe.nutritional_info.calories || 
+						recipe.nutritional_info.protein || 
+						recipe.nutritional_info.carbs || 
+						recipe.nutritional_info.fat
+					) && (
 					<View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
 							🥗 Nutritional Information
@@ -425,72 +425,89 @@ export default function RecipeViewer({ recipe, onBack, onEdit }: Props) {
 						</Text>
 						
 						<View style={styles.nutritionGrid}>
-							<View style={[styles.nutritionItem, styles.caloriesItem]}>
-								<Text style={styles.nutritionIcon}>🔥</Text>
-								<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Calories</Text>
-								<Text style={[styles.nutritionValue, styles.caloriesValue]}>
-									{recipe.nutritional_info?.calories 
-										? Math.round(recipe.nutritional_info.calories / (recipe.servings || 1)) 
-										: "350"}
-								</Text>
-								<Text style={[styles.nutritionUnit, { color: colors.textSecondary }]}>kcal</Text>
-							</View>
+							{recipe.nutritional_info?.calories && (
+								<View style={[styles.nutritionItem, styles.caloriesItem]}>
+									<Text style={styles.nutritionIcon}>🔥</Text>
+									<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Calories</Text>
+									<Text style={[styles.nutritionValue, styles.caloriesValue]}>
+										{Math.round(recipe.nutritional_info.calories)}
+									</Text>
+									<Text style={[styles.nutritionUnit, { color: colors.textSecondary }]}>kcal</Text>
+								</View>
+							)}
 							
-							<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
-								<Text style={styles.nutritionIcon}>🥩</Text>
-								<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Protein</Text>
-								<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
-									{recipe.nutritional_info?.protein || "15g"}
-								</Text>
-							</View>
+							{recipe.nutritional_info?.protein && (
+								<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
+									<Text style={styles.nutritionIcon}>🥩</Text>
+									<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Protein</Text>
+									<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
+										{recipe.nutritional_info.protein}
+									</Text>
+								</View>
+							)}
 							
-							<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
-								<Text style={styles.nutritionIcon}>🍞</Text>
-								<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Carbs</Text>
-								<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
-									{recipe.nutritional_info?.carbs || "45g"}
-								</Text>
-							</View>
+							{recipe.nutritional_info?.carbs && (
+								<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
+									<Text style={styles.nutritionIcon}>🍞</Text>
+									<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Carbs</Text>
+									<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
+										{recipe.nutritional_info.carbs}
+									</Text>
+								</View>
+							)}
 							
-							<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
-								<Text style={styles.nutritionIcon}>🥑</Text>
-								<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Fat</Text>
-								<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
-									{recipe.nutritional_info?.fat || "12g"}
-								</Text>
-							</View>
+							{recipe.nutritional_info?.fat && (
+								<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
+									<Text style={styles.nutritionIcon}>🥑</Text>
+									<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Fat</Text>
+									<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
+										{recipe.nutritional_info.fat}
+									</Text>
+								</View>
+							)}
 							
-							<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
-								<Text style={styles.nutritionIcon}>🌾</Text>
-								<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Fiber</Text>
-								<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
-									{recipe.nutritional_info?.fiber || "5g"}
-								</Text>
-							</View>
+							{recipe.nutritional_info?.fiber && (
+								<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
+									<Text style={styles.nutritionIcon}>🌾</Text>
+									<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Fiber</Text>
+									<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
+										{recipe.nutritional_info.fiber}
+									</Text>
+								</View>
+							)}
 							
-							<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
-								<Text style={styles.nutritionIcon}>🍯</Text>
-								<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Sugar</Text>
-								<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
-									{recipe.nutritional_info?.sugar || "8g"}
-								</Text>
-							</View>
+							{recipe.nutritional_info?.sugar && (
+								<View style={[styles.nutritionItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
+									<Text style={styles.nutritionIcon}>🍯</Text>
+									<Text style={[styles.nutritionLabel, { color: colors.textPrimary }]}>Sugar</Text>
+									<Text style={[styles.nutritionValue, { color: colors.textPrimary }]}>
+										{recipe.nutritional_info.sugar}
+									</Text>
+								</View>
+							)}
 						</View>
 						
 						{/* Nutritional Notes */}
-						<View style={[styles.nutritionNotes, { backgroundColor: colors.background, borderColor: colors.border }]}>
-							<Text style={[styles.notesTitle, { color: colors.textPrimary }]}>💡 Nutrition Tips</Text>
-							<Text style={[styles.noteText, { color: colors.textSecondary }]}>
-								• This recipe provides {recipe.nutritional_info?.calories ? Math.round(((recipe.nutritional_info.calories * servingAdjustment) / (recipe.servings || 1) / 2000) * 100) : "15-20"}% of daily calories (based on 2000 cal/day)
-							</Text>
-							<Text style={[styles.noteText, { color: colors.textSecondary }]}>
-								• Good source of protein for muscle health and satiety
-							</Text>
-							<Text style={[styles.noteText, { color: colors.textSecondary }]}>
-								• Contains fiber for digestive health
-							</Text>
-						</View>
+						{recipe.nutritional_info?.calories && (
+							<View style={[styles.nutritionNotes, { backgroundColor: colors.background, borderColor: colors.border }]}>
+								<Text style={[styles.notesTitle, { color: colors.textPrimary }]}>💡 Nutrition Tips</Text>
+								<Text style={[styles.noteText, { color: colors.textSecondary }]}>
+								• This recipe provides {Math.round((recipe.nutritional_info.calories / 2000) * 100)}% of daily calories (based on 2000 cal/day)
+								</Text>
+								{recipe.nutritional_info.protein && (
+									<Text style={[styles.noteText, { color: colors.textSecondary }]}>
+										• Good source of protein for muscle health and satiety
+									</Text>
+								)}
+								{recipe.nutritional_info.fiber && (
+									<Text style={[styles.noteText, { color: colors.textSecondary }]}>
+										• Contains fiber for digestive health
+									</Text>
+								)}
+							</View>
+						)}
 					</View>
+					)}
 
 					{/* Source */}
 					<View style={[styles.sourceSection, { backgroundColor: colors.surface, borderColor: colors.border }]}> 

@@ -29,13 +29,11 @@ export { isSupabaseConfigured, supabase };
 // Database table structure for recipes with enhanced search fields
 export type Recipe = {
   id?: number;
+  user_id?: string;                  // User who created the recipe (Supabase auth user ID)
   title: string;
   ingredients: string[];
   directions: string[];
   servings?: number;
-  prep_time?: string;
-  cook_time?: string;
-  total_time?: string;
   nutritional_info?: {
     calories?: number;
     protein?: string;
@@ -62,7 +60,6 @@ export type Recipe = {
   prep_time_minutes?: number;        // Numeric prep time for filtering
   cook_time_minutes?: number;        // Numeric cook time for filtering
   total_time_minutes?: number;       // Numeric total time for filtering
-  source_website?: string;           // Domain name for source tracking
   recipe_yield?: string;             // "4 servings", "12 muffins", etc.
   
   // Favorites system
@@ -71,6 +68,9 @@ export type Recipe = {
   
   created_at?: string;
   updated_at?: string;
+
+  // Personal notes for this recipe
+  personal_notes?: string;
 };
 
 // Favorites table structure for URLs and quick access
@@ -88,3 +88,23 @@ export type Favorite = {
   created_at?: string;
   updated_at?: string;
 };
+
+// Add this function for testing
+export const testSupabaseConnection = async () => {
+  try {
+    if (!isSupabaseConfigured || !supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+    
+    const { data, error } = await supabase.from('recipes').select('count').limit(1);
+    // Production build: console.log removed
+    
+    return { success: !error, error: error?.message };
+  } catch (error) {
+    console.error('Supabase connection test failed:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+};
+
+// Add this debugging at the top
+// Production build: console.log removed

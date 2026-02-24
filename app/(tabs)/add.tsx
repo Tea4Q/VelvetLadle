@@ -1,10 +1,15 @@
-import ManualRecipeModal from '@/components/ManualRecipeModal';
+// import ManualRecipeModal from '@/components/ManualRecipeModal';
+import RecipeForm from '@/components/RecipeForm';
 import UrlActionModal from '@/components/UrlActionModal';
 import { useColors, useRadius } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Recipe } from '@/lib/supabase';
+import AuthService from '@/services/AuthService';
+import { RecipeDatabase } from '@/services/recipeDatabase';
+import { GUEST_RECIPE_LIMIT, FREE_ACCOUNT_RECIPE_LIMIT } from '@/constants/limits';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
 	Alert,
 	Pressable,
@@ -16,12 +21,64 @@ import {
 
 export default function AddScreen() {
 	const [showUrlModal, setShowUrlModal] = useState<boolean>(false);
-	const [showManualModal, setShowManualModal] = useState<boolean>(false);
+	const [showRecipeForm, setRecipeForm] = useState<boolean>(false);
+	const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 	const [processedUrl, setProcessedUrl] = useState<string>('');
 	const [testRecipeSource, setTestRecipeSource] = useState<string>('');
 
 	const colors = useColors();
 	const radius = useRadius();
+	const { user } = useAuth();
+
+	// Check if guest and redirect to account creation
+	useFocusEffect(
+		useCallback(() => {
+			async function checkAccess() {
+				const isGuest = user?.id === 'guest_user';
+				if (isGuest) {
+					// Redirect guests to account creation
+					Alert.alert(
+						'Account Required',
+						'Please create an account or sign in to add recipes.',
+						[
+							{
+								text: 'Create Account',
+								onPress: () => router.replace('/account'),
+							},
+							{
+								text: 'Go Back',
+								style: 'cancel',
+								onPress: () => router.replace('/'),
+							},
+						]
+					);
+					return;
+				}
+				
+				// Check recipe limit for free accounts (authenticated users)
+				const allRecipes = await RecipeDatabase.getAllRecipes();
+				if (allRecipes.length >= FREE_ACCOUNT_RECIPE_LIMIT) {
+					// Redirect to upgrade screen - they've hit the free account limit
+					Alert.alert(
+						'Recipe Limit Reached',
+						`Free accounts can save up to ${FREE_ACCOUNT_RECIPE_LIMIT} recipes. Upgrade to a paid subscription for unlimited recipes!`,
+						[
+							{
+								text: 'Upgrade',
+								onPress: () => router.replace('/upgrade'),
+							},
+							{
+								text: 'Go Back',
+								style: 'cancel',
+								onPress: () => router.replace('/'),
+							},
+						]
+					);
+				}
+			}
+			checkAccess();
+		}, [user])
+	);
 
 	const handleTestRecipeSourceChange = (text: string) => {
 		// Production build: console.log removed
@@ -44,7 +101,8 @@ export default function AddScreen() {
 	};
 
 	const handleManualOption = () => {
-		setShowManualModal(true);
+		setEditingRecipe(null);
+		setRecipeForm(true);
 	};
 
 	const closeModal = () => {
@@ -52,18 +110,27 @@ export default function AddScreen() {
 		setShowUrlModal(false);
 	};
 
-	const closeManualModal = () => {
-		setShowManualModal(false);
+	const closeManualForm = () => {
+		setRecipeForm(false);
+		setEditingRecipe(null);
 	};
 
-	const handleManualRecipeUpdated = () => {
-		// Production build: console.log removed
-		// The modal will close itself, we just need to handle any additional logic
+
+	const handleRecipeFormSave = (recipe: Recipe) => {
+		// Save logic here (call your DB/service)
+		setRecipeForm(false);
+		setEditingRecipe(null);
+		// Navigate to recipes tab
+		router.push('/(tabs)/recipes');
 	};
 
 	const handleRecipeSelect = (recipe: Recipe) => {
-		// Navigate to recipes tab where the user can view the recipe
-		router.push('/(tabs)/recipes');
+		// Store the recipe to view and navigate to recipes tab
+		// The recipes screen will detect this and open the viewer
+		router.push({
+			pathname: '/(tabs)/recipes',
+			params: { recipeId: recipe.id?.toString() }
+		});
 	};
 
 	const QuickActionCard = ({
@@ -179,12 +246,23 @@ export default function AddScreen() {
 				onRecipeSelect={handleRecipeSelect}
 			/>
 			
-			<ManualRecipeModal
-				visible={showManualModal}
-				onClose={closeManualModal}
-				onRecipeSelect={handleRecipeSelect}
-				onRecipeUpdated={handleManualRecipeUpdated}
-			/>
+			   {showRecipeForm && (
+				   <View style={{
+					   position: 'absolute',
+					   top: 0,
+					   left: 0,
+					   right: 0,
+					   bottom: 0,
+					   zIndex: 100,
+					   backgroundColor: '#faf4eb',
+				   }}>
+					   <RecipeForm
+						   initialRecipe={editingRecipe}
+						   onSave={handleRecipeFormSave}
+						   onCancel={closeManualForm}
+					   />
+				   </View>
+			   )}
 		</View>
 	);
 }

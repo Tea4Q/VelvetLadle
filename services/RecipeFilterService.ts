@@ -34,22 +34,16 @@ export class RecipeFilterService {
     const cuisineSet = new Set<string>();
     
     recipes.forEach(recipe => {
-      // Check multiple possible fields for cuisine information
-      const cuisineFields = [
-        recipe.cuisine_type,
-        recipe.meal_type,
-        recipe.tags?.join(' '),
-        recipe.description
-      ];
-      
-      cuisineFields.forEach(field => {
-        if (field) {
-          if (typeof field === 'string') {
-            const cuisines = this.parseCuisineString(field);
-            cuisines.forEach(cuisine => cuisineSet.add(cuisine));
+      // Only check the cuisine_type field for cuisine information
+      if (recipe.cuisine_type && typeof recipe.cuisine_type === 'string') {
+        const cleanCuisine = recipe.cuisine_type.trim();
+        if (cleanCuisine && cleanCuisine.length > 0) {
+          // Add the cuisine as-is if it looks like a proper cuisine name
+          if (this.isValidCuisineType(cleanCuisine)) {
+            cuisineSet.add(this.capitalizeFirst(cleanCuisine.toLowerCase()));
           }
         }
-      });
+      }
     });
     
     return Array.from(cuisineSet).sort();
@@ -399,5 +393,37 @@ export class RecipeFilterService {
     const minutes = minuteMatch ? parseInt(minuteMatch[1]) : 0;
     
     return hours * 60 + minutes || null;
+  }
+
+  /**
+   * Check if a string is a valid cuisine type (not recipe source or other metadata)
+   */
+  private static isValidCuisineType(cuisine: string): boolean {
+    if (!cuisine || cuisine.length < 2) return false;
+    
+    const normalized = cuisine.toLowerCase().trim();
+    
+    // Filter out values that are clearly not cuisine types
+    const invalidValues = [
+      'recipe', 'manual', 'entered', 'web', 'url', 'scraped', 'imported',
+      'user', 'custom', 'added', 'new', 'saved', 'created', 'input',
+      'form', 'entry', 'data', 'source', 'type', 'category'
+    ];
+    
+    if (invalidValues.includes(normalized)) {
+      return false;
+    }
+    
+    // Must contain only letters, spaces, and basic punctuation
+    if (!normalized.match(/^[a-z\s\-']+$/)) {
+      return false;
+    }
+    
+    // Should not be too long (cuisine names are typically short)
+    if (normalized.length > 30) {
+      return false;
+    }
+    
+    return true;
   }
 }

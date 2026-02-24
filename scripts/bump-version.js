@@ -51,14 +51,14 @@ if (appJson.expo.ios && appJson.expo.ios.buildNumber) {
 // Write updated app.json
 fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2));
 
-console.log(`✅ Version updated: ${currentVersion} → ${newVersion}`);
+// Production build: console.log removed
 
 // Suggest next commands
-console.log('\n📋 Next steps:');
-console.log('1. Update CHANGELOG.md with new changes');
-console.log('2. Commit the version bump:');
-console.log('   git add app.json CHANGELOG.md');
-console.log('   npm run commit');
-console.log('3. Build the app:');
-console.log('   npm run build:preview (for testing)');
-console.log('   npm run build:production (for app store submission)');
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed
+// Production build: console.log removed');
+// Production build: console.log removed');

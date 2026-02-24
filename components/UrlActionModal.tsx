@@ -1,3 +1,5 @@
+import { RecipeDatabase } from '@/services/recipeDatabase';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
 	ActivityIndicator,
@@ -9,10 +11,9 @@ import {
 	TextInput,
 	View,
 } from 'react-native';
-import { Recipe, isSupabaseConfigured } from '../lib/supabase';
+import { Recipe } from '../lib/supabase';
 import { CorsProxyService } from '../services/corsProxyService';
 import { FavoritesService } from '../services/FavoritesService';
-import { RecipeDatabase } from '../services/recipeDatabase';
 import { RecipeExtractor } from '../services/recipeExtractor';
 import Button from './buttons';
 import CircleButton from './circleButton';
@@ -28,9 +29,12 @@ type Props = {
 
 export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }: Props) {
 	const [isProcessing, setIsProcessing] = useState(false);
+	const [processingStatus, setProcessingStatus] = useState<string>('Starting extraction...');
 	const [showManualEntry, setShowManualEntry] = useState(false);
 	const [inputUrl, setInputUrl] = useState('');
 	const [isUrlInputMode, setIsUrlInputMode] = useState(false);
+	const [isChecking, setIsChecking] = useState(false);
+	const [testRecipeSource, setTestRecipeSource] = useState<string>('');
 
 	// Initialize URL input mode based on whether URL is provided
 	React.useEffect(() => {
@@ -119,6 +123,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 		const urlToUse = isUrlInputMode ? inputUrl : (inputUrl || url);
 		// Production build: console.log removed
 		setIsProcessing(true);
+		setProcessingStatus('Validating URL...');
 
 		try {
 			// Validate URL format first
@@ -137,6 +142,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 			// First check if this URL contains a recipe
 			// Production build: console.log removed
+			setProcessingStatus('Connecting to website...');
 			let html;
 
 			try {
@@ -189,6 +195,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 			}
 
 			// Check if recipe already exists in database
+			setProcessingStatus('Checking for duplicates...');
 			const existingRecipe = await RecipeDatabase.getRecipeByUrl(urlToUse);
 			if (existingRecipe) {
 				// Use React Native Alert
@@ -218,6 +225,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 			// Extract recipe from the webpage
 			// Production build: console.log removed
+			setProcessingStatus('Extracting recipe data...');
 			const extractionResult = await RecipeExtractor.extractRecipeFromUrl(urlToUse);
 
 			// Handle new extraction result format: { recipe, error }
@@ -243,12 +251,12 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 			const extractedRecipe = extractionResult.recipe;
 
-			// Block saving if required fields are missing
-			if (!extractedRecipe.title || !extractedRecipe.ingredients?.length || !extractedRecipe.directions?.length) {
+			// Validate critical fields (title and ingredients are required)
+			if (!extractedRecipe.title || !extractedRecipe.ingredients?.length) {
 				setIsProcessing(false);
 				Alert.alert(
 					'Incomplete Recipe',
-					'The extracted recipe is missing a title, ingredients, or directions. Please enter the recipe manually.',
+					'The extracted recipe is missing a title or ingredients. Please enter the recipe manually.',
 					[
 						{
 							text: 'Enter Manually',
@@ -261,35 +269,39 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 				return;
 			}
 
-			// Save recipe to database
+			// Check what data is missing
+			const missingFields: string[] = [];
+			if (!extractedRecipe.directions || extractedRecipe.directions.length === 0) {
+				missingFields.push('Directions');
+			}
+			if (!extractedRecipe.nutritional_info || 
+				(!extractedRecipe.nutritional_info.calories && 
+				 !extractedRecipe.nutritional_info.protein && 
+				 !extractedRecipe.nutritional_info.carbs)) {
+				missingFields.push('Nutritional Info');
+			}
+			if (!extractedRecipe.prep_time_minutes && !extractedRecipe.cook_time_minutes) {
+				missingFields.push('Cooking Times');
+			}
+			if (!extractedRecipe.description) {
+				missingFields.push('Description');
+			}
+
+			// Save recipe to database with available data
+			setProcessingStatus('Saving recipe...');
 			const saveResult = await RecipeDatabase.saveRecipe(extractedRecipe);
 
 			if (saveResult.success) {
-				const storageType = isSupabaseConfigured
-					? 'Supabase database'
-					: 'demo storage (temporary)';
-				const setupNote = isSupabaseConfigured
-					? ''
-					: '\n\n💡 Set up Supabase for permanent storage (see SUPABASE_SETUP.md)';
-
-				// Use React Native Alert
-				Alert.alert(
-					'Recipe Saved!',
-					`Successfully saved "${extractedRecipe.title}" to ${storageType} with ${extractedRecipe.ingredients.length} ingredients and ${extractedRecipe.directions.length} steps.${setupNote}`,
-					[
-						{ text: 'OK' },
-						{
-							text: 'View Recipe',
-							onPress: () => {
-								if (onRecipeSelect && saveResult.data) {
-									onClose();
-									onRecipeSelect(saveResult.data);
-								}
-							},
-						},
-					]
-				);
-				onClose();
+				// Show brief success status
+				setProcessingStatus('Recipe saved! Opening...');
+				
+				// Auto-navigate to recipe view after a brief moment
+				setTimeout(() => {
+					if (onRecipeSelect && saveResult.data) {
+						onClose();
+						onRecipeSelect(saveResult.data);
+					}
+				}, 500);
 			} else {
 				// Use React Native Alert
 				Alert.alert(
@@ -392,39 +404,71 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 					) : (
 						// URL Action Mode
 						<>
-							<Text style={styles.modalTitle}>Recipe Website Ready</Text>
-							<Text style={styles.modalText}>Website: {inputUrl || url}</Text>
-
-							<View style={styles.modalButtons}>
-								<View style={styles.actionButtonsRow}>
-									<CircleButton
-										icon='globe'
-										label='Open Website'
-										onPress={openUrlInBrowser}
-									/>
-									<CircleButton
-										icon='star'
-										label='Add to Favorites'
-										onPress={addToFavorites}
-									/>
-									<View style={styles.processButtonContainer}>
-										{isProcessing && (
-											<ActivityIndicator
-												size='small'
-												color='#faf4eb'
-												style={styles.loadingIndicator}
-											/>
-										)}
-										<ProcessButton
-											icon={isProcessing ? 'spinner' : 'cog'}
-											label={isProcessing ? 'Processing...' : 'Process Recipe'}
-											onPress={processRecipe}
-										/>
+							{isProcessing ? (
+							// Processing overlay - Modern design
+							<View style={styles.processingContainer}>
+								{/* Top decorative element */}
+								<View style={styles.processingDecoration}>
+									<Ionicons name="restaurant" size={32} color="#00205B" />
+								</View>
+								
+								{/* Main spinner */}
+								<View style={styles.processingIconContainer}>
+									<View style={styles.spinnerOuterRing} />
+									<ActivityIndicator size='large' color='#00205B' />
+								</View>
+								
+								{/* Title and status */}
+								<View style={styles.processingTextContainer}>
+									<Text style={styles.processingTitle}>Processing Recipe</Text>
+									<View style={styles.statusBadge}>
+										<Ionicons name="time-outline" size={16} color="#00205B" style={{ marginRight: 6 }} />
+										<Text style={styles.processingStatus}>{processingStatus}</Text>
 									</View>
 								</View>
-								<Button label='Edit URL' onPress={() => setIsUrlInputMode(true)} />
-								<Button label='Cancel' onPress={onClose} />
-							</View>
+								
+								{/* Progress bar */}
+								<View style={styles.progressBarContainer}>
+									<View style={styles.progressBar}>
+										<View style={styles.progressBarFill} />
+									</View>
+								</View>
+								
+								{/* Bottom hint */}
+								<View style={styles.processingFooter}>
+									<Ionicons name="sparkles" size={14} color="#00205B" style={{ opacity: 0.5, marginRight: 6 }} />
+									<Text style={styles.processingHint}>Extracting recipe details</Text>
+								</View>
+								</View>
+							) : (
+								// Action buttons
+								<>
+									<Text style={styles.modalTitle}>Recipe Website Ready</Text>
+									<Text style={styles.modalText}>Website: {inputUrl || url}</Text>
+
+									<View style={styles.modalButtons}>
+										<View style={styles.actionButtonsRow}>
+											<CircleButton
+												icon='globe'
+												label='Open Website'
+												onPress={openUrlInBrowser}
+											/>
+											<CircleButton
+												icon='star'
+												label='Add to Favorites'
+												onPress={addToFavorites}
+											/>
+											<ProcessButton
+												icon='cog'
+												label='Process Recipe'
+												onPress={processRecipe}
+											/>
+										</View>
+										<Button label='Edit URL' onPress={() => setIsUrlInputMode(true)} />
+										<Button label='Cancel' onPress={onClose} />
+									</View>
+								</>
+							)}
 						</>
 					)}
 				</View>
@@ -498,13 +542,103 @@ const styles = StyleSheet.create({
 		width: '100%',
 		flexWrap: 'wrap',
 	},
-	processButtonContainer: {
-		position: 'relative',
+	processingContainer: {
 		alignItems: 'center',
+		justifyContent: 'center',
+		paddingVertical: 40,
+		paddingHorizontal: 30,
+		width: '100%',
 	},
-	loadingIndicator: {
+	processingDecoration: {
+		marginBottom: 20,
+		opacity: 0.3,
+	},
+	processingIconContainer: {
+		width: 100,
+		height: 100,
+		borderRadius: 50,
+		backgroundColor: '#ffffff',
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 24,
+		shadowColor: '#00205B',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.15,
+		shadowRadius: 12,
+		elevation: 8,
+		borderWidth: 3,
+		borderColor: '#e8f0ff',
+	},
+	spinnerOuterRing: {
 		position: 'absolute',
-		top: -20,
-		zIndex: 1,
+		width: 90,
+		height: 90,
+		borderRadius: 45,
+		borderWidth: 2,
+		borderColor: '#e8f0ff',
+		borderStyle: 'dashed',
+	},
+	processingTextContainer: {
+		alignItems: 'center',
+		gap: 12,
+		marginBottom: 20,
+	},
+	processingTitle: {
+		fontSize: 24,
+		fontWeight: '700',
+		color: '#00205B',
+		letterSpacing: 0.5,
+	},
+	statusBadge: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: '#ffffff',
+		paddingHorizontal: 16,
+		paddingVertical: 8,
+		borderRadius: 20,
+		shadowColor: '#00205B',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+		elevation: 3,
+		borderWidth: 1,
+		borderColor: '#e8f0ff',
+	},
+	processingStatus: {
+		fontSize: 14,
+		color: '#00205B',
+		fontWeight: '600',
+		textAlign: 'center',
+	},
+	progressBarContainer: {
+		width: '100%',
+		paddingHorizontal: 20,
+		marginBottom: 20,
+	},
+	progressBar: {
+		height: 4,
+		backgroundColor: '#e8f0ff',
+		borderRadius: 2,
+		overflow: 'hidden',
+	},
+	progressBarFill: {
+		height: '100%',
+		backgroundColor: '#00205B',
+		borderRadius: 2,
+		width: '60%',
+		opacity: 0.8,
+	},
+	processingFooter: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	processingHint: {
+		fontSize: 13,
+		color: '#00205B',
+		opacity: 0.5,
+		textAlign: 'center',
+		fontStyle: 'italic',
 	},
 });
+

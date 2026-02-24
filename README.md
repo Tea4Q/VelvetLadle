@@ -28,7 +28,18 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
 - For imported recipes, verify the nutrition matches the source and adjust if necessary.
 
 ---
-## ✨ **Recent Enhancements (August 2025)**
+## ✨ **Latest Updates (February 2026 - Google Play Store Ready)**
+
+- **🔐 Authentication Fixes**: Resolved navigation issues and added proper authentication state management
+- **📱 Improved Navigation**: Fixed "Back to Dashboard" and "Recents" card navigation issues  
+- **⏰ Recent Recipes**: Properly displays recipes from the last 7 days with correct timing logic
+- **📜 Scrollable Filters**: Enhanced mobile UX with fully scrollable recipe filter interface
+- **👤 User Data Privacy**: Fixed data isolation - users now see only their own recipes in all views
+- **🍽️ Clean Cuisine Filters**: Removed non-cuisine contamination from filter options
+- **🚀 Performance**: Eliminated render loops, optimized callbacks, improved list scrolling
+- **🎯 Production Ready**: Comprehensive testing and optimization for Google Play Store release
+
+## 🚀 **Previous Enhancements (August 2025)**
 
 - **🚀 Performance Optimization**: Fixed critical render loops and "Maximum update depth exceeded" errors
 - **🎯 Recipe Navigation**: Seamless "View Recipe" functionality after adding recipes
@@ -39,10 +50,12 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
 
 ## 🚀 **Key Features**
 
+
 ### **Recipe Management**
 - **🌐 Web Scraping**: Extract recipes from any website URL
-- **✏️ Manual Entry**: Create recipes with ingredients, directions, and serving info
-- **📝 Full Editing**: Edit existing recipes with pre-populated forms
+- **✏️ Unified Add/Edit Form**: Manual entry and editing are now handled by a single, unified RecipeForm with a tabbed interface (Basics, Details, Nutrition, Notes).
+- **📝 Personal Notes**: Add and edit personal notes for each recipe, accessible in both the form and the viewer.
+- **Full Editing**: Edit existing recipes with all fields pre-populated from the database.
 - **⭐ Favorites**: Mark recipes as favorites for quick access
 - **🔍 Search & Filter**: Find recipes by ingredients, cuisine, or keywords
 
@@ -53,21 +66,36 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
 - **⚡ Fast Performance**: Smooth animations and efficient state management
 
 ### **Data Storage**
-- **☁️ Supabase Integration**: Cloud storage for permanent recipe collection
-- **💾 Demo Mode**: Local storage for testing and development
+- **☁️ Supabase Integration**: Cloud storage for unlimited recipes
+- **💾 Guest Mode**: Try the app with up to 10 recipes (no signup required)
 - **🔄 Dual Support**: Seamless switching between storage modes
 - **🛡️ Data Safety**: Comprehensive validation and error handling
 
 ## 📖 **Documentation**
 
-- **[Render Optimization Guide](RENDER_OPTIMIZATION_GUIDE.md)**: Performance improvements and render loop fixes
-- **[Home Page Redesign](HOME_PAGE_REDESIGN.md)**: Complete authentication system and modern UI
-- **[Recipe Management Enhancements](RECIPE_MANAGEMENT_ENHANCEMENTS.md)**: Latest feature improvements and technical details
-- **[Favorites Guide](FAVORITES_GUIDE.md)**: Favorite recipes functionality
-- **[Search & Filter Guide](SEARCH_AND_FILTER_GUIDE.md)**: Recipe discovery features
-- **[Theme Guide](THEME_GUIDE.md)**: Design system and theming
-- **[Testing Checklist](TESTING_CHECKLIST.md)**: Quality assurance guidelines
-- **[Supabase Setup](SUPABASE_SETUP.md)**: Cloud database configuration
+**Complete Feature Overview:**
+- **[📋 Complete Features Guide](docs/FEATURES.md)**: Comprehensive feature documentation for users, testers, and investors
+
+**User Guides:**
+- **[Recipe Management](docs/RECIPE_MANAGEMENT_ENHANCEMENTS.md)**: Add, edit, and organize recipes
+- **[Favorites System](docs/FAVORITES_GUIDE.md)**: Quick access to your best recipes
+- **[Search & Filter](docs/SEARCH_AND_FILTER_GUIDE.md)**: Find recipes fast
+- **[Quick Categories](docs/QUICK_CATEGORIES_GUIDE.md)**: Meal type filtering
+
+**Setup & Configuration:**
+- **[Supabase Setup](docs/SUPABASE_SETUP.md)**: Cloud database configuration
+- **[Web Scraping APIs](docs/WEB_SCRAPING_APIS.md)**: External service setup
+- **[Local Image Storage](docs/LOCAL_IMAGE_STORAGE.md)**: Image caching
+
+**Development:**
+- **[Build Process](docs/BUILD_PROCESS.md)**: Build and release workflow
+- **[Testing Checklist](docs/TESTING_CHECKLIST.md)**: QA procedures
+- **[Render Optimization](docs/RENDER_OPTIMIZATION_GUIDE.md)**: Performance patterns
+- **[Theme Guide](docs/THEME_GUIDE.md)**: Design system
+
+**Technical:**
+- **[EAS Build Guide](docs/EAS_BUILD_GUIDE.md)**: Expo Application Services builds
+- **[Changelog](docs/CHANGELOG.md)**: Version history
 
 ## 🛠 **Technology Stack**
 
@@ -92,7 +120,21 @@ VelvetLadle is a comprehensive React Native app built with Expo for managing you
    npx expo start
    ```
 
-3. Optional: Set up Supabase for cloud storage (see [SUPABASE_SETUP.md](SUPABASE_SETUP.md))
+3. Optional: Set up Supabase for cloud storage (see [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md))
+
+## 📋 **Features**
+
+For a complete overview of all features, see **[docs/FEATURES.md](docs/FEATURES.md)**
+
+**Highlights:**
+- 🌐 Smart recipe import from any website
+- ✏️ Manual recipe entry with full editing
+- ⭐ Favorites system for quick access
+- 🔍 Advanced search and filtering
+- 📊 Automatic nutrition tracking
+- 💾 Dual storage (cloud + local demo)
+- 🎨 Modern, touch-optimized UI
+- ⚡ Performance optimized
 
 In the output, you'll find options to open the app in a
 
@@ -116,7 +158,7 @@ app/                    # Main application screens
 components/            # Reusable UI components
 ├── RecipeList.tsx     # Recipe browsing and management
 ├── RecipeViewer.tsx   # Recipe detail viewing
-├── ManualRecipeModal.tsx # Manual recipe creation/editing
+├── RecipeForm.tsx     # Unified add/edit form with tabs and notes
 ├── UrlActionModal.tsx # URL processing interface
 └── button.tsx         # Enhanced button component
 services/              # Business logic and API services
@@ -135,7 +177,12 @@ contexts/              # React contexts for global state
 2. **Sign in or continue as guest** - Choose your authentication method
 3. **Add your first recipe** - Use the "Add Recipe" button on the home screen
 4. **From website**: Enter any recipe URL and let the app extract the content
-5. **Manual entry**: Create recipes from scratch with ingredients and directions
+5. **Manual or Edit entry**: Use the unified RecipeForm to create or edit recipes, including all fields and personal notes
+## 📝 **Personal Notes Feature**
+
+- Every recipe supports a personal notes section for your own modifications, reviews, or tips.
+- Notes are available in both the RecipeForm (add/edit) and RecipeViewer (view mode) under a dedicated Notes tab.
+- Notes are saved to the database and can be updated at any time.
 6. **Browse and organize** - View your recipe collection, mark favorites, and search
 
 ## 🚀 **Development**

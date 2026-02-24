@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velvet Ladle",
     "slug": "VelvetLadle",
-    "version": "1.0.0",
+    "version": "2.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/favicon_velveltLadle_large_128x128.png",
     "scheme": "velvetladle",
@@ -47,9 +47,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.1",
     "updates": {
       "enabled": false,
       "url": "https://u.expo.dev/df5296c9-1e42-454b-924c-07dc23f4ed53"

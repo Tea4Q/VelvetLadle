@@ -137,9 +137,9 @@ export class WebScrapingAPIService {
         ingredients: recipe.extendedIngredients?.map((ing: any) => ing.original) || [],
         directions: recipe.analyzedInstructions?.[0]?.steps?.map((step: any) => step.step) || [],
         servings: recipe.servings,
-        prep_time: `PT${recipe.preparationMinutes || 0}M`,
-        cook_time: `PT${recipe.cookingMinutes || 0}M`,
-        total_time: `PT${recipe.readyInMinutes || 0}M`,
+        prep_time_minutes: recipe.preparationMinutes || undefined,
+        cook_time_minutes: recipe.cookingMinutes || undefined,
+        total_time_minutes: recipe.readyInMinutes || undefined,
         image_url: recipe.image,
         description: recipe.summary?.replace(/<[^>]*>/g, ''),
         web_address: url,
@@ -154,11 +154,41 @@ export class WebScrapingAPIService {
           sodium: getNutrient('Sodium', 'mg'),
         } : undefined,
       };
-      // Check for critical fields
-      if (!result.title || !result.ingredients.length || !result.directions.length) {
-        console.error('[Spoonacular] Incomplete recipe data:', result);
+      
+      // Fallback: Parse nutrition from description text if structured data not available
+      if (!result.nutritional_info && recipe.summary) {
+        // Production build: console.log removed
+        // Production build: console.log removed);
+        const nutritionFromText = this.parseNutritionFromText(recipe.summary);
+        if (nutritionFromText) {
+          result.nutritional_info = nutritionFromText;
+          // Production build: console.log removed
+        } else {
+          // Production build: console.log removed
+        }
+        
+        // Also try to extract total time from description
+        const timeMatch = recipe.summary.match(/(?:in|around|about)\s+(?:around\s+)?(\d+)\s*minutes?/i);
+        if (timeMatch && !result.total_time_minutes) {
+          result.total_time_minutes = parseInt(timeMatch[1]);
+          // Production build: console.log removed
+        }
+      } else {
+        // Production build: console.log removed
+      }
+      
+      // Check for critical fields - only title and ingredients are required
+      // Directions can be added manually later
+      if (!result.title || !result.ingredients.length) {
+        console.error('[Spoonacular] Incomplete recipe data (missing title or ingredients):', result);
         return null;
       }
+      
+      // Warn if directions are missing but still return the recipe
+      if (!result.directions.length) {
+        console.warn('[Spoonacular] Recipe extracted without directions - can be added manually');
+      }
+      
       return result;
     } catch (error: any) {
       console.error('[Spoonacular] Extract error:', error?.message || error);
@@ -207,5 +237,40 @@ export class WebScrapingAPIService {
     }
     console.error('[extractRecipeWithAPIs] All extraction methods failed for URL:', url);
     return null;
+  }
+
+  /**
+   * Parse nutrition information from description text
+   */
+  private static parseNutritionFromText(text: string): any {
+    if (!text) return null;
+    
+    const nutrition: any = {};
+    
+    // Extract calories (e.g., "652 calories")
+    const caloriesMatch = text.match(/(\d+)\s*calories/i);
+    if (caloriesMatch) {
+      nutrition.calories = parseInt(caloriesMatch[1]);
+    }
+    
+    // Extract protein (e.g., "19g of protein")
+    const proteinMatch = text.match(/(\d+)g\s*of\s*protein/i);
+    if (proteinMatch) {
+      nutrition.protein = proteinMatch[1] + 'g';
+    }
+    
+    // Extract fat (e.g., "32g of fat")
+    const fatMatch = text.match(/(\d+)g\s*of\s*fat/i);
+    if (fatMatch) {
+      nutrition.fat = fatMatch[1] + 'g';
+    }
+    
+    // Extract carbs (e.g., "45g of carbohydrates" or "45g of carbs")
+    const carbsMatch = text.match(/(\d+)g\s*of\s*carb(?:ohydrate)?s?/i);
+    if (carbsMatch) {
+      nutrition.carbs = carbsMatch[1] + 'g';
+    }
+    
+    return Object.keys(nutrition).length > 0 ? nutrition : null;
   }
 }

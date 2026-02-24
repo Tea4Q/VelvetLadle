@@ -34,8 +34,25 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen, refreshTrigge
         FavoritesService.getFavoriteRecipes()
       ]);
       
-      setFavorites(allFavorites);
+      // Deduplicate favorites to prevent React key conflicts
+      const seenFavorites = new Set<string>();
+      const uniqueFavorites = allFavorites.filter(fav => {
+        const key = fav.type === 'recipe' ? `recipe-${fav.recipe_id}` : `url-${fav.url}`;
+        if (seenFavorites.has(key)) {
+          return false;
+        }
+        seenFavorites.add(key);
+        return true;
+      });
+      
+      setFavorites(uniqueFavorites);
       setFavoriteRecipes(recipes);
+      
+      // If we found duplicates in the display data, clean up the storage too
+      if (uniqueFavorites.length !== allFavorites.length) {
+        // Clean up duplicates in storage asynchronously
+        FavoritesService.removeDuplicateFavorites().catch(console.error);
+      }
       // Production build: console.log removed
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -394,7 +411,7 @@ export default function FavoritesList({ onRecipeSelect, onUrlOpen, refreshTrigge
         <FlatList
           data={displayData}
           renderItem={renderFavorite}
-          keyExtractor={(item) => `${item.type}-${item.id || item.url}`}
+          keyExtractor={(item, index) => `${item.type}-${item.id || item.url}-${index}`}
           refreshing={refreshing}
           onRefresh={handleRefresh}
           showsVerticalScrollIndicator={false}

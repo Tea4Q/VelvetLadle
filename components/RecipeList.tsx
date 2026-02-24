@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	Alert,
 	FlatList,
+	RefreshControl,
+	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
 	View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
 	useColors,
 	useElevation,
@@ -14,10 +17,12 @@ import {
 	useSpacing,
 	useTypography,
 } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Recipe } from '../lib/supabase';
 import { FavoritesService } from '../services/FavoritesService';
 import { ImageStorageService } from '../services/ImageStorageService';
 import { RecipeDatabase } from '../services/recipeDatabase';
+import { RecipeDeletionService } from '../services/RecipeDeletionService';
 import { RecipeExtractor } from '../services/recipeExtractor';
 import { RecipeFilterService } from '../services/RecipeFilterService';
 import { RecipeValidation } from '../utils/recipeValidation';
@@ -28,17 +33,22 @@ import SmartImage from './SmartImage';
 type Props = {
 	onRecipeSelect?: (recipe: Recipe) => void;
 	initialCategoryFilter?: string;
+	initialFilterType?: string;
 };
 
-export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Props) {
+export default function RecipeList({ onRecipeSelect, initialCategoryFilter, initialFilterType }: Props) {
 	const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 	const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
-	const [showFilters, setShowFilters] = useState(!!initialCategoryFilter);
+	const [showFilters, setShowFilters] = useState(!!initialCategoryFilter || !!initialFilterType);
 	const [favoriteStatuses, setFavoriteStatuses] = useState<{
 		[key: number]: boolean;
 	}>({});
+
+	const { user } = useAuth();
+	const router = useRouter();
+	const isGuest = user?.id === 'guest_user';
 
 	// Use ref to prevent multiple simultaneous loads
 	const isLoadingRef = useRef(false);
@@ -95,18 +105,33 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 
 			setAllRecipes(cleanRecipes);
 			
-			// Apply current category filter if provided
+			// Apply filters if provided
+			let recipesToShow = cleanRecipes;
+			
+			// Apply filterType (e.g., 'recent')
+			if (initialFilterType === 'recent') {
+				// Filter to recent recipes (last 7 days)
+				const sevenDaysAgo = new Date();
+				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+				
+				recipesToShow = cleanRecipes.filter(recipe => {
+					if (!recipe.created_at) return false;
+					const recipeDate = new Date(recipe.created_at);
+					return recipeDate >= sevenDaysAgo;
+				}).sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+			}
+			
+			// Apply category filter if provided (after filterType)
 			if (stableCategoryFilter.current) {
-				const filtered = RecipeFilterService.filterRecipes(
-					cleanRecipes,
+				recipesToShow = RecipeFilterService.filterRecipes(
+					recipesToShow,
 					'',
 					[],
 					[stableCategoryFilter.current]
 				);
-				setFilteredRecipes(filtered);
-			} else {
-				setFilteredRecipes(cleanRecipes);
 			}
+			
+			setFilteredRecipes(recipesToShow);
 			
 			// Load favorite statuses
 			const statuses: { [key: number]: boolean } = {};
@@ -138,6 +163,11 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		}
 	}, []); // Remove initialCategoryFilter dependency completely
 
+	// Helper to detect demo recipes
+	const isDemoRecipe = (recipe: Recipe) => {
+		return recipe.web_address?.startsWith('https://example.com/');
+	};
+
 	const handleToggleFavorite = async (recipe: Recipe) => {
 		if (!recipe.id) return;
 
@@ -167,18 +197,59 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 		selectedIngredients: string[],
 		selectedCuisines: string[]
 	) => {
+		// Start with all recipes, then apply initial filterType if present
+		let baseRecipes = allRecipes;
+		
+		// Apply filterType (e.g., 'recent') first if present
+		if (initialFilterType === 'recent') {
+			const sevenDaysAgo = new Date();
+			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+			
+			baseRecipes = allRecipes.filter(recipe => {
+				if (!recipe.created_at) return false;
+				const recipeDate = new Date(recipe.created_at);
+				return recipeDate >= sevenDaysAgo;
+			}).sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+		}
+		
+		// Then apply search/filter on the base set
 		const filtered = RecipeFilterService.filterRecipes(
-			allRecipes,
+			baseRecipes,
 			searchTerm,
 			selectedIngredients,
 			selectedCuisines
 		);
 		setFilteredRecipes(filtered);
-	}, [allRecipes]);
+	}, [allRecipes, initialFilterType]);
 
 	const handleClearSearch = useCallback(() => {
-		setFilteredRecipes(allRecipes);
-	}, [allRecipes]);
+		// When clearing search, restore to the initial filtered state (if any)
+		let recipesToShow = allRecipes;
+		
+		// Apply filterType (e.g., 'recent') if present
+		if (initialFilterType === 'recent') {
+			const sevenDaysAgo = new Date();
+			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+			
+			recipesToShow = allRecipes.filter(recipe => {
+				if (!recipe.created_at) return false;
+				const recipeDate = new Date(recipe.created_at);
+				return recipeDate >= sevenDaysAgo;
+			}).sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+		}
+		
+		// Apply category filter if provided (after filterType)
+		if (stableCategoryFilter.current) {
+			recipesToShow = RecipeFilterService.filterRecipes(
+				recipesToShow,
+				'',
+				[],
+				[stableCategoryFilter.current]
+			);
+		}
+		
+		setFilteredRecipes(recipesToShow);
+	}, [allRecipes, initialFilterType]);
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
@@ -227,58 +298,8 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 	}, []);
 
 
-		// Helper to perform the actual delete
-		const performDelete = async (recipe: Recipe) => {
-			try {
-				const result = await RecipeDatabase.deleteRecipe(recipe.id!);
-				if (result.success) {
-					await ImageStorageService.deleteLocalImage(recipe.id!);
-					handleRefresh();
-				} else {
-					console.error('❌ Error deleting recipe:', result.error);
-					Alert.alert('Error', result.error || 'Failed to delete recipe. Please try again.');
-				}
-			} catch (error) {
-				console.error('❌ Error deleting recipe:', error);
-				Alert.alert('Error', 'Failed to delete recipe. Please try again.');
-			}
-		};
-
 		const handleDelete = useCallback(async (recipe: Recipe) => {
-			const recipeTitle = RecipeValidation.getSafeTitle(recipe);
-			if (!recipe.id) {
-				console.error('❌ Recipe has no ID, cannot delete');
-				return;
-			}
-			if (!recipe.title || recipe.title.trim() === '') {
-				console.warn('⚠️ Recipe has empty title, ID:', recipe.id);
-			}
-			// Use Alert for both web and mobile
-			if (typeof window !== 'undefined' && window.confirm) {
-				if (!window.confirm(
-					`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`
-				)) {
-					return;
-				}
-				await performDelete(recipe);
-			} else {
-				Alert.alert(
-					'Delete Recipe',
-					`Are you sure you want to delete "${recipeTitle}"?\n\nThis action cannot be undone.`,
-					[
-						{
-							text: 'Cancel',
-							style: 'cancel',
-							onPress: () => {},
-						},
-						{
-							text: 'Delete',
-							style: 'destructive',
-							onPress: () => performDelete(recipe),
-						}
-					]
-				);
-			}
+			await RecipeDeletionService.deleteRecipeWithConfirmation(recipe, handleRefresh);
 		}, [handleRefresh]);
 
 	useEffect(() => {
@@ -477,6 +498,32 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					{RecipeValidation.getSafeTitle(recipe)}
 				</Text>
 
+				{isDemoRecipe(recipe) && (
+					<View
+						style={{
+							backgroundColor: colors.info + '20',
+							borderColor: colors.info,
+							borderWidth: 1,
+							paddingHorizontal: spacing.sm,
+							paddingVertical: 2,
+							borderRadius: radius.sm,
+							marginLeft: spacing.xs,
+							marginRight: spacing.sm,
+							alignSelf: 'flex-start',
+						}}
+					>
+						<Text
+							style={{
+								color: colors.info,
+								fontSize: typography.fontSize.xs,
+								fontWeight: typography.fontWeight.semibold,
+							}}
+						>
+							DEMO
+						</Text>
+					</View>
+				)}
+
 				<View style={styles.headerActions}>
 					<TouchableOpacity
 						onPress={(e) => {
@@ -595,7 +642,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					</View>
 				)}
 
-				{recipe.total_time && (
+				{recipe.prep_time_minutes && (
 					<Text
 						style={[
 							styles.timeText,
@@ -605,7 +652,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 							},
 						]}
 					>
-						⏰ {recipe.total_time}
+						⏰ {recipe.prep_time_minutes}
 					</Text>
 				)}
 			</View>
@@ -732,6 +779,54 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			{/* Guest Signup CTA Banner */}
+			{isGuest && (
+				<View
+					style={[
+						styles.guestBanner,
+						{
+							backgroundColor: colors.secondary,
+							paddingHorizontal: spacing.lg,
+							paddingVertical: spacing.md,
+							borderBottomWidth: 1,
+							borderBottomColor: colors.border,
+						},
+					]}
+				>
+					<Text
+						style={[
+							styles.guestBannerText,
+							{
+								color: colors.primary,
+								fontSize: typography.fontSize.base,
+								fontWeight: typography.fontWeight.semibold,
+								marginBottom: spacing.xs,
+							},
+						]}
+					>
+						👋 Browsing Demo Recipes
+					</Text>
+					<Text
+						style={[
+							styles.guestBannerSubtext,
+							{
+								color: colors.textSecondary,
+								fontSize: typography.fontSize.sm,
+								marginBottom: spacing.sm,
+							},
+						]}
+					>
+						Sign up to add your own recipes and sync across devices!
+					</Text>
+					<Button
+						label='Create Free Account'
+						theme='primary'
+						onPress={() => router.push('/account')}
+						icon='user-plus'
+					/>
+				</View>
+			)}
+			
 			{/* Filter Toggle Button */}
 			<View
 				style={[
@@ -750,7 +845,7 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 						},
 					]}
 				>
-					My Recipes ({filteredRecipes.length})
+					{isGuest ? 'Demo Recipes' : 'My Recipes'} ({filteredRecipes.length})
 				</Text>
 
 				<Button
@@ -824,15 +919,23 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 					/>
 				</View>
 			) : (
-				<FlatList
-					data={filteredRecipes}
-					renderItem={renderRecipe}
-					keyExtractor={(item) => item.id?.toString() || item.title}
-					refreshing={refreshing}
-					onRefresh={handleRefresh}
+				<ScrollView 
 					showsVerticalScrollIndicator={false}
+					refreshControl={
+						<RefreshControl
+							refreshing={refreshing}
+							onRefresh={handleRefresh}
+							tintColor={colors.primary}
+						/>
+					}
 					contentContainerStyle={{ paddingBottom: spacing.xl }}
-				/>
+				>
+					{filteredRecipes.map((recipe, index) => 
+						<View key={recipe.id?.toString() || `${recipe.title}-${index}`}>
+							{renderRecipe({ item: recipe })}
+						</View>
+					)}
+				</ScrollView>
 			)}
 		</View>
 	);
@@ -841,6 +944,15 @@ export default function RecipeList({ onRecipeSelect, initialCategoryFilter }: Pr
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+	},
+	guestBanner: {
+		// Dynamic styles applied inline
+	},
+	guestBannerText: {
+		// Dynamic styles applied inline
+	},
+	guestBannerSubtext: {
+		// Dynamic styles applied inline
 	},
 	header: {
 		flexDirection: 'row',

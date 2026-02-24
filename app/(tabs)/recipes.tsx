@@ -1,22 +1,44 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
+import RecipeForm from '../../components/RecipeForm';
 import RecipeList from '../../components/RecipeList';
 import RecipeViewer from '../../components/RecipeViewer';
-import ManualRecipeModal from '../../components/ManualRecipeModal';
-import { Recipe } from '../../lib/supabase';
 import { useColors } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { Recipe } from '../../lib/supabase';
+import { RecipeDatabase } from '../../services/recipeDatabase';
 
 export default function RecipesScreen() {
 	const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-	const [showEditModal, setShowEditModal] = useState(false);
+	const [showEditForm, setShowEditForm] = useState(false);
 	const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 	const [refreshKey, setRefreshKey] = useState(0);
 	const colors = useColors();
+	const { user } = useAuth();
 	
-	// Get URL parameters for category filtering and stabilize the value
-	const { category } = useLocalSearchParams();
+	const isGuest = user?.id === 'guest_user';
+	
+	// Get URL parameters for category filtering, filterType, and recipeId
+	const { category, filterType, recipeId } = useLocalSearchParams();
 	const stableCategory = useMemo(() => category as string, [category]);
+	const stableFilterType = useMemo(() => filterType as string, [filterType]);
+
+	// When recipeId is passed via router params, load and display that recipe
+	useEffect(() => {
+		if (recipeId) {
+			const loadRecipe = async () => {
+				const id = parseInt(recipeId as string, 10);
+				if (!isNaN(id)) {
+					const { success, data } = await RecipeDatabase.getRecipeById(id);
+					if (success && data) {
+						setSelectedRecipe(data);
+					}
+				}
+			};
+			loadRecipe();
+		}
+	}, [recipeId]);
 
 	const handleRecipeSelect = (recipe: Recipe) => {
 		setSelectedRecipe(recipe);
@@ -28,21 +50,39 @@ export default function RecipesScreen() {
 
 	const handleEdit = (recipe: Recipe) => {
 		setEditingRecipe(recipe);
-		setShowEditModal(true);
+		setShowEditForm(true);
 	};
 
-	const handleEditModalClose = () => {
-		setShowEditModal(false);
+	const handleEditFormClose = () => {
+		setShowEditForm(false);
 		setEditingRecipe(null);
 	};
 
-	const handleRecipeUpdated = () => {
-		// Refresh the recipe list by incrementing the refresh key
-		setRefreshKey(prev => prev + 1);
-		// If we're viewing the edited recipe, update the selected recipe
-		if (selectedRecipe && editingRecipe && selectedRecipe.id === editingRecipe.id) {
-			setSelectedRecipe(null);
+
+
+	const handleRecipeFormSave = async (updatedRecipe: Recipe) => {
+		if (!updatedRecipe.id) {
+			Alert.alert('Error', 'Recipe ID is missing.');
+			return;
 		}
+		const { success, data, error } = await RecipeDatabase.updateRecipe(updatedRecipe.id, updatedRecipe);
+		if (!success) {
+			Alert.alert('Error updating recipe', error || 'Unknown error');
+			return;
+		}
+		
+		// Close the edit form and refresh
+		setShowEditForm(false);
+		setEditingRecipe(null);
+		setRefreshKey(prev => prev + 1);
+		
+		// If we're viewing the edited recipe, update the selected recipe
+		if (selectedRecipe && data && data.id === selectedRecipe.id) {
+			setSelectedRecipe(data);
+		}
+		
+		// Show success message
+		Alert.alert('Success', 'Recipe updated successfully!');
 	};
 
 	return (
@@ -51,22 +91,26 @@ export default function RecipesScreen() {
 				<RecipeViewer
 					recipe={selectedRecipe}
 					onBack={handleBack}
-					onEdit={handleEdit}
+					onEdit={isGuest ? undefined : handleEdit}
 				/>
 			) : (
 				<RecipeList
-					key={`recipes-list-${refreshKey}-${stableCategory || 'all'}`} // Include category in key to force re-render
+					key={`recipes-list-${refreshKey}-${stableCategory || 'all'}-${stableFilterType || 'none'}`} // Include both category and filterType in key
 					onRecipeSelect={handleRecipeSelect}
 					initialCategoryFilter={stableCategory}
+					initialFilterType={stableFilterType}
 				/>
 			)}
 			
-			<ManualRecipeModal
-				visible={showEditModal}
-				onClose={handleEditModalClose}
-				editingRecipe={editingRecipe}
-				onRecipeUpdated={handleRecipeUpdated}
-			/>
+			{showEditForm && editingRecipe && (
+				<View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.background, zIndex: 10 }}>
+					<RecipeForm
+						initialRecipe={editingRecipe}
+						onSave={handleRecipeFormSave}
+						onCancel={handleEditFormClose}
+					/>
+				</View>
+			)}
 		</View>
 	);
 }

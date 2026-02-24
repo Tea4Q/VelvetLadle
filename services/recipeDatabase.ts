@@ -1,18 +1,30 @@
-import { supabase, Recipe, isSupabaseConfigured } from '../lib/supabase';
+import { Recipe, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { DemoStorage } from './demoStorage';
 
 export class RecipeDatabase {
   static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Recipe; error?: string }> {
+    // Production build: console.log removed
     try {
+      // Production build: console.log removed
+      
       if (!isSupabaseConfigured || !supabase) {
+        // Production build: console.log removed
         const result = await DemoStorage.saveRecipe(recipe);
-        if (result.success) {
-        
-        }
         return result;
       }
 
-    
+      // Get current authenticated user
+      // Production build: console.log removed
+      const { data: { user } } = await supabase.auth.getUser();
+      // Production build: console.log removed` : 'null');
+      
+      if (!user) {
+        // Production build: console.log removed
+        return { success: false, error: 'User not authenticated' };
+      }
+      
+      // Production build: console.log removed
+      // Production build: console.log removed
       
       const { data, error } = await supabase
         .from('recipes')
@@ -21,9 +33,9 @@ export class RecipeDatabase {
           ingredients: recipe.ingredients,
           directions: recipe.directions,
           servings: recipe.servings,
-          prep_time: recipe.prep_time,
-          cook_time: recipe.cook_time,
-          total_time: recipe.total_time,
+          prep_time_minutes: recipe.prep_time_minutes,
+          cook_time_minutes: recipe.cook_time_minutes,
+          total_time_minutes: recipe.total_time_minutes,
           nutritional_info: recipe.nutritional_info,
           web_address: recipe.web_address,
           recipe_source: recipe.recipe_source,
@@ -31,6 +43,7 @@ export class RecipeDatabase {
           description: recipe.description,
           cuisine_type: recipe.cuisine_type,
           difficulty_level: recipe.difficulty_level,
+          user_id: user.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
@@ -38,9 +51,12 @@ export class RecipeDatabase {
         .single();
 
       if (error) {
-        console.error('Error saving recipe:', error);
+        console.error('❌ Error saving recipe:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return { success: false, error: error.message };
       }
+      
+      // Production build: console.log removed
 
      
       return { success: true, data };
@@ -74,22 +90,74 @@ export class RecipeDatabase {
     }
   }
 
-  static async getAllRecipes(): Promise<Recipe[]> {
+  static async getRecipeById(id: number): Promise<{ success: boolean; data?: Recipe; error?: string }> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        return await DemoStorage.getAllRecipes();
+        // Demo storage: find recipe by ID
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const recipe = allRecipes.find(r => r.id === id);
+        if (recipe) {
+          return { success: true, data: recipe };
+        }
+        return { success: false, error: 'Recipe not found' };
       }
 
       const { data, error } = await supabase
         .from('recipes')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching recipe by ID:', error);
+      return { success: false, error: 'Failed to fetch recipe' };
+    }
+  }
+
+  static async getAllRecipes(): Promise<Recipe[]> {
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        // Production build: console.log removed');
+        const recipes = await DemoStorage.getAllRecipes();
+        // Initialize demo recipes if storage is empty
+        if (recipes.length === 0) {
+          // Production build: console.log removed
+          await DemoStorage.createDemoRecipesWithCategories();
+          return await DemoStorage.getAllRecipes();
+        }
+        return recipes;
+      }
+
+      // Check if user is authenticated in Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
+        .from('recipes')
+        .select('*');
+      
+      if (user) {
+        // Authenticated Supabase users see their own recipes
+        // Production build: console.log removed
+        query = query.eq('user_id', user.id);
+      } else {
+        // Guests (no Supabase auth) see demo recipes (recipes with no user_id)
+        // Production build: console.log removed
+        query = query.is('user_id', null);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching recipes:', error);
         return [];
       }
 
+      // Production build: console.log removed
       return data || [];
     } catch (error) {
       console.error('Unexpected error fetching recipes:', error);
@@ -104,6 +172,12 @@ export class RecipeDatabase {
         return await DemoStorage.updateRecipe(id, updates);
       }
 
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
+      }
+
       const { data, error } = await supabase
         .from('recipes')
         .update({
@@ -111,6 +185,7 @@ export class RecipeDatabase {
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -128,7 +203,7 @@ export class RecipeDatabase {
 
   static async deleteRecipe(id: number): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('[RecipeDatabase] Attempting to delete recipe with id:', id);
+      // Production build: console.log removed
       if (!isSupabaseConfigured || !supabase) {
         return { 
           success: false, 
@@ -153,30 +228,46 @@ export class RecipeDatabase {
     }
   }
 
-  static async getRecentRecipes(days: number = 7): Promise<Recipe[]> {
+  static async getRecentRecipes(days: number = 7, limit: number = 5): Promise<Recipe[]> {
     try {
       if (!isSupabaseConfigured || !supabase) {
-        // Demo storage: filter by creation date
+        // Demo storage: filter by creation date and limit results
         const allRecipes = await DemoStorage.getAllRecipes();
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
         
-        return allRecipes.filter(recipe => {
+        const recentRecipes = allRecipes.filter(recipe => {
           if (!recipe.created_at) return false;
           const recipeDate = new Date(recipe.created_at);
           return recipeDate >= cutoffDate;
         });
+        
+        // Sort by creation date (newest first) and limit results
+        return recentRecipes
+          .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+          .slice(0, limit);
       }
 
-      // Supabase: query recent recipes
+      // Supabase: query recent recipes with user filtering
+      const { data: { user } } = await supabase.auth.getUser();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('recipes')
         .select('*')
         .gte('created_at', cutoffDate.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      // Filter by user_id if authenticated, otherwise get demo recipes
+      if (user) {
+        query = query.eq('user_id', user.id);
+      } else {
+        query = query.is('user_id', null);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching recent recipes:', error);
@@ -205,12 +296,22 @@ export class RecipeDatabase {
       }
 
       // Supabase: query most recent recipe
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
         .from('recipes')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
+      
+      // Filter by user_id if authenticated, otherwise get demo recipes
+      if (user) {
+        query = query.eq('user_id', user.id);
+      } else {
+        query = query.is('user_id', null);
+      }
+      
+      const { data, error } = await query.single();
 
       if (error) {
         console.error('Error fetching most recent recipe:', error);
@@ -233,9 +334,17 @@ export class RecipeDatabase {
           .slice(0, limit);
       }
 
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated for getRecipesByCategory');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('recipes')
         .select('*')
+        .eq('user_id', user.id)
         .ilike('cuisine_type', cuisineType)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -264,9 +373,17 @@ export class RecipeDatabase {
         return categories;
       }
 
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated for getAvailableCategories');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('recipes')
         .select('cuisine_type')
+        .eq('user_id', user.id)
         .not('cuisine_type', 'is', null);
 
       if (error) {

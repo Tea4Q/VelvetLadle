@@ -4,7 +4,7 @@ import { useColors, useSpacing, useRadius, useTypography, useElevation } from '.
 
 type Props = {
 	label: string;
-	theme?: 'primary' | 'secondary' | 'outline' | 'danger';
+	theme?: 'primary' | 'secondary' | 'outline' | 'danger' | 'link';
 	size?: 'sm' | 'md' | 'lg';
 	icon?: string;
 	onPress?: () => void;
@@ -56,6 +56,13 @@ export default function Button({ label, theme = 'primary', size = 'md', icon, on
 					textColor: colors.textInverse,
 					borderWidth: 0,
 				};
+			case 'link':
+				return {
+					backgroundColor: 'transparent',
+					borderColor: 'transparent',
+					textColor: disabled ? colors.textLight : colors.primary,
+					borderWidth: 0,
+				};
 			default:
 				return {
 					backgroundColor: colors.primary,
@@ -90,7 +97,7 @@ export default function Button({ label, theme = 'primary', size = 'md', icon, on
 					opacity: disabled ? 0.6 : pressed ? 0.8 : 1,
 					transform: pressed && !disabled ? [{ scale: 0.98 }] : [{ scale: 1 }],
 				},
-				!disabled && elevation.md,
+				!disabled && theme !== 'link' && elevation.md,
 			]}
 		>
 			{icon && (
