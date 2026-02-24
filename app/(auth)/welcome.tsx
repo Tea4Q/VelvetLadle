@@ -41,7 +41,10 @@ export default function WelcomeScreen() {
               label="Sign In"
               theme="primary"
               onPress={() => {
-                router.push("/account?mode=signin");
+                router.push({
+                  pathname: "/account",
+                  params: { mode: "signin" },
+                });
               }}
             />
             <Button

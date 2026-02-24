@@ -6,18 +6,28 @@ import { FavoritesService } from "@/services/FavoritesService";
 import { RecipeDatabase } from "@/services/recipeDatabase";
 import { DemoFavorites } from "@/utils/demoFavorites";
 import { formatTimeAgo } from "@/utils/timeFormatter";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import {
+  faBook,
+  faCarrot,
+  faChevronRight,
+  faClock,
+  faMagnifyingGlass,
+  faStar,
+  faUser,
+  faUtensils,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-	Image,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 // Recent Recipes List Component
@@ -69,8 +79,8 @@ function RecentRecipesList({ colors, radius }: { colors: any; radius: any }) {
                 },
               ]}
             >
-              <FontAwesome6
-                name="utensils"
+              <FontAwesomeIcon
+                icon={faCarrot}
                 size={20}
                 color={colors.textLight}
               />
@@ -101,9 +111,9 @@ function RecentRecipesList({ colors, radius }: { colors: any; radius: any }) {
               </Text>
             )}
           </View>
-          <FontAwesome6
-            name="chevron-right"
-            size={16}
+          <FontAwesomeIcon
+            icon={faChevronRight}
+            size={20}
             color={colors.textLight}
           />
         </Pressable>
@@ -368,7 +378,7 @@ export default function Index() {
             ]}
             onPress={() => router.push("/account")}
           >
-            <FontAwesome6 name="user" size={20} color={colors.primary} />
+            <FontAwesomeIcon icon={faUser} size={24} color={colors.primary} />
           </Pressable>
         </View>
 
@@ -390,9 +400,9 @@ export default function Index() {
           ]}
           onPress={() => router.push("/(tabs)/recipes")}
         >
-          <FontAwesome6
-            name="magnifying-glass"
-            size={16}
+          <FontAwesomeIcon
+            icon={faMagnifyingGlass}
+            size={20}
             color={colors.textLight}
           />
           <Text style={[styles.searchPlaceholder, { color: colors.textLight }]}>
@@ -413,7 +423,7 @@ export default function Index() {
             ]}
             onPress={handleNavigateToRecipes}
           >
-            <FontAwesome6 name="book" size={14} color={colors.primary} />
+            <FontAwesomeIcon icon={faBook} size={20} color={colors.primary} />
             <Text style={[styles.chipText, { color: colors.primary }]}>
               Recipes ({recipeCount}
               {isGuest ? "/10" : ""})
@@ -430,7 +440,7 @@ export default function Index() {
             ]}
             onPress={handleNavigateToFavorites}
           >
-            <FontAwesome6 name="star" size={14} color={colors.primary} />
+            <FontAwesomeIcon icon={faStar} size={24} color={colors.primary} />
             <Text style={[styles.chipText, { color: colors.primary }]}>
               Favorites ({favoriteCount})
             </Text>
@@ -446,7 +456,7 @@ export default function Index() {
             ]}
             onPress={handleNavigateToRecents}
           >
-            <FontAwesome6 name="clock" size={14} color={colors.primary} />
+            <FontAwesomeIcon icon={faClock} size={20} color={colors.primary} />
             <Text style={[styles.chipText, { color: colors.primary }]}>
               Recents ({recentCount})
             </Text>
@@ -493,8 +503,8 @@ export default function Index() {
                 </Text>
               )}
             </View>
-            <FontAwesome6
-              name="chevron-right"
+            <FontAwesomeIcon
+              icon={faChevronRight}
               size={24}
               color={colors.textInverse}
             />
@@ -585,8 +595,8 @@ export default function Index() {
                                   },
                                 ]}
                               >
-                                <FontAwesome6
-                                  name="utensils"
+                                <FontAwesomeIcon
+                                  icon={faUtensils}
                                   size={12}
                                   color={colors.textLight}
                                 />
