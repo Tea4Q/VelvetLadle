@@ -19,7 +19,17 @@ module.exports = ({ config }) => {
 
     // VelvetLadle's platform-specific configuration
     ios: {
+      ...(config.ios ?? {}),
+      config: {
+        ...((config.ios && config.ios.config) ?? {}),
+        usesNonExemptEncryption: false,
+      },
+      infoPlist: {
+        ...((config.ios && config.ios.infoPlist) ?? {}),
+        ITSAppUsesNonExemptEncryption: false,
+      },
       supportsTablet: true,
+      bundleIdentifier: "com.tea4q.velvetladle",
     },
     android: {
       package: "com.qtea.VelvetLadle",
