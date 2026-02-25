@@ -144,13 +144,23 @@ export default function Index() {
 
   // Check if user is guest
   useEffect(() => {
+    // Prevent category fetches until auth user exists
+    if (!user?.id) return;
+
+    const loadCategorySections = async () => {
+      const AuthService = (await import("../../services/AuthService")).default;
+      const guestStatus = await AuthService.isCurrentUserGuest();
+      setIsGuest(guestStatus);
+    };
+
     async function checkGuestStatus() {
       const AuthService = (await import("../../services/AuthService")).default;
       const guestStatus = await AuthService.isCurrentUserGuest();
       setIsGuest(guestStatus);
     }
     checkGuestStatus();
-  }, [user]);
+    loadCategorySections();
+  }, [user, user?.id]);
 
   // Memoize categories to prevent unnecessary re-renders
   const categories = useMemo(
