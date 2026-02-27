@@ -1,32 +1,32 @@
 import {
-	faArrowsRotate,
-	faBook,
-	faHeart,
-	faLightbulb,
-	faNoteSticky,
+  faArrowsRotate,
+  faBook,
+  faHeart,
+  faLightbulb,
+  faNoteSticky,
 } from "@fortawesome/free-solid-svg-icons";
-import FontAwesomeIcon from "./FontAwesomeIcon";
 import { useEffect, useState } from "react";
 import {
-	Alert,
-	Linking,
-	ScrollView,
-	StyleSheet,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View,
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
-	useColors,
-	useRadius,
-	useSpacing,
-	useTypography,
+  useColors,
+  useRadius,
+  useSpacing,
+  useTypography,
 } from "../contexts/ThemeContext";
 import { Recipe } from "../lib/supabase";
 import { FavoritesService } from "../services/FavoritesService";
 import { RecipeDeletionService } from "../services/RecipeDeletionService";
 import { RecipeRefreshService } from "../services/recipeRefreshService";
+import FontAwesomeIcon from "./FontAwesomeIcon";
 import IngredientList from "./IngredientList";
 import SmartImage from "./SmartImage";
 
@@ -1215,7 +1215,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     minWidth: "30%",
-    maxWidth: "48%",
+    maxWidth: "100%",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#e8dcc0",

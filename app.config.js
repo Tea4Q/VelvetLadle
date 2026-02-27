@@ -11,7 +11,7 @@ module.exports = ({ config }) => {
     name: "Velvet Ladle",
     slug: "VelvetLadle",
     version: "2.1.0",
-    orientation: "portrait",
+    orientation: "default",
     icon: "./assets/images/favicon_velvetLadle_large_128x128.png",
     scheme: "velvetladle",
     userInterfaceStyle: "automatic",
