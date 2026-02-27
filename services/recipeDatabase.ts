@@ -64,6 +64,10 @@ export class RecipeDatabase {
       if (error) {
         console.error('❌ Error saving recipe:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
+        if (isNetworkFetchError(error)) {
+          console.warn('Supabase unavailable while saving recipe, using demo storage fallback');
+          return await DemoStorage.saveRecipe(recipe);
+        }
         return { success: false, error: error.message };
       }
       
@@ -72,6 +76,10 @@ export class RecipeDatabase {
      
       return { success: true, data };
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        console.warn('Supabase request threw network error while saving recipe, using demo storage fallback');
+        return await DemoStorage.saveRecipe(recipe);
+      }
       console.error('Unexpected error saving recipe:', error);
       return { success: false, error: 'An unexpected error occurred while saving the recipe' };
     }
@@ -90,12 +98,20 @@ export class RecipeDatabase {
         .single();
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          console.warn('Supabase unavailable while fetching recipe by URL, using demo storage fallback');
+          return await DemoStorage.getRecipeByUrl(url);
+        }
         // Production build: console.log removed
         return null;
       }
 
       return data;
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        console.warn('Supabase request threw network error while fetching recipe by URL, using demo storage fallback');
+        return await DemoStorage.getRecipeByUrl(url);
+      }
       console.error('Error fetching recipe by URL:', error);
       return null;
     }
@@ -120,11 +136,27 @@ export class RecipeDatabase {
         .single();
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          const allRecipes = await DemoStorage.getAllRecipes();
+          const recipe = allRecipes.find(r => r.id === id);
+          if (recipe) {
+            return { success: true, data: recipe };
+          }
+          return { success: false, error: 'Recipe not found' };
+        }
         return { success: false, error: error.message };
       }
 
       return { success: true, data };
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const recipe = allRecipes.find(r => r.id === id);
+        if (recipe) {
+          return { success: true, data: recipe };
+        }
+        return { success: false, error: 'Recipe not found' };
+      }
       console.error('Error fetching recipe by ID:', error);
       return { success: false, error: 'Failed to fetch recipe' };
     }
@@ -219,12 +251,20 @@ export class RecipeDatabase {
         .single();
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          console.warn('Supabase unavailable while updating recipe, using demo storage fallback');
+          return await DemoStorage.updateRecipe(id, updates);
+        }
         console.error('Error updating recipe:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true, data };
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        console.warn('Supabase request threw network error while updating recipe, using demo storage fallback');
+        return await DemoStorage.updateRecipe(id, updates);
+      }
       console.error('Unexpected error updating recipe:', error);
       return { success: false, error: 'An unexpected error occurred while updating the recipe' };
     }
@@ -234,10 +274,7 @@ export class RecipeDatabase {
     try {
       // Production build: console.log removed
       if (!isSupabaseConfigured || !supabase) {
-        return { 
-          success: false, 
-          error: 'Supabase is not configured. Please set up your Supabase credentials.' 
-        };
+        return await DemoStorage.deleteRecipe(id);
       }
 
       const { error } = await supabase
@@ -246,12 +283,20 @@ export class RecipeDatabase {
         .eq('id', id);
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          console.warn('Supabase unavailable while deleting recipe, using demo storage fallback');
+          return await DemoStorage.deleteRecipe(id);
+        }
         console.error('Error deleting recipe:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        console.warn('Supabase request threw network error while deleting recipe, using demo storage fallback');
+        return await DemoStorage.deleteRecipe(id);
+      }
       console.error('Unexpected error deleting recipe:', error);
       return { success: false, error: 'An unexpected error occurred while deleting the recipe' };
     }
@@ -299,12 +344,40 @@ export class RecipeDatabase {
       const { data, error } = await query;
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          const allRecipes = await DemoStorage.getAllRecipes();
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - days);
+
+          return allRecipes
+            .filter(recipe => {
+              if (!recipe.created_at) return false;
+              const recipeDate = new Date(recipe.created_at);
+              return recipeDate >= cutoffDate;
+            })
+            .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+            .slice(0, limit);
+        }
         console.error('Error fetching recent recipes:', error);
         return [];
       }
 
       return data || [];
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+
+        return allRecipes
+          .filter(recipe => {
+            if (!recipe.created_at) return false;
+            const recipeDate = new Date(recipe.created_at);
+            return recipeDate >= cutoffDate;
+          })
+          .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+          .slice(0, limit);
+      }
       console.error('Unexpected error fetching recent recipes:', error);
       return [];
     }
@@ -343,12 +416,32 @@ export class RecipeDatabase {
       const { data, error } = await query.single();
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          const allRecipes = await DemoStorage.getAllRecipes();
+          if (allRecipes.length === 0) return null;
+
+          return allRecipes.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0);
+            const dateB = new Date(b.created_at || 0);
+            return dateB.getTime() - dateA.getTime();
+          })[0];
+        }
         console.error('Error fetching most recent recipe:', error);
         return null;
       }
 
       return data;
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        const allRecipes = await DemoStorage.getAllRecipes();
+        if (allRecipes.length === 0) return null;
+
+        return allRecipes.sort((a, b) => {
+          const dateA = new Date(a.created_at || 0);
+          const dateB = new Date(b.created_at || 0);
+          return dateB.getTime() - dateA.getTime();
+        })[0];
+      }
       console.error('Unexpected error fetching most recent recipe:', error);
       return null;
     }
@@ -366,8 +459,10 @@ export class RecipeDatabase {
       // Get current authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('User not authenticated for getRecipesByCategory');
-        return [];
+        const allRecipes = await DemoStorage.getAllRecipes();
+        return allRecipes
+          .filter(recipe => recipe.cuisine_type?.toLowerCase() === cuisineType.toLowerCase())
+          .slice(0, limit);
       }
 
       const { data, error } = await supabase
@@ -379,12 +474,24 @@ export class RecipeDatabase {
         .limit(limit);
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          const allRecipes = await DemoStorage.getAllRecipes();
+          return allRecipes
+            .filter(recipe => recipe.cuisine_type?.toLowerCase() === cuisineType.toLowerCase())
+            .slice(0, limit);
+        }
         console.error('Error fetching recipes by category:', error);
         return [];
       }
 
       return data || [];
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        const allRecipes = await DemoStorage.getAllRecipes();
+        return allRecipes
+          .filter(recipe => recipe.cuisine_type?.toLowerCase() === cuisineType.toLowerCase())
+          .slice(0, limit);
+      }
       console.error('Unexpected error fetching recipes by category:', error);
       return [];
     }
@@ -405,8 +512,13 @@ export class RecipeDatabase {
       // Get current authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('User not authenticated for getAvailableCategories');
-        return [];
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const categories = [...new Set(allRecipes
+          .map(recipe => recipe.cuisine_type)
+          .filter(Boolean)
+          .map(cat => cat!.toLowerCase())
+        )];
+        return categories;
       }
 
       const { data, error } = await supabase
@@ -416,6 +528,15 @@ export class RecipeDatabase {
         .not('cuisine_type', 'is', null);
 
       if (error) {
+        if (isNetworkFetchError(error)) {
+          const allRecipes = await DemoStorage.getAllRecipes();
+          const categories = [...new Set(allRecipes
+            .map(recipe => recipe.cuisine_type)
+            .filter(Boolean)
+            .map(cat => cat!.toLowerCase())
+          )];
+          return categories;
+        }
         console.error('Error fetching categories:', error);
         return [];
       }
@@ -427,6 +548,15 @@ export class RecipeDatabase {
       
       return categories;
     } catch (error) {
+      if (isNetworkFetchError(error)) {
+        const allRecipes = await DemoStorage.getAllRecipes();
+        const categories = [...new Set(allRecipes
+          .map(recipe => recipe.cuisine_type)
+          .filter(Boolean)
+          .map(cat => cat!.toLowerCase())
+        )];
+        return categories;
+      }
       console.error('Unexpected error fetching categories:', error);
       return [];
     }

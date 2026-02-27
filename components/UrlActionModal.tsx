@@ -36,6 +36,29 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 	const [isChecking, setIsChecking] = useState(false);
 	const [testRecipeSource, setTestRecipeSource] = useState<string>('');
 
+	const getFriendlyExtractionError = (errorMessage?: string) => {
+		const message = (errorMessage || '').toLowerCase();
+
+		if (
+			message.includes('network request failed') ||
+			message.includes('failed to fetch') ||
+			message.includes('networkerror when attempting to fetch resource') ||
+			message.includes('typeerror: networkerror')
+		) {
+			return 'Could not access this website right now. Please check your connection, try again, or use manual entry.';
+		}
+
+		if (message.includes('timeout')) {
+			return 'The website took too long to respond. Please try again or use manual entry.';
+		}
+
+		if (message.includes('cors') || message.includes('blocked') || message.includes('forbidden')) {
+			return 'This website blocks automated access. Please use manual entry for this recipe.';
+		}
+
+		return errorMessage || "Could not extract recipe information from this webpage. The recipe might be in a format we don't support yet, or the page structure is too complex.";
+	};
+
 	// Initialize URL input mode based on whether URL is provided
 	React.useEffect(() => {
 		if (visible) {
@@ -232,10 +255,11 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 			if (!extractionResult || extractionResult.error || !extractionResult.recipe) {
 				setIsProcessing(false);
+				const userFacingError = getFriendlyExtractionError(extractionResult?.error);
 				// Always show an alert and offer manual entry
 				Alert.alert(
 					'Extraction Failed',
-					extractionResult?.error || "Could not extract recipe information from this webpage. The recipe might be in a format we don't support yet, or the page structure is too complex.",
+					userFacingError,
 					[
 						{
 							text: 'Enter Manually',

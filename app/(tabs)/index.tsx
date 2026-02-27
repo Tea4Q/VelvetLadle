@@ -16,7 +16,7 @@ import {
   faUser,
   faUtensils,
 } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import FontAwesomeIcon from "@/components/FontAwesomeIcon";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

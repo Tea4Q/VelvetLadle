@@ -13,7 +13,7 @@ import {
 	faLightbulb,
 	faPenToSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import FontAwesomeIcon from "@/components/FontAwesomeIcon";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {

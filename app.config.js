@@ -62,7 +62,7 @@ module.exports = ({ config }) => {
 
     updates: {
       enabled: true,
-      checkOnLaunch: "ON_LOAD",
+      checkAutomatically: "ON_LOAD",
       fallbackToCacheTimeout: 0,
       url: "https://u.expo.dev/df5296c9-1e42-454b-924c-07dc23f4ed53",
     },

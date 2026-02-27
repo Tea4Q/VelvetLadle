@@ -5,7 +5,7 @@ import {
 	faLightbulb,
 	faNoteSticky,
 } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import FontAwesomeIcon from "./FontAwesomeIcon";
 import { useEffect, useState } from "react";
 import {
 	Alert,

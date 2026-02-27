@@ -6,6 +6,29 @@
 .gitignore
 .gitattributes
 
+# Large / unnecessary build context
+.git
+.vscode
+docs
+coverage
+dist
+build
+web-build
+android
+ios
+.expo
+.expo-shared
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# Local env/secrets
+.env*
+!.env.example
+
 # Dependencies (will be installed on build server)
 node_modules/
 .pnp

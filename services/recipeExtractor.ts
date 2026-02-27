@@ -4,6 +4,35 @@ import { fetchNutrition } from './nutritionService';
 import { WebScrapingAPIService } from './webScrapingAPIService';
 
 export class RecipeExtractor {
+  private static isNetworkFetchError(error: unknown): boolean {
+    const message = String((error as any)?.message ?? error ?? '').toLowerCase();
+    return (
+      message.includes('networkerror when attempting to fetch resource') ||
+      message.includes('network request failed') ||
+      message.includes('failed to fetch') ||
+      message.includes('typeerror: networkerror') ||
+      message.includes('attempting to fetch resource')
+    );
+  }
+
+  private static toUserFriendlyExtractionError(error: unknown): string {
+    const message = String((error as any)?.message ?? error ?? '').toLowerCase();
+
+    if (this.isNetworkFetchError(error)) {
+      return 'Could not access this website right now. Please check your connection, try again, or use manual entry.';
+    }
+
+    if (message.includes('timeout')) {
+      return 'The website took too long to respond. Please try again or use manual entry.';
+    }
+
+    if (message.includes('cors') || message.includes('blocked') || message.includes('forbidden')) {
+      return 'This website blocks automated access. Please use manual entry for this recipe.';
+    }
+
+    return 'Could not extract recipe from this URL. The site may be unsupported or blocked.';
+  }
+
   /**
    * Remove duplicate directions (case-insensitive comparison)
    * Handles recipe sites that repeat instructions in multiple sections (mobile/print views)
@@ -170,8 +199,7 @@ export class RecipeExtractor {
         }
       } catch (error: any) {
         // Production build: console.log removed
-        // If error has a message, propagate it
-        if (error?.message) return { error: error.message };
+        // Continue to fallback strategies instead of surfacing raw API/network errors
       }
 
       // Strategy 2: Fallback to CORS proxy method
@@ -305,7 +333,7 @@ export class RecipeExtractor {
           return { recipe: recipeWithImage };
         }
       } catch (error: any) {
-        if (error?.message) return { error: error.message };
+        return { error: this.toUserFriendlyExtractionError(error) };
       }
       // If all strategies fail,
       return { error: 'Could not extract recipe from this URL. The site may be unsupported or blocked.' };

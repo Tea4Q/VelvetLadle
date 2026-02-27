@@ -27,26 +27,21 @@
         "resizeMode": "cover",
         "backgroundColor": "#faf4eb"
       },
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon_velvetLadle_small_48x48.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-image-picker"
-    ],
+    "plugins": ["expo-router", "expo-image-picker"],
     "experiments": {
       "typedRoutes": true
     },
     "runtimeVersion": "1.0.1",
     "updates": {
       "enabled": true,
-      "checkOnLaunch": "ON_LOAD",
+      "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/df5296c9-1e42-454b-924c-07dc23f4ed53"
     },
