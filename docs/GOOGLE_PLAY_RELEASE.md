@@ -105,33 +105,33 @@ npx eas submit -p android \
 - [x] Sign up with new account
 - [x] Sign in with existing account
 - [x] Add recipe from URL (try 3 different sites)
-- [ ] Add recipe manually
-- [ ] View recipe details
-- [ ] Edit existing recipe
-- [ ] Delete recipe
-- [ ] Mark recipe as favorite
-- [ ] Un-favorite recipe
-- [ ] Search recipes by title
-- [ ] Filter by ingredients
-- [ ] Filter by cuisine
-- [ ] Sign out
-- [ ] Guest mode (no sign-in) - view demo recipes only
+- [x] Add recipe manually
+- [x] View recipe details
+- [x] Edit existing recipe
+- [x] Delete recipe
+- [x] Mark recipe as favorite
+- [x] Un-favorite recipe
+- [x] Search recipes by title
+- [x] Filter by ingredients
+- [x] Filter by cuisine
+- [x] Sign out
+- [x] Guest mode (no sign-in) - view demo recipes only
 
 ### Database/Cloud Features
 
-- [ ] Recipes save to Supabase
-- [ ] Sign out and sign back in - recipes persist
-- [ ] Guests see demo recipes (user_id = NULL)
-- [ ] Authenticated users see only their recipes
-- [ ] Recipe count limits enforced (10 for free)
+- [x] Recipes save to Supabase
+- [x] Sign out and sign back in - recipes persist
+- [x] Guests see demo recipes (user_id = NULL)
+- [x] Authenticated users see only their recipes
+- [x] Recipe count limits enforced (10 for free)
 
 ### Edge Cases
 
-- [ ] No internet connection - appropriate error messages
-- [ ] Invalid URL for recipe extraction
-- [ ] Recipe with no image
-- [ ] Very long recipe title/ingredients
-- [ ] Special characters in recipe data
+- [x] No internet connection - appropriate error messages
+- [x] Invalid URL for recipe extraction
+- [x] Recipe with no image
+- [x] Very long recipe title/ingredients
+- [x] Special characters in recipe data
 
 ## Environment Variables
 

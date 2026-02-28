@@ -15,6 +15,7 @@ eas.json                                 # EAS configuration with production pro
 ## 🏗 **Production Build Profiles**
 
 ### **Production Profile Configuration**
+
 ```json
 "production": {
   "channel": "production",           // Production update channel
@@ -35,6 +36,7 @@ eas.json                                 # EAS configuration with production pro
 ### **1. Standard Production Builds** (`create-production-builds.yml`)
 
 #### **Android Production Build**
+
 ```yaml
 build_production_android:
   - Checkout code
@@ -48,6 +50,7 @@ build_production_android:
 ```
 
 #### **iOS Production Build**
+
 ```yaml
 build_production_ios:
   - Checkout code
@@ -61,6 +64,7 @@ build_production_ios:
 ```
 
 #### **All Platforms Build**
+
 ```yaml
 build_production_all:
   - Complete validation suite
@@ -72,6 +76,7 @@ build_production_all:
 ### **2. Advanced Deployment** (`production-deployment.yml`)
 
 #### **Build and Submit Workflow**
+
 ```yaml
 build_and_submit_production:
   - Full testing and validation
@@ -81,6 +86,7 @@ build_and_submit_production:
 ```
 
 #### **Release Candidate Workflow**
+
 ```yaml
 release_candidate_build:
   - Strict TypeScript checking
@@ -93,6 +99,7 @@ release_candidate_build:
 ## 📋 **Pre-Production Checklist**
 
 ### **🔍 Code Quality**
+
 - [ ] **TypeScript**: No compilation errors
 - [ ] **ESLint**: No linting errors or warnings
 - [ ] **Tests**: All tests passing with 80%+ coverage
@@ -100,6 +107,7 @@ release_candidate_build:
 - [ ] **Performance**: Bundle size within limits
 
 ### **📱 App Configuration**
+
 - [ ] **App Icon**: High-quality icons for all sizes
 - [ ] **Splash Screen**: Proper splash screen assets
 - [ ] **App Name**: Finalized app name and description
@@ -107,12 +115,14 @@ release_candidate_build:
 - [ ] **Permissions**: Only necessary permissions requested
 
 ### **🔐 Credentials & Certificates**
+
 - [ ] **Android**: Google Play Service Account JSON
 - [ ] **iOS**: Apple Developer certificates
 - [ ] **Signing**: Proper code signing configuration
 - [ ] **Provisioning**: Valid provisioning profiles
 
 ### **🌐 Backend & Services**
+
 - [ ] **Production APIs**: All APIs pointing to production
 - [ ] **Database**: Production database configured
 - [ ] **Analytics**: Production analytics setup
@@ -121,6 +131,7 @@ release_candidate_build:
 ## 🛠 **Build Commands**
 
 ### **Local Production Builds**
+
 ```bash
 # Build for all platforms
 eas build --profile production --platform all
@@ -134,6 +145,7 @@ eas build --profile production --platform all --message "Release candidate v1.0.
 ```
 
 ### **Build with Submission**
+
 ```bash
 # Build and submit to stores
 eas build --profile production --platform all --auto-submit
@@ -143,6 +155,7 @@ eas submit --profile production --platform all
 ```
 
 ### **Build Status & Management**
+
 ```bash
 # Check build status
 eas build:list --status=in-progress --limit=10
@@ -157,6 +170,7 @@ eas build:cancel [BUILD_ID]
 ## 📦 **App Store Configuration**
 
 ### **Google Play Store Setup**
+
 ```json
 "android": {
   "serviceAccountKeyPath": "./android-service-account.json",
@@ -166,12 +180,14 @@ eas build:cancel [BUILD_ID]
 ```
 
 #### **Google Play Tracks**
+
 - **Internal**: Team testing (up to 100 testers)
 - **Alpha**: Closed testing (limited audience)
 - **Beta**: Open testing (public, but limited)
 - **Production**: Live in Play Store
 
 ### **Apple App Store Setup**
+
 ```json
 "ios": {
   "appleId": "your-apple-id@example.com",
@@ -181,6 +197,7 @@ eas build:cancel [BUILD_ID]
 ```
 
 #### **iOS Submission Process**
+
 1. **Build**: Create production iOS build
 2. **Upload**: Automatically uploaded to App Store Connect
 3. **Review**: Submit for App Store review
@@ -191,6 +208,7 @@ eas build:cancel [BUILD_ID]
 ### **Required Credentials**
 
 #### **Android (Google Play)**
+
 ```bash
 # Create service account in Google Cloud Console
 # Download JSON key file
@@ -201,6 +219,7 @@ eas secret:create --scope project --name GOOGLE_SERVICE_ACCOUNT_KEY --value "$(c
 ```
 
 #### **iOS (Apple App Store)**
+
 ```bash
 # Apple Developer Account required
 # App Store Connect access
@@ -212,6 +231,7 @@ eas secret:create --scope project --name APPLE_PASSWORD --value "app-specific-pa
 ```
 
 ### **Environment Variables**
+
 ```json
 "env": {
   "NODE_ENV": "production",
@@ -224,6 +244,7 @@ eas secret:create --scope project --name APPLE_PASSWORD --value "app-specific-pa
 ## 📊 **Build Optimization**
 
 ### **Bundle Size Optimization**
+
 ```bash
 # Analyze bundle size
 npx expo export --platform all --output-dir dist
@@ -236,6 +257,7 @@ du -sh dist/_expo/static/js/android/
 ```
 
 ### **Performance Validation**
+
 ```bash
 # Run performance checks
 npm run build --if-present
@@ -246,6 +268,7 @@ npx expo export --platform all --dev=false
 ```
 
 ### **Asset Optimization**
+
 ```bash
 # Optimize images
 npx expo optimize
@@ -257,6 +280,7 @@ npx expo export:embed --platform all
 ## 🧪 **Testing Production Builds**
 
 ### **Internal Testing**
+
 ```bash
 # Create internal test build
 eas build --profile production --platform all
@@ -266,6 +290,7 @@ eas build --profile production --platform all
 ```
 
 ### **Beta Testing**
+
 ```bash
 # Submit to beta testing tracks
 eas submit --profile production --platform android --track beta
@@ -273,6 +298,7 @@ eas submit --profile production --platform ios --track testflight
 ```
 
 ### **Testing Checklist**
+
 - [ ] **Installation**: App installs without issues
 - [ ] **Startup**: Fast startup and splash screen
 - [ ] **Core Features**: All main features working
@@ -284,6 +310,7 @@ eas submit --profile production --platform ios --track testflight
 ## 🚀 **Release Process**
 
 ### **Version Management**
+
 ```bash
 # Update version in app.json/app.config.js
 {
@@ -300,6 +327,7 @@ eas submit --profile production --platform ios --track testflight
 ```
 
 ### **Release Steps**
+
 1. **Code Freeze**: Finalize all features
 2. **Testing**: Complete testing checklist
 3. **Build**: Create production builds
@@ -310,6 +338,7 @@ eas submit --profile production --platform ios --track testflight
 8. **Launch**: Release to production
 
 ### **Post-Release Monitoring**
+
 ```bash
 # Monitor build status
 eas build:list --limit=5
@@ -323,6 +352,7 @@ eas submit:list --limit=5
 ## 📱 **Store Listing Optimization**
 
 ### **App Store Metadata**
+
 - **App Name**: "VelvetLadle - Recipe Manager"
 - **Description**: Compelling description highlighting key features
 - **Keywords**: Relevant keywords for discovery
@@ -330,6 +360,7 @@ eas submit:list --limit=5
 - **App Icon**: Professional, recognizable icon
 
 ### **Google Play Store**
+
 - **Short Description**: Concise value proposition
 - **Full Description**: Detailed feature list with benefits
 - **Graphics**: Feature graphics, screenshots, videos
@@ -340,6 +371,7 @@ eas submit:list --limit=5
 ### **Common Issues**
 
 #### **Build Failures**
+
 ```bash
 # Clear all caches
 eas build --profile production --platform all --clear-cache
@@ -352,6 +384,7 @@ eas build --profile production --platform all --verbose
 ```
 
 #### **Submission Failures**
+
 ```bash
 # Check submission status
 eas submit:list
@@ -364,6 +397,7 @@ eas submit --profile production --platform [android|ios] --verbose
 ```
 
 #### **Certificate Issues**
+
 ```bash
 # iOS: Regenerate certificates
 eas credentials
@@ -373,6 +407,7 @@ eas credentials
 ```
 
 ### **Debug Information**
+
 ```bash
 # Check EAS project configuration
 eas config
@@ -387,6 +422,7 @@ eas project:info
 ## ✅ **Production Readiness Checklist**
 
 ### **Technical Requirements**
+
 - [x] **Build Configuration**: Production profile properly configured
 - [x] **Testing**: Comprehensive test suite with coverage
 - [x] **Performance**: Optimized bundle size and performance
@@ -394,6 +430,7 @@ eas project:info
 - [x] **Error Handling**: Proper error boundaries and crash reporting
 
 ### **Business Requirements**
+
 - [ ] **Legal**: Privacy policy, terms of service
 - [ ] **Compliance**: GDPR, platform guidelines compliance
 - [ ] **Marketing**: Store listings, marketing materials
@@ -401,6 +438,7 @@ eas project:info
 - [ ] **Analytics**: Usage tracking and analytics setup
 
 ### **Deployment Requirements**
+
 - [ ] **Credentials**: All certificates and keys configured
 - [ ] **Environments**: Production APIs and services ready
 - [ ] **Monitoring**: Error tracking and performance monitoring

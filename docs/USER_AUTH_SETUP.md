@@ -1,6 +1,7 @@
 # User Authentication & Recipe Isolation Setup Guide
 
 ## Overview
+
 This guide walks through setting up proper Supabase authentication and ensuring each user only sees their own recipes.
 
 ## Step 1: Run Database Migration
@@ -10,23 +11,27 @@ This guide walks through setting up proper Supabase authentication and ensuring 
 3. Run the migration file: `database_migration_add_user_id.sql`
 
 This adds:
+
 - `user_id` column to recipes table
-- `user_id` column to favorites table  
+- `user_id` column to favorites table
 - Row Level Security (RLS) policies to filter by user
 - Proper indexes for performance
 
 ## Step 2: Update Supabase Configuration
 
 ### Enable Email Authentication
+
 1. Go to **Authentication** → **Providers** in Supabase
 2. Enable **Email** provider
 3. Configure email templates (optional)
 
 ### Configure Email Confirmation (Optional)
+
 - **Disable confirmation** for testing: Settings → Authentication → Email Auth → Uncheck "Enable email confirmations"
 - **Enable confirmation** for production: Users will need to verify email before access
 
 ### Verify Password Reset Email Template
+
 1. Go to **Authentication** → **Email Templates** in Supabase dashboard
 2. Locate the **Reset Password** template
 3. Verify the template contains the reset link: `{{ .ConfirmationURL }}`
@@ -38,6 +43,7 @@ This adds:
 ## Step 3: Password Reset Feature
 
 ### How It Works
+
 VelvetLadle now includes a complete password reset flow:
 
 1. **User initiates reset**: Clicks "Forgot Password?" on sign-in screen
@@ -46,6 +52,7 @@ VelvetLadle now includes a complete password reset flow:
 4. **Password updated**: User enters new password, account is updated
 
 ### User Flow
+
 ```
 Sign In Screen
     ↓ (click "Forgot Password?")
@@ -61,10 +68,12 @@ Sign In Screen (with new password)
 ### Testing Password Reset
 
 #### Prerequisites
+
 - Supabase Email provider is enabled (Step 2)
 - Valid email address for testing (must be real to receive emails)
 
 #### Test Steps
+
 1. **Open VelvetLadle** with Supabase configured
 2. **Navigate to Sign In** screen
 3. **Click "Forgot Password?"** link below password field
@@ -82,13 +91,17 @@ Sign In Screen (with new password)
 10. **Sign in with new password** to confirm it works
 
 ### Demo Mode Behavior
+
 When Supabase is **not** configured (demo mode):
+
 - "Forgot Password?" link still appears on sign-in screen
 - Clicking it shows an alert: "Password reset requires Supabase configuration. This feature is not available in demo mode."
 - Users must set up Supabase to use password reset
 
 ### Deep Linking Configuration
+
 VelvetLadle uses the URL scheme `velvetladle://` for password reset deep links:
+
 - **Already configured** in `app.config.js`: `scheme: "velvetladle"`
 - Reset link format: `velvetladle://reset-password`
 - No additional setup required
@@ -96,6 +109,7 @@ VelvetLadle uses the URL scheme `velvetladle://` for password reset deep links:
 ### Customizing Password Reset Emails (Optional)
 
 To match VelvetLadle branding:
+
 1. Go to Supabase Dashboard → **Authentication** → **Email Templates**
 2. Select **Reset Password** template
 3. Customize:
@@ -108,27 +122,32 @@ To match VelvetLadle branding:
 ### Troubleshooting Password Reset
 
 #### Email not received
+
 - **Check spam folder** - Supabase emails may be filtered
 - **Verify email provider is enabled** in Supabase dashboard
 - **Check Supabase logs**: Dashboard → Logs → Filter by "auth"
 - **Wait a few minutes** - email delivery can be delayed
 
 #### "Failed to send reset link" error
+
 - Supabase not configured - check environment variables
 - Network error - verify internet connection
 - Invalid email format - check for typos
 
 #### Reset link doesn't open app
+
 - **iOS/Android**: Verify app is installed
 - **Custom URL scheme**: Check `app.config.js` has `scheme: "velvetladle"`
 - **Fallback**: Manually open app and navigate to reset password screen
 
 #### "Reset failed" or "Link expired"
+
 - Reset links expire after 1 hour (Supabase default)
 - Click "Request New Link" to send another email
 - Check URL wasn't truncated by email client
 
 #### Password update fails
+
 - Check minimum 6 characters
 - Verify passwords match
 - Session may have expired - request new reset link
@@ -167,7 +186,7 @@ static async getCurrentUserId(): Promise<string | null> {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) return user.id;
     }
-    
+
     // Fall back to local storage
     const user = await this.getCurrentUser();
     return user?.id || null;
@@ -183,6 +202,7 @@ static async getCurrentUserId(): Promise<string | null> {
 Modify all recipe operations to include `user_id`:
 
 #### saveRecipe()
+
 ```typescript
 static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Recipe; error?: string }> {
   try {
@@ -221,24 +241,28 @@ static async saveRecipe(recipe: Recipe): Promise<{ success: boolean; data?: Reci
 ```
 
 #### getAllRecipes()
+
 No changes needed! RLS policies automatically filter by user_id when user is authenticated.
 
 #### updateRecipe()
+
 ```typescript
 // Add user_id check for updates
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 if (!user) {
-  return { success: false, error: 'User not authenticated' };
+  return { success: false, error: "User not authenticated" };
 }
 
 const { data, error } = await supabase
-  .from('recipes')
+  .from("recipes")
   .update({
     ...recipeData,
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   })
-  .eq('id', id)
-  .eq('user_id', user.id) // ← Ensures user owns this recipe
+  .eq("id", id)
+  .eq("user_id", user.id) // ← Ensures user owns this recipe
   .select()
   .single();
 ```
@@ -298,19 +322,22 @@ The welcome screen currently signs users in as guests for both "Sign In" and "Cr
 ## Step 5: Testing Checklist
 
 ### Test Authentication
-- [ ] Create a new account with email/password
-- [ ] Verify email confirmation (if enabled)
-- [ ] Sign out and sign back in
+
+- [x] Create a new account with email/password
+- [x] Verify email confirmation (if enabled)
+- [x] Sign out and sign back in
 - [ ] Try signing up with existing email (should fail)
 
 ### Test Recipe Isolation
-- [ ] Create account A, add recipes
-- [ ] Sign out, create account B
-- [ ] Verify account B can't see account A's recipes
-- [ ] Add recipes to account B
-- [ ] Sign back into account A, verify recipes still there
+
+- [x] Create account A, add recipes
+- [x] Sign out, create account B
+- [x] Verify account B can't see account A's recipes
+- [x] Add recipes to account B
+- [x] Sign back into account A, verify recipes still there
 
 ### Test Guest Mode
+
 - [ ] Continue as guest (should not be able to access Add/Recipes tabs)
 - [ ] Verify guest is prompted to create account
 
@@ -323,8 +350,8 @@ If you have existing recipes without user_id:
 DELETE FROM recipes WHERE user_id IS NULL;
 
 -- Option 2: Assign to a specific user
-UPDATE recipes 
-SET user_id = 'your-uuid-here' 
+UPDATE recipes
+SET user_id = 'your-uuid-here'
 WHERE user_id IS NULL;
 ```
 
@@ -340,16 +367,19 @@ WHERE user_id IS NULL;
 ## Troubleshooting
 
 ### "User not authenticated" error
+
 - Check if Supabase session is active: `supabase.auth.getUser()`
 - Verify JWT token in browser/app storage
 - Check if email confirmation is required but not completed
 
 ### "Row Level Security policy violation"
+
 - Ensure user_id is being set on insert
 - Verify RLS policies are created correctly
 - Check that auth.uid() matches user_id
 
 ### Users can see each other's recipes
+
 - RLS may not be enabled: `ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;`
 - Policies may be missing or incorrect
 - Check for permissive "Allow all" policies
@@ -362,4 +392,3 @@ WHERE user_id IS NULL;
 4. Update FavoritesService methods
 5. Test with multiple user accounts
 6. Deploy and monitor
-
