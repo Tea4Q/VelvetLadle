@@ -18,6 +18,7 @@ import {
 import { Favorite, Recipe } from "../lib/supabase";
 import { FavoritesService } from "../services/FavoritesService";
 import Button from "./buttons";
+import FontAwesomeIcon from "./FontAwesomeIcon"; // <-- add this import
 
 type Props = {
   onRecipeSelect?: (recipe: Recipe) => void;
@@ -477,6 +478,7 @@ export default function FavoritesList({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   tabContainer: {
     // Dynamic styles applied inline

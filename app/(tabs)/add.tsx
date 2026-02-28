@@ -1,4 +1,5 @@
 // import ManualRecipeModal from '@/components/ManualRecipeModal';
+import FontAwesomeIcon from "@/components/FontAwesomeIcon";
 import RecipeForm from "@/components/RecipeForm";
 import UrlActionModal from "@/components/UrlActionModal";
 import { FREE_ACCOUNT_RECIPE_LIMIT } from "@/constants/limits";
@@ -8,21 +9,20 @@ import { Recipe } from "@/lib/supabase";
 import { RecipeDatabase } from "@/services/recipeDatabase";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
-	faCarrot,
-	faEgg,
-	faLightbulb,
-	faPenToSquare,
+  faCarrot,
+  faEgg,
+  faLightbulb,
+  faPenToSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import FontAwesomeIcon from "@/components/FontAwesomeIcon";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-	Alert,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 export default function AddScreen() {
@@ -236,7 +236,11 @@ export default function AddScreen() {
               { backgroundColor: colors.surface, borderRadius: radius.md },
             ]}
           >
-            <FontAwesomeIcon icon={faLightbulb} size="lg" color={colors.accent} />
+            <FontAwesomeIcon
+              icon={faLightbulb}
+              size="lg"
+              color={colors.accent}
+            />
             <Text style={[styles.tipText, { color: colors.textLight }]}>
               Try popular recipe sites like AllRecipes, Food Network, or your
               favorite food blog!
@@ -278,6 +282,7 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   mainContainer: {
     flexGrow: 1,

@@ -1,3 +1,4 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
@@ -8,8 +9,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useColors } from "../../contexts/ThemeContext";
 import { Recipe } from "../../lib/supabase";
 import { RecipeDatabase } from "../../services/recipeDatabase";
-import { useFocusEffect } from '@react-navigation/native';
-
 
 export default function RecipesScreen() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -35,15 +34,18 @@ export default function RecipesScreen() {
       if (!user?.id) return undefined; // Don't set up interval if user ID is not available
 
       // Refresh recipes every 5 minutes while screen is focused
-      const interval = setInterval(() => {
-        if (__DEV__) {
-          console.log("[RecipesScreen] refreshing recipes in background");
-        }
-        setRefreshKey((prev) => prev + 1);
-      }, 5 * 60 * 1000); // 5 minutes
+      const interval = setInterval(
+        () => {
+          if (__DEV__) {
+            console.log("[RecipesScreen] refreshing recipes in background");
+          }
+          setRefreshKey((prev) => prev + 1);
+        },
+        5 * 60 * 1000,
+      ); // 5 minutes
 
       return () => clearInterval(interval); // Clean up interval on blur
-    }, [user?.id /* keep existing deps used by fetch logic */])
+    }, [user?.id /* keep existing deps used by fetch logic */]),
   );
 
   // When recipeId is passed via router params, load and display that recipe
@@ -151,5 +153,6 @@ export default function RecipesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
 });

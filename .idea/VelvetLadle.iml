@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="true">
+  <component name="NewModuleRootManager">
+    <output url="file://$MODULE_DIR$/out/production/VelvetLadle" />
+    <output-test url="file://$MODULE_DIR$/out/test/VelvetLadle" />
     <exclude-output />
+    <javadoc-paths>
+      <root url="file://$MODULE_DIR$" />
+    </javadoc-paths>
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Android API 35, extension level 13 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="VelvetLadle" level="project" />
   </component>
 </module>

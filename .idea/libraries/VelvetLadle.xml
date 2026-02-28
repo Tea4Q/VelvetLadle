@@ -1,0 +1,78 @@
+<component name="libraryTable">
+  <library name="VelvetLadle">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$" />
+      <root url="file://$PROJECT_DIR$/android/.gradle/8.10.2/dependencies-accessors/467f588a233bb1e39513f104bb27b92a895d3408/sources" />
+      <root url="file://$PROJECT_DIR$/android/.gradle/8.10.2/dependencies-accessors/569c8b261a8a714d7731d5f568e0e5c05babae10/sources" />
+      <root url="file://$PROJECT_DIR$/android/app/build/generated/autolinking/src/main/java" />
+      <root url="file://$PROJECT_DIR$/android/app/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/@react-native-async-storage/async-storage/android/src/javaPackage/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/@react-native-async-storage/async-storage/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/@react-native-async-storage/async-storage/android/src/oldarch/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-constants/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-dev-client/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-dev-launcher/android/build/generated/data_binding_base_class_source_out/debug/out" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-dev-launcher/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-dev-launcher/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-dev-menu-interface/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-dev-menu/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-dev-menu/vendored/react-native-safe-area-context/android" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-eas-client/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-image-picker/node_modules/expo-image-loader/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-json-utils/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-manifests/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-modules-core/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-modules-core/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-structured-headers/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-structured-headers/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-updates-interface/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo-updates/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo/android/build/generated/expo/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/expo/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-edge-to-edge/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-edge-to-edge/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-gesture-handler/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-gesture-handler/android/paper77/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-gesture-handler/android/paper/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-gesture-handler/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/src/fabric/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/src/paper/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/src/reactNativeVersionPatch/BorderRadiiDrawableUtils/75" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/src/reactNativeVersionPatch/BorderRadiiDrawableUtils/latest" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/src/reactNativeVersionPatch/ReanimatedNativeHierarchyManager/75" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-reanimated/android/src/reactNativeVersionPatch/ReanimatedNativeHierarchyManager/latest" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-safe-area-context/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-safe-area-context/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-safe-area-context/android/src/paper/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-screens/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-screens/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-screens/android/src/paper/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/RenderableViewManager73/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/RenderableViewManager75/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/SvgPackage73/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/SvgPackage74/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/SvgViewManager73/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/SvgViewManager75/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-svg/android/src/paper/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-webview/android/build/generated/source/buildConfig/debug" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-webview/android/build/generated/source/codegen/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-webview/android/src/main/java" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-webview/android/src/newarch" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native-webview/android/src/oldarch" />
+      <root url="file://$PROJECT_DIR$/node_modules/react-native/ReactAndroid/src/main/java" />
+    </SOURCES>
+  </library>
+</component>

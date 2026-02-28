@@ -1,3 +1,4 @@
+import FontAwesomeIcon from "@/components/FontAwesomeIcon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useColors, useRadius } from "@/contexts/ThemeContext";
 import { Recipe } from "@/lib/supabase";
@@ -16,7 +17,6 @@ import {
   faUser,
   faUtensils,
 } from "@fortawesome/free-solid-svg-icons";
-import FontAwesomeIcon from "@/components/FontAwesomeIcon";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -660,6 +660,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
     backgroundColor: "#faf4eb",
   },
 

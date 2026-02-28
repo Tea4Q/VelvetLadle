@@ -338,10 +338,7 @@ export default function AccountScreen() {
                 disabled={isLoading}
               >
                 <Text
-                  style={[
-                    styles.forgotPasswordText,
-                    { color: colors.primary },
-                  ]}
+                  style={[styles.forgotPasswordText, { color: colors.primary }]}
                 >
                   Forgot Password?
                 </Text>
@@ -401,6 +398,7 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   content: {
     paddingVertical: 40,

@@ -1,7 +1,7 @@
 import Button from "@/components/buttons";
 import ImageViewer from "@/components/imageViewer";
-import { useColors } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useColors } from "@/contexts/ThemeContext";
 import { router } from "expo-router";
 import {
   KeyboardAvoidingView,
@@ -96,6 +96,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   authContainer: {
     flexGrow: 1,
