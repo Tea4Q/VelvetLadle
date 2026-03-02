@@ -1,20 +1,21 @@
+import { GUEST_USER_ID } from "@/constants/limits";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-	RefreshControl,
-	ScrollView,
-	StyleSheet,
-	Text,
-	TouchableOpacity,
-	View
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import {
-	useColors,
-	useElevation,
-	useRadius,
-	useSpacing,
-	useTypography,
+  useColors,
+  useElevation,
+  useRadius,
+  useSpacing,
+  useTypography,
 } from "../contexts/ThemeContext";
 import { Recipe } from "../lib/supabase";
 import { FavoritesService } from "../services/FavoritesService";
@@ -52,7 +53,7 @@ export default function RecipeList({
 
   const { user } = useAuth();
   const router = useRouter();
-  const isGuest = user?.id === "guest_user";
+  const isGuest = user?.id === GUEST_USER_ID;
 
   // Use ref to prevent multiple simultaneous loads
   const isLoadingRef = useRef(false);
@@ -679,19 +680,20 @@ export default function RecipeList({
           </View>
         )}
 
-        {recipe.prep_time_minutes && (
-          <Text
-            style={[
-              styles.timeText,
-              {
-                color: colors.textLight,
-                fontSize: typography.fontSize.xs,
-              },
-            ]}
-          >
-            ⏰ {recipe.prep_time_minutes}
-          </Text>
-        )}
+        {recipe.prep_time_minutes !== undefined &&
+          recipe.prep_time_minutes !== null && (
+            <Text
+              style={[
+                styles.timeText,
+                {
+                  color: colors.textLight,
+                  fontSize: typography.fontSize.xs,
+                },
+              ]}
+            >
+              ⏰ {recipe.prep_time_minutes}
+            </Text>
+          )}
       </View>
 
       {recipe.ingredients && recipe.ingredients.length > 0 && (
@@ -712,26 +714,27 @@ export default function RecipeList({
       {/* Nutritional Summary */}
       {recipe.nutritional_info && (
         <View style={[styles.nutritionSummary, { marginTop: spacing.sm }]}>
-          {recipe.nutritional_info.calories && (
-            <View
-              style={[
-                styles.nutritionBadge,
-                {
-                  backgroundColor: colors.accent + "20",
-                  marginRight: spacing.xs,
-                },
-              ]}
-            >
-              <Text
+          {recipe.nutritional_info.calories !== undefined &&
+            recipe.nutritional_info.calories !== null && (
+              <View
                 style={[
-                  styles.nutritionBadgeText,
-                  { color: colors.accent, fontSize: typography.fontSize.xs },
+                  styles.nutritionBadge,
+                  {
+                    backgroundColor: colors.accent + "20",
+                    marginRight: spacing.xs,
+                  },
                 ]}
               >
-                🔥 {recipe.nutritional_info.calories} cal
-              </Text>
-            </View>
-          )}
+                <Text
+                  style={[
+                    styles.nutritionBadgeText,
+                    { color: colors.accent, fontSize: typography.fontSize.xs },
+                  ]}
+                >
+                  🔥 {recipe.nutritional_info.calories} cal
+                </Text>
+              </View>
+            )}
           {recipe.nutritional_info.protein && (
             <View
               style={[

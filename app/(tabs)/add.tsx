@@ -2,11 +2,12 @@
 import FontAwesomeIcon from "@/components/FontAwesomeIcon";
 import RecipeForm from "@/components/RecipeForm";
 import UrlActionModal from "@/components/UrlActionModal";
-import { FREE_ACCOUNT_RECIPE_LIMIT } from "@/constants/limits";
+import { FREE_ACCOUNT_RECIPE_LIMIT, GUEST_USER_ID } from "@/constants/limits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useColors, useRadius } from "@/contexts/ThemeContext";
 import { Recipe } from "@/lib/supabase";
 import { RecipeDatabase } from "@/services/recipeDatabase";
+import { PurchaseService } from "@/services/purchaseService";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faCarrot,
@@ -40,7 +41,7 @@ export default function AddScreen() {
   useFocusEffect(
     useCallback(() => {
       async function checkAccess() {
-        const isGuest = user?.id === "guest_user";
+        const isGuest = user?.id === GUEST_USER_ID;
         if (isGuest) {
           // Redirect guests to account creation
           Alert.alert(
@@ -49,7 +50,11 @@ export default function AddScreen() {
             [
               {
                 text: "Create Account",
-                onPress: () => router.replace("/account"),
+                onPress: () =>
+                  router.replace({
+                    pathname: "/account",
+                    params: { mode: "signup" },
+                  }),
               },
               {
                 text: "Go Back",
@@ -63,7 +68,11 @@ export default function AddScreen() {
 
         // Check recipe limit for free accounts (authenticated users)
         const allRecipes = await RecipeDatabase.getAllRecipes();
-        if (allRecipes.length >= FREE_ACCOUNT_RECIPE_LIMIT) {
+        // RevenueCat is source-of-truth for premium; fall back to user metadata
+        const isPremiumUser =
+          (await PurchaseService.isPremium()) ||
+          user?.subscription_tier === "premium";
+        if (!isPremiumUser && allRecipes.length >= FREE_ACCOUNT_RECIPE_LIMIT) {
           // Redirect to upgrade screen - they've hit the free account limit
           Alert.alert(
             "Recipe Limit Reached",

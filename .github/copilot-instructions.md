@@ -70,12 +70,31 @@ Always handle extraction failures gracefully and provide manual entry options.
 - **Usage**: Primary extraction method in `WebScrapingAPIService.extractWithScrapingBee()`
 - **Fallback**: CORS proxy if not configured
 
+#### RevenueCat (In-App Purchases)
+- **Purpose**: Native iOS App Store and Google Play in-app subscription purchases
+- **SDK**: `react-native-purchases` — do NOT add it as an Expo config plugin; it uses auto-linking
+- **Service**: `services/purchaseService.ts` (singleton `PurchaseService`) wraps all RevenueCat calls
+  - `configure(userId?)` — call once on app mount (done in `AuthContext`)
+  - `loginUser(id)` / `logoutUser()` — call on every sign-in / sign-out
+  - `isPremium()` — source-of-truth for premium entitlement; always check this before `subscription_tier`
+  - `getOffering()` — fetch current pricing from RevenueCat dashboard
+  - `purchasePackage(pkg)` / `restorePurchases()` — handle transactions
+- **Entitlement ID**: must be exactly `premium` in the RevenueCat dashboard
+- **Setup**: Create project at [app.revenuecat.com](https://app.revenuecat.com), add products in App Store Connect / Google Play Console, then add to `.env.local`:
+  ```env
+  EXPO_PUBLIC_REVENUECAT_IOS_KEY=appl_xxxxxx
+  EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_xxxxxx
+  ```
+- **Graceful degradation**: When keys are absent the service silently no-ops; upgrade screen shows "Coming Soon" box
+- **AuthContext integration**: `PurchaseService.configure()` runs on mount; `loginUser`/`logoutUser` fire on every auth state change so customer records always match the Supabase user
+
 #### API Priority & Graceful Degradation
 The app works without ANY external services:
 1. Recipe extraction tries: Spoonacular → ScrapingBee → CORS Proxy → Manual Entry
 2. Storage tries: Supabase → Demo Mode (in-memory)
-3. All services check for API key availability before attempting requests
-4. Missing APIs log warnings but never crash the app
+3. Premium entitlement tries: RevenueCat → `subscription_tier` metadata fallback
+4. All services check for API key availability before attempting requests
+5. Missing APIs log warnings but never crash the app
 
 ### State Management & Render Optimization
 **Critical performance pattern** - always use stable callbacks to prevent render loops:
@@ -113,9 +132,14 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 # Recipe APIs (optional - graceful fallbacks exist)
 EXPO_PUBLIC_SPOONACULAR_KEY=your-spoonacular-key
 EXPO_PUBLIC_SCRAPINGBEE_KEY=your-scrapingbee-key
+
+# In-app purchases (optional - upgrade screen shows "Coming Soon" without these)
+EXPO_PUBLIC_REVENUECAT_IOS_KEY=appl_xxxxxx
+EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_xxxxxx
 ```
 
 All services work with demo/fallback modes if credentials missing.
+After adding RevenueCat keys, run `npx expo prebuild --clean` to regenerate native code.
 
 ### Running the App
 ```bash

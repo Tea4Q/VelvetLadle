@@ -50,9 +50,13 @@ export default function RecipeViewer({
   const [activeTab, setActiveTab] = useState<
     "overview" | "cooking-tips" | "notes"
   >("overview");
-  const [servingAdjustment, setServingAdjustment] = useState(
-    recipe.servings || 4,
-  );
+  const [servingAdjustment, setServingAdjustment] = useState(() => {
+    if (recipe.recipe_yield) {
+      const match = recipe.recipe_yield.match(/\d+/);
+      if (match) return parseInt(match[0]);
+    }
+    return recipe.servings || 4;
+  });
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([]);
   const [personalNotes, setPersonalNotes] = useState(
     recipe.personal_notes || "",
@@ -65,6 +69,17 @@ export default function RecipeViewer({
 
   useEffect(() => {
     setCurrentRecipe(recipe);
+
+    // Sync serving adjustment to updated recipe_yield or servings
+    const baseServings = (() => {
+      if (recipe.recipe_yield) {
+        const match = recipe.recipe_yield.match(/\d+/);
+        if (match) return parseInt(match[0]);
+      }
+      return recipe.servings || 4;
+    })();
+    setServingAdjustment(baseServings);
+
     const checkFavoriteStatus = async () => {
       if (recipe.id) {
         const favorited = await FavoritesService.isRecipeFavorited(recipe.id);
@@ -75,7 +90,14 @@ export default function RecipeViewer({
 
     // Initialize completed steps array
     setCompletedSteps(new Array(recipe.directions.length).fill(false));
-  }, [recipe.id, recipe.directions.length]);
+  }, [
+    recipe.id,
+    recipe.directions.length,
+    recipe.recipe_yield,
+    recipe.servings,
+    recipe.total_time_minutes,
+    recipe.updated_at,
+  ]);
 
   const toggleStepCompletion = (stepIndex: number) => {
     setCompletedSteps((prev) => {
@@ -441,7 +463,7 @@ export default function RecipeViewer({
                   Servings
                 </Text>
                 <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  {servingAdjustment}
+                  {currentRecipe.recipe_yield || servingAdjustment}
                 </Text>
               </View>
               <View
@@ -742,32 +764,33 @@ export default function RecipeViewer({
                 </Text>
 
                 <View style={styles.nutritionGrid}>
-                  {currentRecipe.nutritional_info?.calories && (
-                    <View style={[styles.nutritionItem, styles.caloriesItem]}>
-                      <Text style={styles.nutritionIcon}>🔥</Text>
-                      <Text
-                        style={[
-                          styles.nutritionLabel,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        Calories
-                      </Text>
-                      <Text
-                        style={[styles.nutritionValue, styles.caloriesValue]}
-                      >
-                        {Math.round(currentRecipe.nutritional_info.calories)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.nutritionUnit,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        kcal
-                      </Text>
-                    </View>
-                  )}
+                  {currentRecipe.nutritional_info?.calories !== undefined &&
+                    currentRecipe.nutritional_info?.calories !== null && (
+                      <View style={[styles.nutritionItem, styles.caloriesItem]}>
+                        <Text style={styles.nutritionIcon}>🔥</Text>
+                        <Text
+                          style={[
+                            styles.nutritionLabel,
+                            { color: colors.textPrimary },
+                          ]}
+                        >
+                          Calories
+                        </Text>
+                        <Text
+                          style={[styles.nutritionValue, styles.caloriesValue]}
+                        >
+                          {Math.round(currentRecipe.nutritional_info.calories)}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.nutritionUnit,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          kcal
+                        </Text>
+                      </View>
+                    )}
 
                   {currentRecipe.nutritional_info?.protein && (
                     <View
@@ -921,52 +944,60 @@ export default function RecipeViewer({
                 </View>
 
                 {/* Nutritional Notes */}
-                {currentRecipe.nutritional_info?.calories && (
-                  <View
-                    style={[
-                      styles.nutritionNotes,
-                      {
-                        backgroundColor: colors.background,
-                        borderColor: colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.notesTitle, { color: colors.textPrimary }]}
+                {currentRecipe.nutritional_info?.calories !== undefined &&
+                  currentRecipe.nutritional_info?.calories !== null && (
+                    <View
+                      style={[
+                        styles.nutritionNotes,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                        },
+                      ]}
                     >
-                      💡 Nutrition Tips
-                    </Text>
-                    <Text
-                      style={[styles.noteText, { color: colors.textSecondary }]}
-                    >
-                      • This recipe provides{" "}
-                      {Math.round(
-                        (currentRecipe.nutritional_info.calories / 2000) * 100,
+                      <Text
+                        style={[
+                          styles.notesTitle,
+                          { color: colors.textPrimary },
+                        ]}
+                      >
+                        💡 Nutrition Tips
+                      </Text>
+                      <Text
+                        style={[
+                          styles.noteText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        • This recipe provides{" "}
+                        {Math.round(
+                          (currentRecipe.nutritional_info.calories / 2000) *
+                            100,
+                        )}
+                        % of daily calories (based on 2000 cal/day)
+                      </Text>
+                      {currentRecipe.nutritional_info.protein && (
+                        <Text
+                          style={[
+                            styles.noteText,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          • Good source of protein for muscle health and satiety
+                        </Text>
                       )}
-                      % of daily calories (based on 2000 cal/day)
-                    </Text>
-                    {currentRecipe.nutritional_info.protein && (
-                      <Text
-                        style={[
-                          styles.noteText,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        • Good source of protein for muscle health and satiety
-                      </Text>
-                    )}
-                    {currentRecipe.nutritional_info.fiber && (
-                      <Text
-                        style={[
-                          styles.noteText,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        • Contains fiber for digestive health
-                      </Text>
-                    )}
-                  </View>
-                )}
+                      {currentRecipe.nutritional_info.fiber && (
+                        <Text
+                          style={[
+                            styles.noteText,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          • Contains fiber for digestive health
+                        </Text>
+                      )}
+                    </View>
+                  )}
               </View>
             )}
 

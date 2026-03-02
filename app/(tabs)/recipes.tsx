@@ -5,6 +5,7 @@ import { Alert, StyleSheet, View } from "react-native";
 import RecipeForm from "../../components/RecipeForm";
 import RecipeList from "../../components/RecipeList";
 import RecipeViewer from "../../components/RecipeViewer";
+import { GUEST_USER_ID } from "../../constants/limits";
 import { useAuth } from "../../contexts/AuthContext";
 import { useColors } from "../../contexts/ThemeContext";
 import { Recipe } from "../../lib/supabase";
@@ -17,8 +18,7 @@ export default function RecipesScreen() {
   const [refreshKey, setRefreshKey] = useState(0);
   const colors = useColors();
   const { user } = useAuth();
-
-  const isGuest = user?.id === "guest_user";
+  const isGuest = user?.id === GUEST_USER_ID;
 
   // Get URL parameters for category filtering, filterType, and recipeId
   const { category, filterType, recipeId } = useLocalSearchParams();
@@ -27,10 +27,6 @@ export default function RecipesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (__DEV__) {
-        console.warn("[RecipesScreen] focus refresh", { userId: user?.id });
-      }
-
       if (!user?.id) return undefined; // Don't set up interval if user ID is not available
 
       // Refresh recipes every 5 minutes while screen is focused

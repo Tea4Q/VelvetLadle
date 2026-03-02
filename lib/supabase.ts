@@ -1,11 +1,15 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
 // Use environment variables for security
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-// Debug: print EXPO_PUBLIC env visibility in development only
-if (__DEV__) {
+// Debug: print EXPO_PUBLIC env visibility only when explicitly enabled
+const isEnvDebugEnabled =
+  __DEV__ && process.env.EXPO_PUBLIC_ENV_DEBUG === "true";
+
+if (isEnvDebugEnabled) {
   const envObj = process.env as Record<string, string | undefined>;
   const expoPublicKeys = Object.keys(envObj)
     .filter((k) => k.startsWith("EXPO_PUBLIC_"))
@@ -55,7 +59,14 @@ if (isSupabaseConfigured) {
   try {
     // Validate URL format
     new URL(supabaseUrl);
-    supabase = createClient(supabaseUrl, supabaseKey);
+    supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
   } catch {
     console.error("Invalid Supabase URL format:", supabaseUrl);
     console.error(

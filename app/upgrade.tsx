@@ -1,21 +1,96 @@
+import { FREE_ACCOUNT_RECIPE_LIMIT } from "@/constants/limits";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { PurchasesOffering, PurchasesPackage } from "react-native-purchases";
 import Button from "../components/buttons";
 import { useColors, useSpacing } from "../contexts/ThemeContext";
+import { PurchaseService } from "../services/purchaseService";
 
 export default function UpgradeScreen() {
   const colors = useColors();
   const spacing = useSpacing();
   const router = useRouter();
 
-  const handleCreateAccount = () => {
-    router.push("/account");
-  };
+  const [offering, setOffering] = useState<PurchasesOffering | null>(null);
+  const [loadingOffering, setLoadingOffering] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  useEffect(() => {
+    async function fetchOffering() {
+      setLoadingOffering(true);
+      const current = await PurchaseService.getOffering();
+      setOffering(current);
+      setLoadingOffering(false);
+    }
+    fetchOffering();
+  }, []);
+
+  const handlePurchase = useCallback(
+    async (pkg: PurchasesPackage) => {
+      setPurchasing(true);
+      const result = await PurchaseService.purchasePackage(pkg);
+      setPurchasing(false);
+
+      if (result.success) {
+        Alert.alert(
+          "Welcome to Premium! 🎉",
+          "You now have unlimited recipe storage. Enjoy VelvetLadle to the fullest!",
+          [{ text: "Let's Go!", onPress: () => router.replace("/(tabs)/add") }],
+        );
+      } else if (result.error !== "cancelled") {
+        Alert.alert(
+          "Purchase Failed",
+          result.error ?? "Something went wrong. Please try again.",
+          [{ text: "OK" }],
+        );
+      }
+    },
+    [router],
+  );
+
+  const handleRestore = useCallback(async () => {
+    setRestoring(true);
+    const result = await PurchaseService.restorePurchases();
+    setRestoring(false);
+
+    if (!result.success) {
+      Alert.alert("Restore Failed", result.error ?? "Please try again.", [
+        { text: "OK" },
+      ]);
+      return;
+    }
+
+    if (result.isPremium) {
+      Alert.alert(
+        "Purchase Restored ✓",
+        "Your premium subscription has been restored!",
+        [{ text: "Continue", onPress: () => router.replace("/(tabs)/add") }],
+      );
+    } else {
+      Alert.alert(
+        "No Active Subscription",
+        "We couldn't find a previous premium purchase on this account.",
+        [{ text: "OK" }],
+      );
+    }
+  }, [router]);
 
   const handleGoBack = () => {
     router.push("/(tabs)/recipes");
   };
+
+  const rcAvailable = PurchaseService.isAvailable();
 
   return (
     <ScrollView
@@ -36,69 +111,161 @@ export default function UpgradeScreen() {
 
         {/* Subtitle */}
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Guest users can save up to 10 recipes
+          Free accounts can save up to {FREE_ACCOUNT_RECIPE_LIMIT} recipes
         </Text>
 
         {/* Features List */}
-        <View style={styles.featuresContainer}>
+        <View
+          style={[
+            styles.featuresContainer,
+            { backgroundColor: colors.surface ?? "#f8f9fa" },
+          ]}
+        >
           <Text style={[styles.featuresTitle, { color: colors.primary }]}>
-            Create a free account to unlock:
+            Premium includes:
           </Text>
 
-          <View style={styles.feature}>
-            <Ionicons name="pencil" size={24} color={colors.primary} />
-            <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-              Full edit & delete access
-            </Text>
-          </View>
-
-          <View style={styles.feature}>
-            <Ionicons name="cloud-upload" size={24} color={colors.primary} />
-            <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-              Cloud sync across devices
-            </Text>
-          </View>
-
-          <View style={styles.feature}>
-            <Ionicons
-              name="shield-checkmark"
-              size={24}
-              color={colors.primary}
-            />
-            <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-              Secure backup of all your recipes
-            </Text>
-          </View>
-
-          <View style={styles.feature}>
-            <Ionicons name="people" size={24} color={colors.primary} />
-            <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-              Share recipes with friends (coming soon)
-            </Text>
-          </View>
-
-          <View style={styles.feature}>
-            <Ionicons name="star" size={24} color={colors.primary} />
-            <Text style={[styles.featureText, { color: colors.textSecondary }]}>
-              Premium features & recipe collections
-            </Text>
-          </View>
+          {[
+            { icon: "infinite" as const, text: "Unlimited recipe storage" },
+            { icon: "cloud-upload" as const, text: "Cloud sync across devices" },
+            {
+              icon: "shield-checkmark" as const,
+              text: "Secure backup of all your recipes",
+            },
+            {
+              icon: "people" as const,
+              text: "Share recipes with friends (coming soon)",
+            },
+            {
+              icon: "star" as const,
+              text: "Premium features & recipe collections",
+            },
+          ].map(({ icon, text }) => (
+            <View key={text} style={styles.feature}>
+              <Ionicons name={icon} size={24} color={colors.primary} />
+              <Text
+                style={[styles.featureText, { color: colors.textSecondary }]}
+              >
+                {text}
+              </Text>
+            </View>
+          ))}
         </View>
 
-        {/* Call to Action */}
+        {/* Pricing / Purchase */}
         <View style={styles.ctaContainer}>
-          <Button
-            label="Create Free Account"
-            theme="primary"
-            onPress={handleCreateAccount}
-          />
+          {!rcAvailable ? (
+            // RevenueCat API keys not yet configured
+            <View
+              style={[
+                styles.infoBox,
+                {
+                  borderColor: colors.primary,
+                  backgroundColor: colors.surface ?? "#f8f9fa",
+                },
+              ]}
+            >
+              <Ionicons
+                name="time-outline"
+                size={32}
+                color={colors.primary}
+                style={{ marginBottom: 8 }}
+              />
+              <Text style={[styles.infoBoxTitle, { color: colors.primary }]}>
+                Coming Soon
+              </Text>
+              <Text
+                style={[styles.infoBoxText, { color: colors.textSecondary }]}
+              >
+                In-app subscriptions are being set up. Check back for updates!
+              </Text>
+            </View>
+          ) : loadingOffering ? (
+            <ActivityIndicator
+              size="large"
+              color={colors.primary}
+              style={{ marginVertical: 16 }}
+            />
+          ) : offering && offering.availablePackages.length > 0 ? (
+            offering.availablePackages.map((pkg) => (
+              <TouchableOpacity
+                key={pkg.identifier}
+                style={[
+                  styles.packageButton,
+                  {
+                    borderColor: colors.primary,
+                    backgroundColor: colors.surface ?? "#f8f9fa",
+                  },
+                ]}
+                onPress={() => handlePurchase(pkg)}
+                disabled={purchasing || restoring}
+              >
+                <Text
+                  style={[styles.packageTitle, { color: colors.primary }]}
+                >
+                  {pkg.product.title}
+                </Text>
+                <Text
+                  style={[styles.packagePrice, { color: colors.textSecondary }]}
+                >
+                  {pkg.product.priceString}
+                  {pkg.packageType === "ANNUAL" && " / year"}
+                  {pkg.packageType === "MONTHLY" && " / month"}
+                </Text>
+                {pkg.product.introPrice && (
+                  <Text
+                    style={[styles.packageTrial, { color: colors.primary }]}
+                  >
+                    {pkg.product.introPrice.periodNumberOfUnits}{" "}
+                    {pkg.product.introPrice.periodUnit.toLowerCase()} free trial
+                  </Text>
+                )}
+                {purchasing && (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.primary}
+                    style={{ marginTop: 6 }}
+                  />
+                )}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View
+              style={[
+                styles.infoBox,
+                {
+                  borderColor: colors.primary,
+                  backgroundColor: colors.surface ?? "#f8f9fa",
+                },
+              ]}
+            >
+              <Text style={[styles.infoBoxTitle, { color: colors.primary }]}>
+                No Plans Available
+              </Text>
+              <Text
+                style={[styles.infoBoxText, { color: colors.textSecondary }]}
+              >
+                Subscription plans are being configured. Please check back
+                soon.
+              </Text>
+            </View>
+          )}
+
+          {rcAvailable && !loadingOffering && (
+            <Button
+              label={restoring ? "Restoring…" : "Restore Purchases"}
+              onPress={handleRestore}
+            />
+          )}
+
           <Button label="Go Back" onPress={handleGoBack} />
         </View>
 
-        {/* Info Text */}
+        {/* Legal */}
         <Text style={[styles.infoText, { color: colors.textLight }]}>
-          Don't worry, your existing recipes are safe and will be kept when you
-          create an account.
+          Your existing recipes are safe and will remain accessible.{"\n"}
+          Subscriptions auto-renew unless cancelled at least 24 hours before
+          the renewal date.
         </Text>
       </View>
     </ScrollView>
@@ -121,7 +288,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,
-    shadowColor: "#000",
+    shadowColor: "rgba(0, 0, 0, 0.1)",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -143,7 +310,6 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 32,
     padding: 20,
-    backgroundColor: "#f8f9fa",
     borderRadius: 12,
   },
   featuresTitle: {
@@ -166,10 +332,48 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 24,
   },
-  infoText: {
+  packageButton: {
+    width: "100%",
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+  },
+  packageTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  packagePrice: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  packageTrial: {
     fontSize: 14,
+    fontWeight: "600",
+  },
+  infoBox: {
+    width: "100%",
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 24,
+    alignItems: "center",
+  },
+  infoBoxTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  infoBoxText: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  infoText: {
+    fontSize: 12,
     textAlign: "center",
     fontStyle: "italic",
     paddingHorizontal: 20,
+    lineHeight: 18,
   },
 });

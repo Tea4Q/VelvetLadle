@@ -1,12 +1,10 @@
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { AuthProvider } from "../contexts/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 
 // Keep splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const [fontsLoaded] = useFonts({
@@ -24,7 +22,6 @@ function RootLayoutNav() {
       } finally {
         // Tell the app to render
         setIsReady(true);
-        await SplashScreen.hideAsync();
       }
     }
 
@@ -57,11 +54,6 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  console.log("SUPABASE_URL", process.env.EXPO_PUBLIC_SUPABASE_URL);
-  console.log(
-    "SUPABASE_KEY",
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 8),
-  );
   return (
     <ThemeProvider>
       <AuthProvider>

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRootNavigationState, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -23,6 +23,7 @@ export default function AccountScreen() {
   const router = useRouter();
   const { mode: urlMode } = useLocalSearchParams();
   const { user, signInAsGuest, signOut, signUp, signIn } = useAuth();
+  const rootNavigationState = useRootNavigationState();
 
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +32,26 @@ export default function AccountScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showUserInfo, setShowUserInfo] = useState(false);
+  const [pendingReplace, setPendingReplace] = useState<string | null>(null);
+
+  const isNavigationReady = !!rootNavigationState?.key;
+
+  const safeReplace = useCallback(
+    (path: string) => {
+      if (isNavigationReady) {
+        router.replace(path as any);
+        return;
+      }
+      setPendingReplace(path);
+    },
+    [isNavigationReady, router],
+  );
+
+  useEffect(() => {
+    if (!pendingReplace || !isNavigationReady) return;
+    router.replace(pendingReplace as any);
+    setPendingReplace(null);
+  }, [pendingReplace, isNavigationReady, router]);
 
   // Handle URL mode parameter
   useEffect(() => {
@@ -41,7 +62,7 @@ export default function AccountScreen() {
 
   // Critical auth guard - handle authenticated users properly
   useEffect(() => {
-    if (user) {
+    if (user && user.id !== "guest_user") {
       // If user exists and we're in auth flow, show user info instead of redirect loop
       // Production build: console.log removed
       setShowUserInfo(true);
@@ -68,7 +89,7 @@ export default function AccountScreen() {
         setPassword("");
         setName("");
         // Navigate directly to tabs instead of going through auth gate
-        router.replace("/(tabs)");
+        safeReplace("/(tabs)");
       } else {
         console.error("Sign in failed:", result.error);
         Alert.alert("Sign In Failed", result.error || "Please try again.");
@@ -79,7 +100,7 @@ export default function AccountScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [email, password, signIn, router]);
+  }, [email, password, signIn, safeReplace]);
 
   const handleCreateAccount = useCallback(async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
@@ -105,11 +126,14 @@ export default function AccountScreen() {
         Alert.alert(
           "Account Created! 🎉",
           "Your account has been created successfully. Welcome to VelvetLadle!",
-          [{ text: "Continue", onPress: () => router.replace("/(tabs)") }],
+          [{ text: "Continue", onPress: () => safeReplace("/(tabs)") }],
         );
       } else {
+        const accountCreatedButNotSignedIn =
+          (result.error || "").toLowerCase().includes("account created");
+
         Alert.alert(
-          "Error",
+          accountCreatedButNotSignedIn ? "Account Created" : "Error",
           result.error || "Failed to create account. Please try again.",
         );
       }
@@ -119,7 +143,7 @@ export default function AccountScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [name, email, password, signUp, router]);
+  }, [name, email, password, signUp, safeReplace]);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -139,8 +163,8 @@ export default function AccountScreen() {
   }, [signOut]);
 
   const handleGoBack = useCallback(() => {
-    router.replace("/(tabs)");
-  }, [router]);
+    safeReplace("/(tabs)");
+  }, [safeReplace]);
 
   // If user is logged in, show account info
   if (showUserInfo && user) {
@@ -188,7 +212,7 @@ export default function AccountScreen() {
                 Account Type:
               </Text>
               <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                Free
+                {user.subscription_tier === "premium" ? "Premium" : "Free"}
               </Text>
             </View>
             <View style={styles.infoRow}>
@@ -203,6 +227,29 @@ export default function AccountScreen() {
 
           {/* Actions */}
           <View style={styles.actions}>
+            {user.subscription_tier !== "premium" && (
+              <Button
+                label="Upgrade to Premium"
+                theme="primary"
+                onPress={() =>
+                  Alert.alert(
+                    "Upgrade to Premium",
+                    "Premium subscriptions unlock unlimited recipe uploads. Sign in with your premium account to continue.",
+                    [
+                      {
+                        text: "Sign In",
+                        onPress: () =>
+                          router.push({
+                            pathname: "/account",
+                            params: { mode: "signin" },
+                          }),
+                      },
+                      { text: "Cancel", style: "cancel" },
+                    ],
+                  )
+                }
+              />
+            )}
             <Button
               label="Sign Out"
               theme="secondary"
@@ -386,7 +433,7 @@ export default function AccountScreen() {
             theme="link"
             onPress={() => {
               signInAsGuest();
-              router.replace("/");
+              safeReplace("/");
             }}
           />
         </View>

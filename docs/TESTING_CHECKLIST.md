@@ -1,6 +1,45 @@
 # VelvetLadle Testing Checklist ✅
 
-## 🚀 **Performance & Stability Testing (v1.2.1)**
+## � **Premium Subscription Testing (v2.3.0)**
+
+### **Upgrade Screen**
+
+- [ ] **Limit reached**: Add 10 recipes as a free user → verify redirected to upgrade screen
+- [ ] **No loop**: From upgrade screen, tap Go Back → verify returns to Recipes tab (no loop)
+- [ ] **Coming Soon state**: With no RevenueCat keys in `.env.local` → verify "Coming Soon" box renders cleanly
+- [ ] **Pricing loads**: With RevenueCat keys configured → verify package cards render with correct price strings
+- [ ] **Trial badge**: If offering has intro price configured → verify trial text appears on package card
+
+### **Purchase Flow**
+
+- [ ] **Successful purchase**: Tap a package → complete sandbox purchase → verify "Welcome to Premium!" alert
+- [ ] **Navigate after purchase**: Confirm success alert → tap "Let's Go!" → verify taken to Add screen with no recipe limit
+- [ ] **Cancelled purchase**: Start purchase → cancel from system dialog → verify no error alert, user still on upgrade screen
+- [ ] **Failed purchase**: Simulate payment failure → verify user-friendly error alert with OK button
+- [ ] **Premium gate bypassed**: Sign in as premium user → navigate to Add → verify no limit alert fires
+
+### **Restore Purchases**
+
+- [ ] **Restore with existing sub**: Reinstall app / sign in fresh → tap "Restore Purchases" → verify premium re-granted
+- [ ] **Restore with no sub**: Tap "Restore Purchases" on a free account → verify "No Active Subscription" alert
+- [ ] **Restore failure**: Simulate network error during restore → verify "Restore Failed" alert with message
+- [ ] **Restore hidden without RC keys**: With no RevenueCat keys → verify "Restore Purchases" button is not shown
+
+### **Premium Check in Add Screen**
+
+- [ ] **Free user at limit**: Sign in as free user with 10 recipes → tap Add tab → verify redirected to upgrade screen
+- [ ] **Premium user at 10+**: Sign in as premium user with 10+ recipes → tap Add tab → verify full Add screen shown normally
+- [ ] **RevenueCat entitlement takes priority**: Ensure `PurchaseService.isPremium()` is checked before `subscription_tier` metadata
+
+### **AuthContext / RevenueCat Linkage**
+
+- [ ] **Login links customer**: Sign in with existing account → verify RevenueCat `loginUser` called (check RC dashboard customer list)
+- [ ] **Logout anonymises customer**: Sign out → verify `logoutUser` called and no entitlement carried over
+- [ ] **Session restore links customer**: Kill and reopen app with active session → verify customer re-linked on load
+
+---
+
+## 🚀� **Performance & Stability Testing (v1.2.1)**
 
 ### **Render Loop Prevention**
 
@@ -283,6 +322,8 @@
 - [ ] Database schema finalized ✅
 - [ ] Error handling implemented ✅
 - [ ] Offline mode working ✅
+- [ ] Premium purchase flow tested on device ✅
+- [ ] Restore Purchases tested ✅
 
 ## 📱 **Post-Release Monitoring**
 

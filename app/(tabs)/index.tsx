@@ -31,7 +31,15 @@ import {
 } from "react-native";
 
 // Recent Recipes List Component
-function RecentRecipesList({ colors, radius }: { colors: any; radius: any }) {
+function RecentRecipesList({
+  colors,
+  radius,
+  refreshKey,
+}: {
+  colors: any;
+  radius: any;
+  refreshKey: number;
+}) {
   const [recentRecipes, setRecentRecipes] = useState<Recipe[]>([]);
 
   useEffect(() => {
@@ -45,7 +53,7 @@ function RecentRecipesList({ colors, radius }: { colors: any; radius: any }) {
       }
     }
     loadRecent();
-  }, []);
+  }, [refreshKey]);
 
   if (recentRecipes.length === 0) return null;
 
@@ -649,7 +657,11 @@ export default function Index() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
               Recent Recipes 📖
             </Text>
-            <RecentRecipesList colors={colors} radius={radius} />
+            <RecentRecipesList
+              colors={colors}
+              radius={radius}
+              refreshKey={recentCount}
+            />
           </View>
         )}
       </ScrollView>

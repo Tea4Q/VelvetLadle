@@ -22,11 +22,6 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.qtea.VelvetLadle",
-      "splash": {
-        "image": "./assets/images/Velvet_Ladle_Splash_Android_Large_2400x1080.png",
-        "resizeMode": "cover",
-        "backgroundColor": "#faf4eb"
-      },
       "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {

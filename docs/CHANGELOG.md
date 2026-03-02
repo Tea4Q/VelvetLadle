@@ -1,5 +1,31 @@
 # VelvetLadle Changelog 📋
 
+## [2.3.0] - March 2026 - In-App Purchases & Upgrade Flow 💳
+
+### 💳 **Premium Subscription Infrastructure**
+
+#### **RevenueCat Integration**
+- **Added `react-native-purchases` SDK**: Full RevenueCat integration for native iOS and Android in-app purchases
+- **Created `services/purchaseService.ts`**: Centralised service wrapping all RevenueCat operations — configure, `loginUser`, `logoutUser`, `isPremium`, `getOffering`, `purchasePackage`, `restorePurchases`
+- **Wired into `AuthContext`**: RevenueCat is configured on app mount; `loginUser` is called on every sign-in or session restore, `logoutUser` on sign-out, ensuring customer records are always linked to the correct Supabase user
+- **Premium gate updated in `add.tsx`**: Recipe limit check now queries RevenueCat as source-of-truth for entitlement, falling back to Supabase `subscription_tier` metadata
+- **Graceful degradation**: When RevenueCat API keys are absent (dev / web), the service silently no-ops — no crashes
+
+#### **Upgrade Screen Rebuilt**
+- **Real pricing cards**: Screen now fetches the current RevenueCat offering and renders tappable package buttons with live price strings and introductory trial info
+- **Purchase flow**: Tapping a package calls `Purchases.purchasePackage()`; on success the user is taken directly to the Add screen with unlimited access
+- **Restore Purchases button**: Required by Apple / Google policies — calls `Purchases.restorePurchases()` and re-grants access if a previous purchase is found
+- **Coming Soon fallback**: When RevenueCat keys are not yet configured, a styled info box is shown instead of empty or broken UI
+- **Fixed infinite loop bug**: The previous "Upgrade to Premium" button triggered sign-in → `/(tabs)` → limit check → `/upgrade` endlessly; replaced with direct purchase flow that has no navigation side-effects
+- **Removed "Create Free Account" button**: Users who reach the upgrade screen are already authenticated; the button was redundant and misleading
+- **Updated feature list**: "Create a free account to unlock" heading replaced with "Premium includes:" + added "Unlimited recipe storage" item
+- **Updated legal footer**: Auto-renewal disclosure text added as required by App Store / Play Store review guidelines
+
+### 🔧 **Configuration**
+- **`app.config.js`**: Removed erroneous `react-native-purchases` config plugin entry (the package uses auto-linking, not an Expo config plugin)
+
+---
+
 ## [1.2.2] - February 2026 - Google Play Store Release 🚀
 
 ### 🎯 **Navigation & User Experience Fixes**
@@ -208,7 +234,7 @@
 
 ### **Migration**: No migration needed - Updates are seamless
 
-### **Dependencies**: No new major dependencies added
+### **Dependencies**: `react-native-purchases` (RevenueCat) added in v2.3.0
 
 ### **Performance**: Improved modal rendering and navigation efficiency
 

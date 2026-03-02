@@ -141,7 +141,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 
 ### 💾 **Flexible Data Storage**
 
-**Dual-Mode Architecture with Free Tier**
+**Dual-Mode Architecture with Free & Premium Tiers**
 
 **Guest Mode (Free):**
 - 📱 Up to 10 recipes (manual or URL import)
@@ -152,21 +152,28 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - 📱 Works offline
 - 💡 Perfect for trying the app
 
-**Cloud Mode (Supabase):**
-- ☁️ Unlimited recipe storage
+**Cloud Mode (Supabase, Free Account):**
+- ☁️ Up to 10 recipes with cloud sync
 - 🔄 Sync across multiple devices
 - 🛡️ Enterprise-grade security
-- 📈 Unlimited recipe capacity
-- 🌐 Access from anywhere
-- 🔐 Personal account with authentication
+- 👤 Personal account with authentication
 - 🔑 Secure password reset via email
 
+**Premium Subscription (In-App Purchase):**
+- ♾️ **Unlimited recipe storage**
+- ☁️ Cloud sync across all devices
+- 🛡️ Secure backup of all recipes
+- ⭐ Premium features & recipe collections
+- 👥 Share recipes with friends (coming soon)
+- Managed via native Apple/Google in-app purchase
+- Restore purchases supported across devices
+
 **Seamless Switching:**
-- App works identically in both modes
+- App works identically in free and premium modes
 - No code changes needed
 - Graceful fallback if cloud unavailable
 - Configure once, use forever
-- Upgrade path from guest to full account
+- Upgrade path from guest → free account → premium
 
 ---
 
@@ -218,6 +225,17 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - **Clean Cuisine Filtering**: Removed contamination from non-cuisine fields (no more "recipe", "manual", "entered")
 - **Performance Optimizations**: Eliminated render loops, stabilized callbacks, improved list performance
 
+**New Features (v2.3.0):**
+- **Premium In-App Purchases**: Full RevenueCat integration for native iOS/Android subscriptions
+  - Real pricing cards on the upgrade screen fetched live from RevenueCat
+  - One-tap purchase flow — unlocks unlimited recipes immediately on success
+  - Restore Purchases support required by Apple/Google policies
+  - Graceful "Coming Soon" fallback when API keys are not yet configured
+  - `PurchaseService` wraps all RevenueCat operations with dual-mode safety
+  - `AuthContext` links RevenueCat customer records to Supabase users on sign-in/sign-out
+- **Fixed Upgrade Screen Loop**: Previous navigation bug where "Upgrade to Premium" caused an infinite redirect loop is resolved
+- **Removed redundant "Create Free Account" button** from upgrade screen
+
 **New Features (v1.3.0):**
 - **Password Reset Flow**: Complete forgot password feature with email-based reset links
   - "Forgot Password?" link on sign-in screen
@@ -242,11 +260,13 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - Context API for state management
 - AsyncStorage for local persistence
 - Supabase for cloud backend
+- RevenueCat (`react-native-purchases`) for in-app subscriptions
 
 ### **External Integrations**
 - **Spoonacular API**: Recipe parsing and nutrition analysis
 - **ScrapingBee API**: JavaScript rendering for complex sites
 - **CORS Proxy**: Fallback web scraping
+- **RevenueCat**: Native in-app purchases (iOS & Android subscriptions)
 - All APIs optional with graceful degradation
 
 ### **Developer Experience**
@@ -276,6 +296,12 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 ---
 
 ## 💡 **Use Cases**
+
+### **For Premium Subscribers**
+- Unlimited recipe storage
+- All free account features plus no recipe cap
+- Manage subscription through App Store / Google Play
+- Restore purchases across devices
 
 ### **For Free Users / Trial**
 - Test the app with up to 10 recipes

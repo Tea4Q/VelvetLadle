@@ -18,6 +18,11 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Build artifacts (never commit these - they break EAS upload)
+*.aab
+*.apk
+*.ipa
+
 # Metro
 .metro-health-check*
 

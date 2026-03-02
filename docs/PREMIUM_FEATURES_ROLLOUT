@@ -1,4 +1,16 @@
 Plan: Premium Features Rollout (DRAFT)
+
+STATUS UPDATE (March 2026): Payment infrastructure is now implemented.
+- react-native-purchases (RevenueCat) installed and integrated
+- PurchaseService created (services/purchaseService.ts)
+- AuthContext wires RevenueCat customer records to Supabase users on every auth event
+- Upgrade screen rebuilt with live RevenueCat pricing, purchase flow, and Restore Purchases
+- Premium entitlement check in add.tsx uses RevenueCat as source-of-truth
+- Remaining one-time setup: configure RevenueCat dashboard + store products, add API keys
+- All other phases (OCR, meal planning, pantry, recipe linking, social) remain future work as outlined below
+
+---
+
 Based on your scope choices (MVP + pantry + OCR, all platforms, export-only sync, public-feed coupon prototype), this is feasible, but best delivered in staged releases to control risk. The current app already has reusable foundations for extraction, image handling, and dual storage in recipeExtractor.ts, ImageStorageService.ts, recipeDatabase.ts, and supabase.ts. The main gaps are new data models (recipe links, meal plans, pantry/shopping), OCR/document ingestion pipeline, and external feed normalization. Estimated timeline: 16–28 weeks solo, or 12–20 weeks with a 2–3 person team. Highest-risk area is coupons/sales data quality and ToS compliance; keep that as opt-in prototype after core premium value ships.
 
 Feasibility & Difficulty

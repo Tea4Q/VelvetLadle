@@ -1,5 +1,19 @@
 # Future Features List
 
+## ✅ Completed Features (moved from future)
+
+### In-App Purchases / Premium Subscriptions *(March 2026)*
+- `react-native-purchases` (RevenueCat SDK) installed
+- `services/purchaseService.ts` created — wraps configure, login/logout, entitlement check, purchase, and restore
+- `AuthContext` wired to call `PurchaseService.loginUser` / `logoutUser` on every auth state change
+- Upgrade screen rebuilt with live pricing cards, purchase flow, and Restore Purchases button
+- Free-tier recipe limit check in `add.tsx` now uses RevenueCat as source-of-truth
+- Required legal disclosures (auto-renewal text) added to upgrade screen
+- Upgrade screen loop bug fixed; redundant "Create Free Account" button removed
+- **Remaining work**: Configure RevenueCat dashboard, create products in App Store Connect / Google Play Console, add API keys to `.env.local`, run `expo prebuild`
+
+---
+
 ## Ingredient Substitutions Feature
 
 ### Overview
@@ -168,3 +182,7 @@ substitutionOptions: {
 - Enable multi-device and cross-platform image access
 - Support for image uploads, deletions, and access control
 - Optional fallback to local storage for offline use
+
+---
+
+*Last updated: March 2026. See [CHANGELOG.md](CHANGELOG.md) for completed items.*

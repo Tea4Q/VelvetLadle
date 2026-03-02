@@ -5,6 +5,7 @@ import {
   Recipe,
   supabase,
 } from "../lib/supabase";
+import { isNetworkFetchError } from "../utils/networkUtils";
 
 /**
  * Service for managing recipe and URL favorites
@@ -12,17 +13,6 @@ import {
  */
 export class FavoritesService {
   private static readonly STORAGE_KEY = "velvet_ladle_favorites";
-
-  private static isNetworkFetchError(error: unknown): boolean {
-    const message = String((error as any)?.message ?? error ?? "").toLowerCase();
-    return (
-      message.includes("networkerror when attempting to fetch resource") ||
-      message.includes("network request failed") ||
-      message.includes("failed to fetch") ||
-      message.includes("typeerror: networkerror") ||
-      message.includes("attempting to fetch resource")
-    );
-  }
 
   /**
    * Add a recipe to favorites
@@ -59,7 +49,10 @@ export class FavoritesService {
           .eq("user_id", user.id);
 
         if (recipeUpdateResult.error) {
-          console.error('❌ addRecipeToFavorites: Recipe update error:', recipeUpdateResult.error);
+          console.error(
+            "❌ addRecipeToFavorites: Recipe update error:",
+            recipeUpdateResult.error,
+          );
         }
 
         // Also add to favorites table for better organization
@@ -119,8 +112,10 @@ export class FavoritesService {
         // Production build: console.log removed
       }
     } catch (error) {
-      if (this.isNetworkFetchError(error)) {
-        console.warn("Supabase unavailable while adding recipe favorite, using local fallback");
+      if (isNetworkFetchError(error)) {
+        console.warn(
+          "Supabase unavailable while adding recipe favorite, using local fallback",
+        );
         await this.addToLocalFavorites({
           type: "recipe",
           recipe_id: recipe.id,
@@ -149,7 +144,7 @@ export class FavoritesService {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) {
-          console.error('User not authenticated for removeRecipeFromFavorites');
+          console.error("User not authenticated for removeRecipeFromFavorites");
           return;
         }
 
@@ -177,8 +172,10 @@ export class FavoritesService {
         // Production build: console.log removed
       }
     } catch (error) {
-      if (this.isNetworkFetchError(error)) {
-        console.warn("Supabase unavailable while removing recipe favorite, using local fallback");
+      if (isNetworkFetchError(error)) {
+        console.warn(
+          "Supabase unavailable while removing recipe favorite, using local fallback",
+        );
         await this.removeFromLocalFavorites("recipe", recipeId);
         return;
       }
@@ -246,6 +243,11 @@ export class FavoritesService {
         }
 
         if (result.error) {
+          const code = (result.error as any)?.code;
+          if (code === "23505") {
+            // Duplicate favorite URL - treat as already favorited
+            return;
+          }
           throw result.error;
         }
         // Production build: console.log removed
@@ -255,8 +257,10 @@ export class FavoritesService {
         // Production build: console.log removed
       }
     } catch (error) {
-      if (this.isNetworkFetchError(error)) {
-        console.warn("Supabase unavailable while adding URL favorite, using local fallback");
+      if (isNetworkFetchError(error)) {
+        console.warn(
+          "Supabase unavailable while adding URL favorite, using local fallback",
+        );
         await this.addToLocalFavorites({
           type: "url",
           url,
@@ -270,6 +274,13 @@ export class FavoritesService {
       }
 
       console.error("❌ Error adding website to favorites:", error);
+
+      const duplicateKeyCode = (error as any)?.code;
+      if (duplicateKeyCode === "23505") {
+        // Already exists - keep operation idempotent
+        return;
+      }
+
       throw new Error("Failed to add website to favorites");
     }
   }
@@ -287,8 +298,10 @@ export class FavoritesService {
         // Production build: console.log removed
       }
     } catch (error) {
-      if (this.isNetworkFetchError(error)) {
-        console.warn("Supabase unavailable while removing URL favorite, using local fallback");
+      if (isNetworkFetchError(error)) {
+        console.warn(
+          "Supabase unavailable while removing URL favorite, using local fallback",
+        );
         await this.removeFromLocalFavorites("url", undefined, url);
         return;
       }
@@ -320,15 +333,19 @@ export class FavoritesService {
           .order("created_at", { ascending: false });
 
         if (error) {
-          console.error('❌ getAllFavorites: Supabase error:', error);
+          console.error("❌ getAllFavorites: Supabase error:", error);
           throw error;
         }
-        
+
         return data || [];
       } else {
-        console.log('🔍 getAllFavorites: Using local storage mode');
+        console.log("🔍 getAllFavorites: Using local storage mode");
         const localFavorites = await this.getLocalFavorites();
-        console.log('🔍 getAllFavorites: Found', localFavorites.length, 'local favorites');
+        console.log(
+          "🔍 getAllFavorites: Found",
+          localFavorites.length,
+          "local favorites",
+        );
         return localFavorites;
       }
     } catch (error) {
@@ -350,20 +367,20 @@ export class FavoritesService {
         if (!user) {
           // Fall back to local storage when no user is authenticated
           const favorites = await this.getLocalFavorites();
-          const recipeFavorites = favorites.filter(f => f.type === 'recipe');
-          
-          const recipes = recipeFavorites.map(fav => ({
+          const recipeFavorites = favorites.filter((f) => f.type === "recipe");
+
+          const recipes = recipeFavorites.map((fav) => ({
             id: fav.recipe_id,
             title: fav.title,
             description: fav.description,
-            web_address: fav.url || '',
+            web_address: fav.url || "",
             image_url: fav.image_url,
             ingredients: [],
             directions: [],
             is_favorite: true,
-            favorited_at: fav.created_at
+            favorited_at: fav.created_at,
           })) as Recipe[];
-          
+
           return recipes;
         }
 
@@ -375,13 +392,13 @@ export class FavoritesService {
           .order("favorited_at", { ascending: false });
 
         if (error) {
-          console.error('❌ getFavoriteRecipes: Supabase error:', error);
+          console.error("❌ getFavoriteRecipes: Supabase error:", error);
           throw error;
         }
-        
+
         return data || [];
       } else {
-        console.log('🔍 getFavoriteRecipes: Using local storage mode');
+        console.log("🔍 getFavoriteRecipes: Using local storage mode");
         // For local storage, we need to get favorites and then find matching recipes
         const favorites = await this.getLocalFavorites();
         const recipeFavorites = favorites.filter((f) => f.type === "recipe");
@@ -430,7 +447,9 @@ export class FavoritesService {
         } = await supabase.auth.getUser();
         if (!user) {
           const favorites = await this.getLocalFavorites();
-          return favorites.some(f => f.type === 'recipe' && f.recipe_id === recipeId);
+          return favorites.some(
+            (f) => f.type === "recipe" && f.recipe_id === recipeId,
+          );
         }
 
         const { data, error } = await supabase
@@ -489,8 +508,10 @@ export class FavoritesService {
         // Production build: console.log removed
       }
     } catch (error) {
-      if (this.isNetworkFetchError(error)) {
-        console.warn("Supabase unavailable while updating favorite, using local fallback");
+      if (isNetworkFetchError(error)) {
+        console.warn(
+          "Supabase unavailable while updating favorite, using local fallback",
+        );
         await this.updateLocalFavorite(favoriteId, updates);
         return;
       }
@@ -630,9 +651,9 @@ export class FavoritesService {
   static async clearLocalFavorites(): Promise<void> {
     try {
       await AsyncStorage.removeItem(this.STORAGE_KEY);
-      console.log('✅ Local favorites cleared');
+      console.log("✅ Local favorites cleared");
     } catch (error) {
-      console.error('❌ Error clearing local favorites:', error);
+      console.error("❌ Error clearing local favorites:", error);
     }
   }
 
@@ -643,21 +664,24 @@ export class FavoritesService {
     try {
       const favorites = await this.getLocalFavorites();
       const seen = new Set<string>();
-      const uniqueFavorites = favorites.filter(fav => {
-        const key = fav.type === 'recipe' ? `recipe-${fav.recipe_id}` : `url-${fav.url}`;
+      const uniqueFavorites = favorites.filter((fav) => {
+        const key =
+          fav.type === "recipe" ? `recipe-${fav.recipe_id}` : `url-${fav.url}`;
         if (seen.has(key)) {
           return false;
         }
         seen.add(key);
         return true;
       });
-      
+
       if (uniqueFavorites.length !== favorites.length) {
         await this.saveLocalFavorites(uniqueFavorites);
-        console.log(`✅ Removed ${favorites.length - uniqueFavorites.length} duplicate favorites`);
+        console.log(
+          `✅ Removed ${favorites.length - uniqueFavorites.length} duplicate favorites`,
+        );
       }
     } catch (error) {
-      console.error('❌ Error removing duplicate favorites:', error);
+      console.error("❌ Error removing duplicate favorites:", error);
     }
   }
 }

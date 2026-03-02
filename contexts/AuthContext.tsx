@@ -1,3 +1,4 @@
+import { GUEST_USER_ID } from "@/constants/limits";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -7,23 +8,15 @@ import React, {
   useState,
 } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { PurchaseService } from "../services/purchaseService";
+import { isNetworkFetchError } from "../utils/networkUtils";
 // import { DemoStorage } from './demoStorage';
-
-const isNetworkFetchError = (error: unknown): boolean => {
-  const message = String((error as any)?.message ?? error ?? '').toLowerCase();
-  return (
-    message.includes('networkerror when attempting to fetch resource') ||
-    message.includes('network request failed') ||
-    message.includes('failed to fetch') ||
-    message.includes('typeerror: networkerror') ||
-    message.includes('attempting to fetch resource')
-  );
-};
 
 export interface User {
   id: string;
   email: string;
   name: string;
+  subscription_tier?: "free" | "premium";
 }
 
 interface AuthContextType {
@@ -55,6 +48,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Configure RevenueCat anonymously on mount; user login/logout flows below
+  // link the customer record to the authenticated Supabase user.
+  useEffect(() => {
+    PurchaseService.configure();
+  }, []);
+
+  const mapSupabaseUser = useCallback((supabaseUser: any): User => {
+    const tierFromMetadata =
+      supabaseUser?.user_metadata?.subscription_tier ||
+      supabaseUser?.app_metadata?.subscription_tier;
+
+    const subscriptionTier: "free" | "premium" =
+      tierFromMetadata === "premium" ||
+      supabaseUser?.email?.toLowerCase() === "velvetladle.paid@gmail.com"
+        ? "premium"
+        : "free";
+
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || "",
+      name:
+        supabaseUser.user_metadata?.name ||
+        supabaseUser.email?.split("@")[0] ||
+        "User",
+      subscription_tier: subscriptionTier,
+    };
+  }, []);
+
   // Helper function for demo mode signin
   const signInDemoMode = useCallback(async (email: string) => {
     // Production build: console.log removed
@@ -62,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: "demo_user",
       email,
       name: email.split("@")[0],
+      subscription_tier: "free" as const,
     };
     setUser(demoUser);
     await AsyncStorage.setItem("user", JSON.stringify(demoUser));
@@ -76,13 +98,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: "demo_user",
       email,
       name,
+      subscription_tier: "free" as const,
     };
     setUser(demoUser);
     await AsyncStorage.setItem("user", JSON.stringify(demoUser));
     setIsLoading(false);
     return { success: true };
   }, []);
-  
+
   const signIn = useCallback(
     async (email: string, password: string) => {
       // Production build: console.log removed
@@ -130,20 +153,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               };
             }
 
+            if (error.message.includes("Email not confirmed")) {
+              return {
+                success: false,
+                error: "Please confirm your email address before signing in.",
+              };
+            }
+
             return { success: false, error: error.message };
           }
 
           if (data?.user) {
-            const userData = {
-              id: data.user.id,
-              email: data.user.email || "",
-              name:
-                data.user.user_metadata?.name ||
-                data.user.email?.split("@")[0] ||
-                "User",
-            };
+            const userData = mapSupabaseUser(data.user);
             setUser(userData);
             await AsyncStorage.setItem("user", JSON.stringify(userData));
+            await PurchaseService.loginUser(userData.id);
             return { success: true };
           }
 
@@ -157,7 +181,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const result = await signInDemoMode(email);
             return result;
           }
-          return { success: false, error: "An unexpected error occurred during sign in" };
+          return {
+            success: false,
+            error: "An unexpected error occurred during sign in",
+          };
         } finally {
           setIsLoading(false);
         }
@@ -167,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: "An unexpected error occurred" };
       }
     },
-    [signInDemoMode],
+    [mapSupabaseUser, signInDemoMode],
   );
 
   const signUp = useCallback(
@@ -187,6 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           options: {
             data: {
               name,
+              subscription_tier: "free",
             },
           },
         });
@@ -210,14 +238,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { success: false, error: error.message };
         }
 
-        if (data?.user) {
-          const userData = {
-            id: data.user.id,
-            email: data.user.email || "",
-            name: name,
-          };
+        if (data?.session?.user) {
+          const userData = mapSupabaseUser(data.session.user);
           setUser(userData);
           await AsyncStorage.setItem("user", JSON.stringify(userData));
+          await PurchaseService.loginUser(userData.id);
+          return { success: true };
+        }
+
+        if (data?.user) {
+          const { data: signInData, error: signInError } =
+            await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+
+          if (signInError || !signInData?.user) {
+            const msg = signInError?.message?.toLowerCase() || "";
+
+            if (msg.includes("email not confirmed")) {
+              return {
+                success: false,
+                error:
+                  "Account created. Please confirm your email, then sign in.",
+              };
+            }
+
+            return {
+              success: false,
+              error:
+                "Account created, but sign in was not completed. Please sign in to continue.",
+            };
+          }
+
+          const userData = mapSupabaseUser(signInData.user);
+          setUser(userData);
+          await AsyncStorage.setItem("user", JSON.stringify(userData));
+          await PurchaseService.loginUser(userData.id);
           return { success: true };
         }
 
@@ -228,12 +285,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const result = await signUpDemoMode(email, name);
           return result;
         }
-        return { success: false, error: "An unexpected error occurred during sign up" };
+        return {
+          success: false,
+          error: "An unexpected error occurred during sign up",
+        };
       } finally {
         setIsLoading(false);
       }
     },
-    [signUpDemoMode],
+    [mapSupabaseUser, signUpDemoMode],
   );
 
   const signOut = useCallback(async () => {
@@ -247,6 +307,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Production build: console.log removed
         }
       }
+      await PurchaseService.logoutUser();
       setUser(null);
       await AsyncStorage.removeItem("user");
     } finally {
@@ -259,6 +320,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: "guest_user",
       email: "guest@velvetladle.com",
       name: "Guest User",
+      subscription_tier: "free" as const,
     };
     setUser(guestUser);
     await AsyncStorage.setItem("user", JSON.stringify(guestUser));
@@ -323,14 +385,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Load user from storage on app start
+  // Load user from Supabase session and keep auth state synchronized
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const userData = await AsyncStorage.getItem("user");
-        if (userData) {
-          setUser(JSON.parse(userData));
+        if (isSupabaseConfigured && supabase) {
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
+
+          if (error) {
+            console.error("Error loading Supabase session:", error);
+          }
+
+          if (session?.user) {
+            const sessionUser = mapSupabaseUser(session.user);
+            setUser(sessionUser);
+            await AsyncStorage.setItem("user", JSON.stringify(sessionUser));
+            await PurchaseService.loginUser(sessionUser.id);
+            return;
+          }
         }
+
+        const userData = await AsyncStorage.getItem("user");
+        if (!userData) {
+          return;
+        }
+
+        const parsedUser = JSON.parse(userData);
+        const isLocalOnlyUser =
+          parsedUser?.id === GUEST_USER_ID || parsedUser?.id === "demo_user";
+
+        if (isSupabaseConfigured && supabase && !isLocalOnlyUser) {
+          // Avoid local/Supabase auth mismatch when no valid Supabase session exists.
+          setUser(null);
+          await AsyncStorage.removeItem("user");
+          return;
+        }
+
+        setUser(parsedUser);
       } catch (error) {
         console.error("Error loading user from storage:", error);
       } finally {
@@ -338,8 +432,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data } = supabase.auth.onAuthStateChange(
+        async (_event: any, session: any) => {
+          if (session?.user) {
+            const sessionUser = mapSupabaseUser(session.user);
+            setUser(sessionUser);
+            await AsyncStorage.setItem("user", JSON.stringify(sessionUser));
+            await PurchaseService.loginUser(sessionUser.id);
+            return;
+          }
+
+          const stored = await AsyncStorage.getItem("user");
+          const parsedStored = stored ? JSON.parse(stored) : null;
+
+          if (
+            parsedStored?.id === "guest_user" ||
+            parsedStored?.id === "demo_user"
+          ) {
+            setUser(parsedStored);
+            return;
+          }
+
+          setUser(null);
+          await AsyncStorage.removeItem("user");
+        },
+      );
+
+      subscription = data.subscription;
+    }
+
     loadUser();
-  }, []);
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [mapSupabaseUser]);
 
   return (
     <AuthContext.Provider

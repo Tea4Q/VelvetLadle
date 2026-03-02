@@ -5,8 +5,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useColors } from '../../contexts/ThemeContext';
 
 export default function TabLayout() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const colors = useColors();
+
+  if (isLoading) {
+    return null;
+  }
 
   // Critical auth guard - redirect to welcome screen if no user
   if (!user) {
