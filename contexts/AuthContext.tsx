@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { GlobalAccountDeletionService } from "../services/globalAccountDeletionService";
 import { PurchaseService } from "../services/purchaseService";
 import { isNetworkFetchError } from "../utils/networkUtils";
 // import { DemoStorage } from './demoStorage';
@@ -40,6 +41,9 @@ interface AuthContextType {
   updatePassword: (
     newPassword: string,
   ) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: (
+    password: string,
+  ) => Promise<{ success: boolean; blocked?: boolean; expiresAt?: string; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -385,6 +389,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const deleteAccount = useCallback(
+    async (password: string) => {
+      if (!user) return { success: false, error: "Not signed in." };
+      const verify = await GlobalAccountDeletionService.verifyPassword(
+        user.email,
+        password,
+      );
+      if (!verify.success) return verify;
+
+      const result = await GlobalAccountDeletionService.scheduleOrExecuteDeletion(
+        user.id,
+        user.email,
+      );
+
+      if (result.success && !result.blocked) {
+        // Immediate deletion — clear local state
+        setUser(null);
+      }
+
+      return result;
+    },
+    [user],
+  );
+
   // Load user from Supabase session and keep auth state synchronized
   useEffect(() => {
     const loadUser = async () => {
@@ -401,6 +429,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (session?.user) {
             const sessionUser = mapSupabaseUser(session.user);
+
+            // Check for pending deletion that has now lapsed
+            const deleted =
+              await GlobalAccountDeletionService.checkAndExecutePendingDeletion(
+                sessionUser.id,
+                sessionUser.email,
+              );
+            if (deleted) {
+              setUser(null);
+              await AsyncStorage.removeItem("user");
+              setIsLoading(false);
+              return;
+            }
+
             setUser(sessionUser);
             await AsyncStorage.setItem("user", JSON.stringify(sessionUser));
             await PurchaseService.loginUser(sessionUser.id);
@@ -483,6 +525,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInAsGuest,
         resetPasswordRequest,
         updatePassword,
+        deleteAccount,
       }}
     >
       {children}

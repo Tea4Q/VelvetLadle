@@ -48,7 +48,6 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen name="upgrade" options={{ headerShown: false }} />
-      <Stack.Screen name="test-images" options={{ headerShown: false }} />
     </Stack>
   );
 }

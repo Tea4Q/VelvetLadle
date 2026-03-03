@@ -1,9 +1,9 @@
 // Simple Authentication Service for VelvetLadle
 // This is a basic implementation - in production you'd use a real auth provider
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GUEST_USER_ID } from '../constants/limits';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { GUEST_USER_ID } from "../constants/limits";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
 export interface User {
   id: string;
@@ -20,16 +20,16 @@ export interface AuthState {
 }
 
 class AuthService {
-  private static readonly USER_KEY = 'velvet_ladle_user';
-  private static readonly AUTH_KEY = 'velvet_ladle_auth';
+  private static readonly USER_KEY = "velvet_ladle_user";
+  private static readonly AUTH_KEY = "velvet_ladle_auth";
 
   // Check if user is authenticated
   static async isAuthenticated(): Promise<boolean> {
     try {
       const authData = await AsyncStorage.getItem(this.AUTH_KEY);
-      return authData === 'true';
+      return authData === "true";
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      console.error("Error checking auth status:", error);
       return false;
     }
   }
@@ -46,30 +46,36 @@ class AuthService {
       }
       return null;
     } catch (error) {
-      console.error('Error getting current user:', error);
+      console.error("Error getting current user:", error);
       return null;
     }
   }
 
   // Sign in with email and password
-  static async signIn(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
+  static async signIn(
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
       // Validate inputs
       if (!email || !password) {
-        return { success: false, error: 'Email and password are required' };
+        return { success: false, error: "Email and password are required" };
       }
 
       if (password.length < 6) {
-        return { success: false, error: 'Password must be at least 6 characters' };
+        return {
+          success: false,
+          error: "Password must be at least 6 characters",
+        };
       }
 
       // Check if Supabase is configured
       if (!isSupabaseConfigured || !supabase) {
         // Fallback to mock implementation if Supabase not configured
-        console.warn('Supabase not configured, using mock auth');
-        
+        console.warn("Supabase not configured, using mock auth");
+
         // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Create mock user
         const user: User = {
@@ -80,78 +86,95 @@ class AuthService {
         };
 
         // Save auth state and user data
-        await AsyncStorage.setItem(this.AUTH_KEY, 'true');
+        await AsyncStorage.setItem(this.AUTH_KEY, "true");
         await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
 
         return { success: true, user };
       }
 
       // Use Supabase Auth for real sign in
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase(),
-        password: password,
-      });
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: email.toLowerCase(),
+          password: password,
+        });
 
       if (authError) {
-        console.error('Supabase signin error:', authError);
-        
+        console.error("Supabase signin error:", authError);
+
         // Provide more helpful error messages
-        if (authError.message.includes('Email not confirmed')) {
-          return { success: false, error: 'Please check your email and click the confirmation link before signing in.' };
+        if (authError.message.includes("Email not confirmed")) {
+          return {
+            success: false,
+            error:
+              "Please check your email and click the confirmation link before signing in.",
+          };
         }
-        if (authError.message.includes('Invalid login credentials')) {
-          return { success: false, error: 'Invalid email or password. Please try again.' };
+        if (authError.message.includes("Invalid login credentials")) {
+          return {
+            success: false,
+            error: "Invalid email or password. Please try again.",
+          };
         }
-        
+
         return { success: false, error: authError.message };
       }
 
       if (!authData.user) {
-        return { success: false, error: 'Sign in failed. Please try again.' };
+        return { success: false, error: "Sign in failed. Please try again." };
       }
 
       // Create user object
       const user: User = {
         id: authData.user.id,
-        name: authData.user.user_metadata?.name || this.getNameFromEmail(authData.user.email || email),
+        name:
+          authData.user.user_metadata?.name ||
+          this.getNameFromEmail(authData.user.email || email),
         email: authData.user.email || email.toLowerCase(),
         createdAt: new Date(authData.user.created_at),
       };
 
       // Save auth state and user data locally
-      await AsyncStorage.setItem(this.AUTH_KEY, 'true');
+      await AsyncStorage.setItem(this.AUTH_KEY, "true");
       await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
 
       return { success: true, user };
     } catch (error) {
-      console.error('Error signing in:', error);
-      return { success: false, error: 'An error occurred during sign in' };
+      console.error("Error signing in:", error);
+      return { success: false, error: "An error occurred during sign in" };
     }
   }
 
   // Sign up with email and password
-  static async signUp(name: string, email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
+  static async signUp(
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
       // Validate inputs
       if (!name || !email || !password) {
-        return { success: false, error: 'All fields are required' };
+        return { success: false, error: "All fields are required" };
       }
 
       if (password.length < 6) {
-        return { success: false, error: 'Password must be at least 6 characters' };
+        return {
+          success: false,
+          error: "Password must be at least 6 characters",
+        };
       }
 
       if (!this.isValidEmail(email)) {
-        return { success: false, error: 'Please enter a valid email address' };
+        return { success: false, error: "Please enter a valid email address" };
       }
 
       // Check if Supabase is configured
       if (!isSupabaseConfigured || !supabase) {
         // Fallback to mock implementation if Supabase not configured
-        console.warn('Supabase not configured, using mock auth');
-        
+        console.warn("Supabase not configured, using mock auth");
+
         // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Create mock user
         const user: User = {
@@ -162,7 +185,7 @@ class AuthService {
         };
 
         // Save auth state and user data
-        await AsyncStorage.setItem(this.AUTH_KEY, 'true');
+        await AsyncStorage.setItem(this.AUTH_KEY, "true");
         await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
 
         return { success: true, user };
@@ -180,12 +203,15 @@ class AuthService {
       });
 
       if (authError) {
-        console.error('Supabase signup error:', authError);
+        console.error("Supabase signup error:", authError);
         return { success: false, error: authError.message };
       }
 
       if (!authData.user) {
-        return { success: false, error: 'Account creation failed. Please try again.' };
+        return {
+          success: false,
+          error: "Account creation failed. Please try again.",
+        };
       }
 
       // Create user object
@@ -197,34 +223,38 @@ class AuthService {
       };
 
       // Save auth state and user data locally
-      await AsyncStorage.setItem(this.AUTH_KEY, 'true');
+      await AsyncStorage.setItem(this.AUTH_KEY, "true");
       await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
 
       return { success: true, user };
     } catch (error) {
-      console.error('Error signing up:', error);
-      return { success: false, error: 'An error occurred during sign up' };
+      console.error("Error signing up:", error);
+      return { success: false, error: "An error occurred during sign up" };
     }
   }
 
   // Sign in as guest
-  static async signInAsGuest(): Promise<{ success: boolean; user?: User; error?: string }> {
+  static async signInAsGuest(): Promise<{
+    success: boolean;
+    user?: User;
+    error?: string;
+  }> {
     try {
       const user: User = {
         id: GUEST_USER_ID,
-        name: 'Guest Chef',
-        email: 'guest@velvetladle.app',
+        name: "Guest Chef",
+        email: "guest@velvetladle.app",
         createdAt: new Date(),
       };
 
       // Save auth state and user data
-      await AsyncStorage.setItem(this.AUTH_KEY, 'true');
+      await AsyncStorage.setItem(this.AUTH_KEY, "true");
       await AsyncStorage.setItem(this.USER_KEY, JSON.stringify(user));
 
       return { success: true, user };
     } catch (error) {
-      console.error('Error signing in as guest:', error);
-      return { success: false, error: 'An error occurred' };
+      console.error("Error signing in as guest:", error);
+      return { success: false, error: "An error occurred" };
     }
   }
 
@@ -235,25 +265,28 @@ class AuthService {
       if (isSupabaseConfigured && supabase) {
         const { error } = await supabase.auth.signOut();
         if (error) {
-          console.error('Supabase sign out error:', error);
+          console.error("Supabase sign out error:", error);
         }
       }
-      
+
       // Clear local storage
       await AsyncStorage.removeItem(this.AUTH_KEY);
       await AsyncStorage.removeItem(this.USER_KEY);
       return true;
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error("Error signing out:", error);
       return false;
     }
   }
 
   // Helper methods
   private static getNameFromEmail(email: string): string {
-    const username = email.split('@')[0];
+    const username = email.split("@")[0];
     // Capitalize first letter and remove numbers/special chars
-    return username.charAt(0).toUpperCase() + username.slice(1).replace(/[^a-zA-Z]/g, '');
+    return (
+      username.charAt(0).toUpperCase() +
+      username.slice(1).replace(/[^a-zA-Z]/g, "")
+    );
   }
 
   private static isValidEmail(email: string): boolean {
@@ -267,13 +300,17 @@ class AuthService {
       const user = await this.getCurrentUser();
       return user?.id === GUEST_USER_ID;
     } catch (error) {
-      console.error('Error checking guest status:', error);
+      console.error("Error checking guest status:", error);
       return false;
     }
   }
 
   // Get auth statistics
-  static async getAuthStats(): Promise<{ hasAccount: boolean; isGuest: boolean; signUpDate?: Date }> {
+  static async getAuthStats(): Promise<{
+    hasAccount: boolean;
+    isGuest: boolean;
+    signUpDate?: Date;
+  }> {
     try {
       const user = await this.getCurrentUser();
       if (!user) {
@@ -286,7 +323,7 @@ class AuthService {
         signUpDate: user.createdAt,
       };
     } catch (error) {
-      console.error('Error getting auth stats:', error);
+      console.error("Error getting auth stats:", error);
       return { hasAccount: false, isGuest: false };
     }
   }

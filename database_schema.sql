@@ -231,3 +231,174 @@ COMMENT ON COLUMN recipes.dietary_restrictions IS 'Dietary restriction labels (v
 COMMENT ON COLUMN recipes.meal_type IS 'Type of meal (breakfast, lunch, dinner, snack, dessert)';
 COMMENT ON COLUMN recipes.prep_time_minutes IS 'Preparation time in minutes for numeric filtering';
 COMMENT ON COLUMN recipes.total_time_minutes IS 'Total cooking time in minutes for numeric filtering';
+
+-- =============================================================================
+-- ACCOUNT DELETION SYSTEM
+-- Run these statements in order in the Supabase SQL editor.
+-- =============================================================================
+
+-- Required extension for SHA-256 hashing
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- ---------------------------------------------------------------------------
+-- pending_deletion
+-- Written when an active subscriber requests deletion.
+-- Auto-executed by the app on next open after subscription_end_date passes.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pending_deletion (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id               UUID NOT NULL UNIQUE,
+  subscription_end_date TIMESTAMPTZ NOT NULL,
+  plan_type             TEXT,                    -- 'monthly' | 'annual'
+  created_at            TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE pending_deletion ENABLE ROW LEVEL SECURITY;
+
+-- Users can read and delete their own pending deletion row (for cancellation).
+-- Inserts/upserts are done via the app using the user's session.
+CREATE POLICY "pending_deletion_own_read" ON pending_deletion
+  FOR SELECT USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "pending_deletion_own_insert" ON pending_deletion
+  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
+
+CREATE POLICY "pending_deletion_own_delete" ON pending_deletion
+  FOR DELETE USING (auth.uid()::text = user_id::text);
+
+-- ---------------------------------------------------------------------------
+-- deletion_log
+-- Hashed-only audit record. No plaintext PII stored here.
+-- Service-role access only — users cannot read or write this directly.
+-- Retained for: 30-day resubscribe block, fraud logs, legal compliance.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS deletion_log (
+  id                         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id_hash               TEXT NOT NULL,       -- SHA-256 of auth.uid()
+  email_hash                 TEXT NOT NULL,       -- SHA-256 of email
+  plan_type                  TEXT,
+  subscription_end_date      TIMESTAMPTZ,
+  requested_at               TIMESTAMPTZ DEFAULT NOW(),
+  executed_at                TIMESTAMPTZ,
+  resubscribe_blocked_until  TIMESTAMPTZ          -- requested_at + 30 days
+);
+
+ALTER TABLE deletion_log ENABLE ROW LEVEL SECURITY;
+-- No user-facing policies — service-role only via RPCs below.
+
+-- ---------------------------------------------------------------------------
+-- RPC: anonymize_user_data
+-- Deletes user recipes/favourites, scrubs PII from auth.users,
+-- and records a hashed audit entry in deletion_log.
+-- Called from the app via supabase.rpc('anonymize_user_data', { target_user_id })
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION anonymize_user_data(target_user_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  user_email TEXT;
+  uid_hash   TEXT;
+  email_hash TEXT;
+BEGIN
+  -- Fetch the user's current email for hashing
+  SELECT email INTO user_email
+  FROM auth.users
+  WHERE id = target_user_id;
+
+  -- Compute hashes (no plaintext PII stored)
+  uid_hash   := encode(digest(target_user_id::text, 'sha256'), 'hex');
+  email_hash := encode(digest(COALESCE(user_email, ''), 'sha256'), 'hex');
+
+  -- Delete user data
+  DELETE FROM recipes   WHERE user_id = target_user_id::text;
+  DELETE FROM favorites WHERE user_id = target_user_id::text;
+
+  -- Scrub PII from auth record (keeps row for FK integrity)
+  UPDATE auth.users
+  SET
+    email                = uid_hash || '@deleted.invalid',
+    raw_user_meta_data   = '{}'::jsonb,
+    raw_app_meta_data    = '{}'::jsonb,
+    phone                = NULL
+  WHERE id = target_user_id;
+
+  -- Audit log (hashed only)
+  INSERT INTO deletion_log (
+    user_id_hash,
+    email_hash,
+    executed_at,
+    resubscribe_blocked_until
+  ) VALUES (
+    uid_hash,
+    email_hash,
+    NOW(),
+    NOW() + INTERVAL '30 days'
+  )
+  ON CONFLICT DO NOTHING;
+
+  -- Remove pending deletion intent if present
+  DELETE FROM pending_deletion WHERE user_id = target_user_id;
+END;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- RPC: check_resubscribe_block
+-- Returns TRUE if the given email is still within its 30-day block.
+-- Called before allowing a new sign-up with the same email.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION check_resubscribe_block(email_input TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  hashed TEXT;
+  blocked BOOLEAN;
+BEGIN
+  hashed  := encode(digest(email_input, 'sha256'), 'hex');
+  blocked := EXISTS (
+    SELECT 1
+    FROM deletion_log
+    WHERE email_hash = hashed
+      AND resubscribe_blocked_until > NOW()
+  );
+  RETURN blocked;
+END;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Supabase Storage: profile-images bucket
+-- Run these in the Supabase Dashboard → Storage → New Bucket,
+-- OR run via the management API. The SQL below sets the RLS policies
+-- assuming the bucket already exists.
+--
+-- Bucket settings: name = 'profile-images', public = true
+-- ---------------------------------------------------------------------------
+
+-- Policy: users can upload/update only their own folder (userId/profile.jpg)
+CREATE POLICY "profile_images_insert_own" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'profile-images'
+    AND auth.uid()::text = (string_to_array(name, '/'))[1]
+  );
+
+CREATE POLICY "profile_images_update_own" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'profile-images'
+    AND auth.uid()::text = (string_to_array(name, '/'))[1]
+  );
+
+CREATE POLICY "profile_images_delete_own" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'profile-images'
+    AND auth.uid()::text = (string_to_array(name, '/'))[1]
+  );
+
+-- Public read (avatar images are not private)
+CREATE POLICY "profile_images_public_read" ON storage.objects
+  FOR SELECT USING (bucket_id = 'profile-images');
+
