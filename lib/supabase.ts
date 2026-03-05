@@ -1,5 +1,31 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import { Platform } from "react-native";
+
+/**
+ * Platform-aware storage adapter for Supabase auth.
+ * - Web: uses localStorage (guarded against SSR/bundling where window is absent)
+ * - Native (iOS/Android): uses AsyncStorage
+ *
+ * Without this guard, @react-native-async-storage throws
+ * "ReferenceError: window is not defined" during Metro web bundling.
+ */
+const webStorage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(key);
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(key, value);
+  },
+  removeItem: async (key: string): Promise<void> => {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(key);
+  },
+};
+
+const supabaseStorage = Platform.OS === "web" ? webStorage : AsyncStorage;
 
 // Use environment variables for security
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -61,7 +87,7 @@ if (isSupabaseConfigured) {
     new URL(supabaseUrl);
     supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
-        storage: AsyncStorage,
+        storage: supabaseStorage,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,

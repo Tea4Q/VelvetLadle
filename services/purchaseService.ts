@@ -14,11 +14,24 @@
  */
 
 import { Platform } from "react-native";
-import Purchases, {
-    LOG_LEVEL,
-    PurchasesOffering,
-    PurchasesPackage,
+import type {
+  PurchasesOffering,
+  PurchasesPackage,
 } from "react-native-purchases";
+
+// Dynamic require: Expo Go and web don't have the RevenueCat native binary.
+// This guard prevents a module-resolution crash at startup.
+let Purchases: typeof import("react-native-purchases").default | null = null;
+let LOG_LEVEL: typeof import("react-native-purchases").LOG_LEVEL | null = null;
+if (Platform.OS !== "web") {
+  try {
+    const rc = require("react-native-purchases");
+    Purchases = rc.default;
+    LOG_LEVEL = rc.LOG_LEVEL;
+  } catch (e) {
+    console.warn("[PurchaseService] react-native-purchases not available:", e);
+  }
+}
 
 const RC_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "";
 const RC_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? "";
@@ -44,7 +57,8 @@ class PurchaseServiceClass {
     }
 
     try {
-      if (__DEV__) {
+      if (!Purchases) return; // native module not available (Expo Go / web)
+      if (__DEV__ && LOG_LEVEL) {
         Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       }
       Purchases.configure({

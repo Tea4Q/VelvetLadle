@@ -11,7 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { PurchasesOffering, PurchasesPackage } from "react-native-purchases";
+import type {
+  PurchasesOffering,
+  PurchasesPackage,
+} from "react-native-purchases";
 import Button from "../components/buttons";
 import { useColors, useSpacing } from "../contexts/ThemeContext";
 import { PurchaseService } from "../services/purchaseService";
@@ -127,7 +130,10 @@ export default function UpgradeScreen() {
 
           {[
             { icon: "infinite" as const, text: "Unlimited recipe storage" },
-            { icon: "cloud-upload" as const, text: "Cloud sync across devices" },
+            {
+              icon: "cloud-upload" as const,
+              text: "Cloud sync across devices",
+            },
             {
               icon: "shield-checkmark" as const,
               text: "Secure backup of all your recipes",
@@ -179,6 +185,28 @@ export default function UpgradeScreen() {
               >
                 In-app subscriptions are being set up. Check back for updates!
               </Text>
+              <View style={styles.pricingPreview}>
+                <View style={styles.pricingRow}>
+                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
+                    Monthly
+                  </Text>
+                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
+                    $4.99 / month
+                  </Text>
+                </View>
+                <View style={[styles.pricingDivider, { backgroundColor: colors.border ?? "#e0e0e0" }]} />
+                <View style={styles.pricingRow}>
+                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
+                    Annual
+                  </Text>
+                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
+                    $39.99 / year
+                  </Text>
+                </View>
+                <Text style={[styles.pricingSavings, { color: colors.primary }]}>
+                  Save 33% with annual billing
+                </Text>
+              </View>
             </View>
           ) : loadingOffering ? (
             <ActivityIndicator
@@ -200,9 +228,7 @@ export default function UpgradeScreen() {
                 onPress={() => handlePurchase(pkg)}
                 disabled={purchasing || restoring}
               >
-                <Text
-                  style={[styles.packageTitle, { color: colors.primary }]}
-                >
+                <Text style={[styles.packageTitle, { color: colors.primary }]}>
                   {pkg.product.title}
                 </Text>
                 <Text
@@ -245,9 +271,30 @@ export default function UpgradeScreen() {
               <Text
                 style={[styles.infoBoxText, { color: colors.textSecondary }]}
               >
-                Subscription plans are being configured. Please check back
-                soon.
+                Subscription plans are being configured. Please check back soon.
               </Text>
+              <View style={styles.pricingPreview}>
+                <View style={styles.pricingRow}>
+                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
+                    Monthly
+                  </Text>
+                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
+                    $4.99 / month
+                  </Text>
+                </View>
+                <View style={[styles.pricingDivider, { backgroundColor: colors.border ?? "#e0e0e0" }]} />
+                <View style={styles.pricingRow}>
+                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
+                    Annual
+                  </Text>
+                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
+                    $39.99 / year
+                  </Text>
+                </View>
+                <Text style={[styles.pricingSavings, { color: colors.primary }]}>
+                  Save 33% with annual billing
+                </Text>
+              </View>
             </View>
           )}
 
@@ -264,8 +311,8 @@ export default function UpgradeScreen() {
         {/* Legal */}
         <Text style={[styles.infoText, { color: colors.textLight }]}>
           Your existing recipes are safe and will remain accessible.{"\n"}
-          Subscriptions auto-renew unless cancelled at least 24 hours before
-          the renewal date.
+          Subscriptions auto-renew unless cancelled at least 24 hours before the
+          renewal date.
         </Text>
       </View>
     </ScrollView>
@@ -375,5 +422,36 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     paddingHorizontal: 20,
     lineHeight: 18,
+  },
+  pricingPreview: {
+    width: "100%",
+    marginTop: 16,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  pricingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+  },
+  pricingLabel: {
+    fontSize: 15,
+  },
+  pricingAmount: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  pricingDivider: {
+    height: 1,
+    width: "100%",
+  },
+  pricingSavings: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 8,
+    opacity: 0.85,
   },
 });

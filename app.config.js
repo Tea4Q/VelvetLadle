@@ -15,7 +15,6 @@ module.exports = ({ config }) => {
     icon: "./assets/images/favicon_velvetLadle_large_128x128.png",
     scheme: "velvetladle",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
 
     // VelvetLadle's platform-specific configuration
     ios: {
@@ -41,7 +40,7 @@ module.exports = ({ config }) => {
 
     web: {
       bundler: "metro",
-      output: "static",
+      output: "single-page",
       favicon: "./assets/images/favicon_velvetLadle_small_48x48.png",
     },
 

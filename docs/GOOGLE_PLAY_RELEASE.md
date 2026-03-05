@@ -25,7 +25,42 @@
    - Release status: `draft` (requires manual approval)
    - Change track to `production` when ready for public release
 
-3. **Test Accounts in Database**
+3. **Set Up In-App Purchases (RevenueCat)** ← _required for premium subscriptions_
+
+   a. **Google Play Console — Create Subscription**
+   - Navigate to **Monetize → Subscriptions → Create subscription**
+   - Subscription ID: `velvetladle_premium_monthly`
+   - Base plan ID: `monthly`, billing period: 1 month
+   - Optional second base plan — ID: `annual`, billing period: 1 year
+   - Activate the subscription and publish to at least the Internal track before testing
+
+   b. **RevenueCat Dashboard**
+   - Sign in at [app.revenuecat.com](https://app.revenuecat.com)
+   - Open the **VelvetLadle** project → Android app
+   - **Products**: import `velvetladle_premium_monthly:monthly` (and `:annual` if created)
+   - **Entitlements**: ensure an entitlement with identifier exactly **`premium`** exists and has Android products attached
+   - **Offerings**: ensure the `default` offering has packages that include the Android products
+   - Copy the **Google Play Public SDK Key** (format: `goog_…`)
+
+   c. **Add key to environment**
+
+   ```env
+   EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_xxxxxxxxxxxxxxxxxxxxxx
+   ```
+
+   Also save as an **EAS secret** so production builds can access it:
+
+   ```bash
+   eas secret:create --scope project --name EXPO_PUBLIC_REVENUECAT_ANDROID_KEY --value goog_xxx
+   ```
+
+   d. **Real-Time Developer Notifications** (recommended)
+   - Google Play Console → **Monetize → Monetization Setup → Real-time developer notifications**
+   - Set Pub/Sub topic to the endpoint shown in RevenueCat's Android app settings
+
+   e. **Full setup reference**: see [docs/REVENUECAT_SETUP.md](./REVENUECAT_SETUP.md)
+
+4. **Test Accounts in Database**
    - Guest: velvetladle.guest@gmail.com / guest123
    - Free: velvetladle.free@gmail.com / free123
    - Paid: velvetladle.paid@gmail.com / paid123
@@ -125,6 +160,17 @@ npx eas submit -p android \
 - [x] Authenticated users see only their recipes
 - [x] Recipe count limits enforced (10 for free)
 
+### In-App Purchases & Subscriptions
+
+- [ ] Free user hits 10-recipe limit → redirected to upgrade screen
+- [ ] Upgrade screen shows live pricing from RevenueCat offering
+- [ ] Monthly package purchase completes via Google Play sandbox
+- [ ] After purchase → premium entitlement active in RevenueCat dashboard
+- [ ] Premium user can add recipes beyond the 10-recipe limit
+- [ ] "Restore Purchases" button restores premium on re-install
+- [ ] No RevenueCat keys → "Coming Soon" box shows on upgrade screen (no crash)
+- [ ] Auto-renewal disclosure text visible on upgrade screen
+
 ### Edge Cases
 
 - [x] No internet connection - appropriate error messages
@@ -138,13 +184,26 @@ npx eas submit -p android \
 Ensure `.env.local` has:
 
 ```env
+# Database
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...your-long-key
-EXPO_PUBLIC_SPOONACULAR_KEY=your-api-key
-EXPO_PUBLIC_SCRAPINGBEE_KEY=your-api-key
+
+# Recipe extraction APIs
+EXPO_PUBLIC_SPOONACULAR_KEY=your-spoonacular-key
+EXPO_PUBLIC_SCRAPINGBEE_KEY=your-scrapingbee-key
+
+# In-app purchases — RevenueCat
+EXPO_PUBLIC_REVENUECAT_IOS_KEY=appl_xxxxxxxxxxxxxxxxxxxxxx
+EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_xxxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Note**: Environment variables are bundled into the app at build time. Update and rebuild if changed.
+
+For EAS cloud builds, store secrets with:
+
+```bash
+eas secret:create --scope project --name EXPO_PUBLIC_REVENUECAT_ANDROID_KEY --value goog_xxx
+```
 
 ## Common Issues
 
@@ -183,13 +242,18 @@ EXPO_PUBLIC_SCRAPINGBEE_KEY=your-api-key
 
 1. Get your Google service account JSON credentials
 2. Add file to project root as `android-service-account.json`
-3. Run `npm run build:production`
-4. Submit to internal track for testing
-5. Test thoroughly with real devices
-6. Promote to production when ready
+3. Complete RevenueCat + Google Play subscription setup (see [REVENUECAT_SETUP.md](./REVENUECAT_SETUP.md))
+   - Create subscription product in Google Play Console
+   - Import products into RevenueCat, link to `premium` entitlement + `default` offering
+   - Add `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` to `.env.local` and EAS secrets
+4. Run `npm run build:production`
+5. Submit to internal track for testing
+6. Sandbox-test the purchase and restore flows on a real Android device
+7. Promote to production when ready
 
 ---
 
-**Current Version**: 1.0.1  
+**Current Version**: 2.3.0  
 **Build Type**: Android App Bundle (.aab)  
 **Target**: Google Play Store Internal Testing → Production
+**In-App Purchases**: RevenueCat (`react-native-purchases`) — entitlement ID: `premium`

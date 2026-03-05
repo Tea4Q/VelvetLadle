@@ -43,7 +43,12 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   deleteAccount: (
     password: string,
-  ) => Promise<{ success: boolean; blocked?: boolean; expiresAt?: string; error?: string }>;
+  ) => Promise<{
+    success: boolean;
+    blocked?: boolean;
+    expiresAt?: string;
+    error?: string;
+  }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Configure RevenueCat anonymously on mount; user login/logout flows below
   // link the customer record to the authenticated Supabase user.
   useEffect(() => {
-    PurchaseService.configure();
+    try {
+      PurchaseService.configure();
+    } catch (e) {
+      console.warn("[AuthContext] PurchaseService init skipped:", e);
+    }
   }, []);
 
   const mapSupabaseUser = useCallback((supabaseUser: any): User => {
@@ -398,10 +407,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       );
       if (!verify.success) return verify;
 
-      const result = await GlobalAccountDeletionService.scheduleOrExecuteDeletion(
-        user.id,
-        user.email,
-      );
+      const result =
+        await GlobalAccountDeletionService.scheduleOrExecuteDeletion(
+          user.id,
+          user.email,
+        );
 
       if (result.success && !result.blocked) {
         // Immediate deletion — clear local state

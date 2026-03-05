@@ -1,5 +1,6 @@
 {
   "expo": {
+    "sdkVersion": "55.0.0",
     "name": "Velvet Ladle",
     "slug": "VelvetLadle",
     "version": "2.1.0",
@@ -7,7 +8,6 @@
     "icon": "./assets/images/favicon_velvetLadle_large_128x128.png",
     "scheme": "velvetladle",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tea4q.velvetladle",
@@ -26,7 +26,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "single-page",
       "favicon": "./assets/images/favicon_velvetLadle_small_48x48.png"
     },
     "plugins": ["expo-router", "expo-image-picker"],

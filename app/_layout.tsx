@@ -1,8 +1,49 @@
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import { useEffect, useState } from "react";
+import React, { Component, useEffect, useState } from "react";
+import { Text, View } from "react-native";
 import { AuthProvider } from "../contexts/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
+
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[ErrorBoundary] Caught:", error);
+    console.error("[ErrorBoundary] Component stack:", info.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}
+        >
+          <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 8 }}>Something went wrong</Text>
+          {__DEV__ && this.state.error ? (
+            <Text style={{ fontSize: 12, color: "#c00", textAlign: "center", marginBottom: 8 }}>
+              {this.state.error.message}
+            </Text>
+          ) : null}
+          {__DEV__ && this.state.error?.stack ? (
+            <Text style={{ fontSize: 10, color: "#888", textAlign: "left" }}>
+              {this.state.error.stack.slice(0, 500)}
+            </Text>
+          ) : null}
+          <Text style={{ fontSize: 11, color: "#aaa", marginTop: 12 }}>Please restart the app</Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Keep splash screen visible while we fetch resources
 
@@ -54,10 +95,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

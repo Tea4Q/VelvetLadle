@@ -11,18 +11,21 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 ### 📥 **Smart Recipe Import**
 
 **Web Scraping Technology**
+
 - Extract recipes from ANY website URL with AI-powered parsing
 - Multi-strategy extraction ensures maximum success rate
 - Automatic nutrition analysis via Spoonacular API
 - Fallback mechanisms guarantee you never lose a recipe
 
 **How It Works:**
+
 1. Copy any recipe URL from your favorite food blogs
 2. Paste into VelvetLadle
 3. AI extracts ingredients, directions, cooking times, and nutrition
 4. Review and save to your collection
 
 **Supported Data:**
+
 - Title, description, and source attribution
 - Complete ingredient lists with quantities
 - Step-by-step cooking directions
@@ -37,18 +40,21 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 ### ✏️ **Manual Recipe Entry**
 
 **Unified Add/Edit Interface**
+
 - Clean, intuitive tabbed form (Basics → Details → Nutrition → Notes)
 - Full spell-check support for all text fields
 - Pre-populated editing with all existing data
 - Smart validation prevents incomplete recipes
 
 **Tabs:**
+
 1. **Basics**: Title, description, ingredients, directions, servings
 2. **Details**: Prep/cook times, cuisine, difficulty, image URL
 3. **Nutrition**: Complete nutritional information per serving
 4. **Notes**: Personal notes, modifications, cooking tips
 
 **Use Cases:**
+
 - Family recipes passed down through generations
 - Your own recipe creations
 - Cookbook recipes
@@ -59,12 +65,14 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 ### ⭐ **Favorites System**
 
 **Quick Access to Best Recipes**
+
 - One-tap favorite marking from any recipe
 - Dedicated Favorites tab for instant access
 - Hybrid storage (database + local) for reliability
 - Sync across devices with cloud storage
 
 **Smart Organization:**
+
 - Favorites persist even in demo mode
 - Visual indicators on all recipe cards
 - Separate favorites view with same search/filter capabilities
@@ -77,11 +85,13 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 **Multi-Dimensional Recipe Discovery**
 
 **Quick Categories:**
+
 - Breakfast, Lunch, Dinner, Dessert, Snacks
 - One-tap filtering for common meal types
 - Visual category buttons on home screen
 
 **Advanced Filters:**
+
 - **Search Text**: Find by recipe title or description
 - **Ingredients**: Filter by what you have on hand
 - **Cuisine Type**: Italian, Mexican, Asian, American, etc.
@@ -89,6 +99,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - **Dietary Needs**: (Coming soon - vegetarian, vegan, gluten-free)
 
 **Smart Search:**
+
 - Real-time filtering as you type
 - Combine multiple filters simultaneously
 - Clear all filters in one tap
@@ -101,6 +112,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 **Visual Recipe Collection**
 
 **Features:**
+
 - Automatic image extraction from recipe URLs
 - High-resolution image display with smooth loading
 - Local image caching for offline access
@@ -108,6 +120,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - Manual image URL entry for custom images
 
 **Technical Excellence:**
+
 - Progressive image loading
 - Optimized storage in app documents folder
 - Cache management prevents storage bloat
@@ -120,18 +133,21 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 **Per-Serving Nutrition Display**
 
 **Automatically Tracked:**
+
 - Calories per serving
 - Protein, Carbohydrates, Fat
 - Fiber and Sugar content
 - Sodium levels
 
 **Smart Calculations:**
+
 - Nutrition automatically divided by servings
 - Edit servings to recalculate per-serving values
 - Manual nutrition entry for custom recipes
 - API-powered nutrition analysis when scraped data unavailable
 
 **Use Cases:**
+
 - Meal planning and calorie tracking
 - Dietary goal management
 - Nutritional comparison between recipes
@@ -144,6 +160,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 **Dual-Mode Architecture with Free & Premium Tiers**
 
 **Guest Mode (Free):**
+
 - 📱 Up to 10 recipes (manual or URL import)
 - 💻 No signup required
 - 🚀 Instant start
@@ -153,6 +170,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - 💡 Perfect for trying the app
 
 **Cloud Mode (Supabase, Free Account):**
+
 - ☁️ Up to 10 recipes with cloud sync
 - 🔄 Sync across multiple devices
 - 🛡️ Enterprise-grade security
@@ -160,15 +178,19 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - 🔑 Secure password reset via email
 
 **Premium Subscription (In-App Purchase):**
+
 - ♾️ **Unlimited recipe storage**
 - ☁️ Cloud sync across all devices
 - 🛡️ Secure backup of all recipes
 - ⭐ Premium features & recipe collections
 - 👥 Share recipes with friends (coming soon)
-- Managed via native Apple/Google in-app purchase
-- Restore purchases supported across devices
+- Managed via **RevenueCat** (`react-native-purchases`) — native Apple App Store & Google Play billing
+- Monthly and annual subscription options
+- Restore purchases supported across devices (required by both stores)
+- Entitlement ID: `premium` (see [docs/REVENUECAT_SETUP.md](./REVENUECAT_SETUP.md) for full setup)
 
 **Seamless Switching:**
+
 - App works identically in free and premium modes
 - No code changes needed
 - Graceful fallback if cloud unavailable
@@ -182,6 +204,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 **Modern, Touch-Optimized Design**
 
 **Visual Design:**
+
 - Card-based layout for easy scanning
 - Consistent color scheme (Deep Navy + Warm Cream)
 - Professional typography hierarchy
@@ -189,6 +212,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - Touch-responsive buttons with haptic feedback
 
 **User Experience:**
+
 - Intuitive navigation with Expo Router
 - Tab-based main interface
 - Modal overlays for focused tasks
@@ -196,6 +220,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - Loading states and error handling
 
 **Accessibility:**
+
 - High contrast for readability
 - Large touch targets (44pt minimum)
 - Clear visual hierarchy
@@ -209,6 +234,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 **Lightning-Fast, Smooth Experience**
 
 **Technical Excellence:**
+
 - Render loop prevention with useCallback/useMemo
 - Efficient state management
 - Optimized FlatList rendering
@@ -216,6 +242,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - Minimal re-renders
 
 **Recent Optimizations (v1.2.2 - Google Play Store Release):**
+
 - **Fixed Navigation Issues**: Resolved "Back to Dashboard" incorrectly redirecting to sign-in
 - **Enhanced Authentication**: Added missing `isAuthenticated` and `isLoading` properties to AuthContext
 - **Improved Recent Recipes**: Fixed timing logic to properly show recipes from last 7 days (limit 3)
@@ -226,6 +253,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - **Performance Optimizations**: Eliminated render loops, stabilized callbacks, improved list performance
 
 **New Features (v2.3.0):**
+
 - **Premium In-App Purchases**: Full RevenueCat integration for native iOS/Android subscriptions
   - Real pricing cards on the upgrade screen fetched live from RevenueCat
   - One-tap purchase flow — unlocks unlimited recipes immediately on success
@@ -237,6 +265,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - **Removed redundant "Create Free Account" button** from upgrade screen
 
 **New Features (v1.3.0):**
+
 - **Password Reset Flow**: Complete forgot password feature with email-based reset links
   - "Forgot Password?" link on sign-in screen
   - Email-based password recovery via Supabase Auth
@@ -249,12 +278,14 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 ## 🔧 **Technical Features**
 
 ### **Cross-Platform Development**
+
 - React Native + Expo for iOS, Android, and Web
 - Single codebase, multiple platforms
 - Native performance and feel
 - Hot reloading for rapid development
 
 ### **Modern Tech Stack**
+
 - TypeScript for type safety
 - Expo Router for file-based navigation
 - Context API for state management
@@ -263,6 +294,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - RevenueCat (`react-native-purchases`) for in-app subscriptions
 
 ### **External Integrations**
+
 - **Spoonacular API**: Recipe parsing and nutrition analysis
 - **ScrapingBee API**: JavaScript rendering for complex sites
 - **CORS Proxy**: Fallback web scraping
@@ -270,6 +302,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - All APIs optional with graceful degradation
 
 ### **Developer Experience**
+
 - Comprehensive documentation
 - Automated build processes
 - Version management scripts
@@ -298,12 +331,14 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 ## 💡 **Use Cases**
 
 ### **For Premium Subscribers**
+
 - Unlimited recipe storage
 - All free account features plus no recipe cap
 - Manage subscription through App Store / Google Play
 - Restore purchases across devices
 
 ### **For Free Users / Trial**
+
 - Test the app with up to 10 recipes
 - No signup required
 - Full feature access
@@ -311,24 +346,28 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 - Upgrade when ready for more
 
 ### **For Home Cooks**
+
 - Build your digital cookbook
 - Save recipes from Instagram, Pinterest, food blogs
 - Keep family recipes safe forever
 - Quickly find that recipe you loved
 
 ### **For Meal Planners**
+
 - Organize recipes by meal type
 - Track nutritional information
 - Plan weekly menus
 - Find recipes by available ingredients
 
 ### **For Food Bloggers**
+
 - Collect recipe inspiration
 - Organize recipe research
 - Test recipes with notes
 - Compare different versions
 
 ### **For Health Enthusiasts**
+
 - Track recipe nutrition
 - Filter by dietary needs
 - Find healthy alternatives
@@ -339,6 +378,7 @@ VelvetLadle is a modern, intelligent recipe management app that transforms how y
 ## 🎓 **Learning & Experimentation**
 
 VelvetLadle is also:
+
 - A showcase of modern React Native development
 - An example of dual-storage architecture
 - A demonstration of web scraping techniques
@@ -350,6 +390,7 @@ VelvetLadle is also:
 ## 📈 **Metrics & Performance**
 
 **Current Stats:**
+
 - 1,259 modules bundled
 - ~20s build time (Android)
 - 95% recipe extraction success rate (with APIs)
@@ -357,6 +398,7 @@ VelvetLadle is also:
 - Offline-capable with local caching
 
 **Reliability:**
+
 - Graceful error handling throughout
 - No crashes from missing APIs
 - Works without internet (demo mode)
@@ -367,18 +409,21 @@ VelvetLadle is also:
 ## 🤝 **Perfect For**
 
 ### **Beta Testers**
+
 - Easy to test both cloud and demo modes
 - Comprehensive testing checklist provided
 - Clear bug reporting guidelines
 - Active development with quick fixes
 
 ### **Investors**
+
 - Modern, scalable architecture
 - Clear monetization paths (premium features, API tiers)
 - Growing recipe management market
 - Professional codebase and documentation
 
 ### **Contributors**
+
 - Well-documented codebase
 - Clear component patterns
 - AI agent instructions for rapid onboarding
@@ -389,10 +434,12 @@ VelvetLadle is also:
 ## 📱 **Platform Support**
 
 **Currently Available:**
+
 - ✅ Android (development & production builds)
 - ✅ Web (development preview)
 
 **Coming Soon:**
+
 - 🔜 iOS (pending Apple Developer account)
 - 🔜 App Store & Play Store releases
 
@@ -401,6 +448,7 @@ VelvetLadle is also:
 ## 🔐 **Privacy & Security**
 
 **Your Data, Your Control:**
+
 - Demo mode keeps everything local
 - Cloud mode with secure Supabase backend
 - No third-party analytics or tracking
@@ -412,6 +460,7 @@ VelvetLadle is also:
 ## 📞 **Get Started**
 
 **For Users:**
+
 1. Download the app (link pending release)
 2. Start in demo mode (no signup required)
 3. Add your first recipe via URL or manually
@@ -431,20 +480,23 @@ Contact: [Your Contact Information]
 ## 📄 **Documentation Index**
 
 **Getting Started:**
+
 - [README.md](../README.md) - Project overview
 - [SUPABASE_SETUP.md](SUPABASE_SETUP.md) - Cloud storage setup
 - [WEB_SCRAPING_APIS.md](WEB_SCRAPING_APIS.md) - API configuration
 
 **Features:**
+
 - [RECIPE_MANAGEMENT_ENHANCEMENTS.md](RECIPE_MANAGEMENT_ENHANCEMENTS.md) - Recipe features
 - [FAVORITES_GUIDE.md](FAVORITES_GUIDE.md) - Favorites system
 - [SEARCH_AND_FILTER_GUIDE.md](SEARCH_AND_FILTER_GUIDE.md) - Search functionality
 
 **Development:**
+
 - [BUILD_PROCESS.md](BUILD_PROCESS.md) - Build instructions
 - [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md) - QA procedures
 - [RENDER_OPTIMIZATION_GUIDE.md](RENDER_OPTIMIZATION_GUIDE.md) - Performance
 
 ---
 
-**VelvetLadle** - *Your recipes, beautifully organized.*
+**VelvetLadle** - _Your recipes, beautifully organized._
