@@ -65,7 +65,7 @@ Add a second product for annual billing if desired:
 | **Reference Name** | VelvetLadle Premium Annual            |
 | **Product ID**     | `com.qtea.velvetladle.premium.annual` |
 | **Duration**       | 1 Year                                |
-| **Price**          | e.g. $39.99 / year (~33% savings)     |
+| **Price**          | e.g. $49.99 / year (~33% savings)     |
 
 ### 2c. Localisation & Review Screenshot
 

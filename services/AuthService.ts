@@ -196,6 +196,7 @@ class AuthService {
         email: email.toLowerCase(),
         password: password,
         options: {
+          emailRedirectTo: "velvetladle://",
           data: {
             name: name.trim(),
           },
@@ -204,6 +205,17 @@ class AuthService {
 
       if (authError) {
         console.error("Supabase signup error:", authError);
+        // Provide friendly messages for common errors
+        if (
+          authError.message.toLowerCase().includes("already registered") ||
+          authError.message.toLowerCase().includes("user already exists")
+        ) {
+          return {
+            success: false,
+            error:
+              "An account with this email already exists. Please sign in instead.",
+          };
+        }
         return { success: false, error: authError.message };
       }
 
@@ -211,6 +223,16 @@ class AuthService {
         return {
           success: false,
           error: "Account creation failed. Please try again.",
+        };
+      }
+
+      // Supabase returns a user but with no session when email confirmation is required.
+      // Detect this and inform the user rather than signing them in silently.
+      if (!authData.session) {
+        return {
+          success: false,
+          error:
+            "Account created! Please check your email and click the confirmation link to activate your account.",
         };
       }
 

@@ -40,17 +40,26 @@ module.exports = ({ config }) => {
 
     web: {
       bundler: "metro",
-      output: "single-page",
+      output: "static",
       favicon: "./assets/images/favicon_velvetLadle_small_48x48.png",
     },
 
     plugins: [
       ["expo-router"],
+      ["expo-localization"],
+      ["./scripts/withJitpackFilter"],
       [
         "expo-image-picker",
         {
           photosPermission:
             "Allow VelvetLadle to access your photos for recipe images",
+        },
+      ],
+      [
+        "expo-build-properties",
+        {
+          ios: { newArchEnabled: false },
+          android: { newArchEnabled: false },
         },
       ],
     ],

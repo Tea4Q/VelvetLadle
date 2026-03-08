@@ -1,5 +1,18 @@
 # VelvetLadle Changelog 📋
 
+## [2.3.1] - March 2026 - UI Polish & Build Stability 🛠️
+
+### 📱 **Add Screen Improvements**
+
+- **Scan Recipe — Upcoming Feature**: The "Scan Recipe" card on the Add screen is now visually disabled with an "Upcoming Feature" badge and 45% opacity. Tapping it no longer triggers an alert; the button will be re-enabled once OCR is fully implemented.
+
+### 🔧 **Android Build Fix**
+
+- **JitPack repository filter**: Added `content { includeGroupByRegex "com\\.github\\..*" }` constraint to the JitPack Maven repository in `android/build.gradle`. This prevents Gradle from querying JitPack for Maven Central artifacts (such as `org.bouncycastle:bcprov-jdk15to18`) that it was never designed to serve, eliminating 3–4 minute timeout failures during Android builds.
+- **EAS config plugin** (`scripts/withJitpackFilter.js`): Applies the same JitPack filter automatically after every EAS `expo prebuild`, ensuring the fix survives remote cloud builds.
+
+---
+
 ## [2.3.0] - March 2026 - In-App Purchases & Upgrade Flow 💳
 
 ### 💳 **Premium Subscription Infrastructure**

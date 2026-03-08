@@ -153,24 +153,25 @@ export default function AddScreen() {
     subtitle,
     onPress,
     theme = "primary",
+    comingSoon = false,
   }: {
     icon: IconDefinition;
     title: string;
     subtitle: string;
     onPress: () => void;
     theme?: "primary" | "secondary";
+    comingSoon?: boolean;
   }) => (
     <Pressable
-      onPress={onPress}
-      android_ripple={{ color: colors.textInverse, radius: 150 }}
+      onPress={comingSoon ? undefined : onPress}
+      android_ripple={comingSoon ? undefined : { color: colors.textInverse, radius: 150 }}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      style={({ pressed }) => [
+      style={[
         styles.quickActionCard,
         {
           backgroundColor: theme === "primary" ? colors.primary : colors.accent,
           borderRadius: radius.md,
-          opacity: pressed ? 0.8 : 1,
-          transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+          opacity: comingSoon ? 0.45 : 1,
         },
       ]}
     >
@@ -186,6 +187,11 @@ export default function AddScreen() {
       <Text style={[styles.quickActionSubtitle, { color: colors.textInverse }]}>
         {subtitle}
       </Text>
+      {comingSoon && (
+        <View style={styles.comingSoonBadge}>
+          <Text style={styles.comingSoonText}>Upcoming Feature</Text>
+        </View>
+      )}
     </Pressable>
   );
 
@@ -223,6 +229,7 @@ export default function AddScreen() {
               subtitle="OCR from image"
               onPress={handleOCROption}
               theme="secondary"
+              comingSoon
             />
             <QuickActionCard
               icon={faPenToSquare}
@@ -340,6 +347,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     opacity: 0.9,
+  },
+  comingSoonBadge: {
+    marginTop: 8,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  comingSoonText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#ffffff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   tipsSection: {
     marginBottom: 120,

@@ -13,7 +13,7 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
@@ -130,18 +130,12 @@ export class GlobalProfileImageService {
       let finalUri = displayUri;
       if (isSupabaseConfigured && supabase) {
         try {
-          const uploadUri = await this._uploadToSupabase(
-            localPath,
-            userId,
-          );
+          const uploadUri = await this._uploadToSupabase(localPath, userId);
           if (uploadUri) finalUri = uploadUri;
         } catch (_) {}
       }
 
-      await AsyncStorage.setItem(
-        `${ASYNC_KEY_PREFIX}${userId}`,
-        finalUri,
-      );
+      await AsyncStorage.setItem(`${ASYNC_KEY_PREFIX}${userId}`, finalUri);
       return finalUri;
     }
 
@@ -162,9 +156,7 @@ export class GlobalProfileImageService {
   static async getProfileImage(userId: string): Promise<string | null> {
     // 1. AsyncStorage (fastest)
     try {
-      const stored = await AsyncStorage.getItem(
-        `${ASYNC_KEY_PREFIX}${userId}`,
-      );
+      const stored = await AsyncStorage.getItem(`${ASYNC_KEY_PREFIX}${userId}`);
       if (stored) {
         // Verify local file still exists (it may have been cleared)
         if (Platform.OS !== "web" && stored.startsWith("file://")) {
@@ -190,10 +182,7 @@ export class GlobalProfileImageService {
           .getPublicUrl(path);
         const publicUrl: string | undefined = data?.publicUrl;
         if (publicUrl) {
-          await AsyncStorage.setItem(
-            `${ASYNC_KEY_PREFIX}${userId}`,
-            publicUrl,
-          );
+          await AsyncStorage.setItem(`${ASYNC_KEY_PREFIX}${userId}`, publicUrl);
           return publicUrl;
         }
       } catch (_) {}

@@ -1,5 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRootNavigationState, useRouter } from "expo-router";
+import {
+  useLocalSearchParams,
+  useRootNavigationState,
+  useRouter,
+} from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -13,6 +17,7 @@ import {
   View,
 } from "react-native";
 import Button from "../components/buttons";
+import { GlobalProfileImagePicker } from "../components/globalProfileImagePicker";
 import { useAuth } from "../contexts/AuthContext";
 import { useColors, useRadius, useSpacing } from "../contexts/ThemeContext";
 
@@ -80,7 +85,7 @@ export default function AccountScreen() {
     setIsLoading(true);
     try {
       // Production build: console.log removed
-      const result = await signIn(email, password);
+      const result = await signIn(email.trim().toLowerCase(), password);
 
       if (result.success) {
         // Production build: console.log removed
@@ -116,7 +121,11 @@ export default function AccountScreen() {
     setIsLoading(true);
     try {
       // Production build: console.log removed
-      const result = await signUp(email, password, name);
+      const result = await signUp(
+        email.trim().toLowerCase(),
+        password,
+        name.trim(),
+      );
 
       if (result.success) {
         // Clear form
@@ -129,12 +138,26 @@ export default function AccountScreen() {
           [{ text: "Continue", onPress: () => safeReplace("/(tabs)") }],
         );
       } else {
-        const accountCreatedButNotSignedIn =
-          (result.error || "").toLowerCase().includes("account created");
+        const isConfirmationPending = (result.error || "")
+          .toLowerCase()
+          .includes("account created");
+        const isDuplicate = (result.error || "")
+          .toLowerCase()
+          .includes("already exists");
 
         Alert.alert(
-          accountCreatedButNotSignedIn ? "Account Created" : "Error",
+          isConfirmationPending
+            ? "Check Your Email ✉️"
+            : isDuplicate
+              ? "Account Exists"
+              : "Error",
           result.error || "Failed to create account. Please try again.",
+          isDuplicate
+            ? [
+                { text: "Cancel", style: "cancel" },
+                { text: "Sign In", onPress: () => setMode("signin") },
+              ]
+            : [{ text: "OK" }],
         );
       }
     } catch (error) {
@@ -179,11 +202,12 @@ export default function AccountScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View
-              style={[styles.profileIcon, { backgroundColor: colors.primary }]}
-            >
-              <Ionicons name="person" size={48} color={colors.secondary} />
-            </View>
+            <GlobalProfileImagePicker
+              userId={user.id}
+              displayName={user.name || "Chef"}
+              size={96}
+              editable
+            />
             <Text style={[styles.title, { color: colors.primary }]}>
               Account
             </Text>

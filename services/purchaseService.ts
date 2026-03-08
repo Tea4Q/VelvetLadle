@@ -4,7 +4,7 @@
  * Setup required (one-time):
  *  1. Create a RevenueCat account at https://app.revenuecat.com
  *  2. Create a project for VelvetLadle, add iOS & Android apps.
- *  3. Create a "premium" Entitlement and attach products from
+ *  3. Create a "VelvetLadle Premium" Entitlement and attach products from
  *     App Store Connect / Google Play Console.
  *  4. Add your API keys to .env.local:
  *       EXPO_PUBLIC_REVENUECAT_IOS_KEY=appl_xxxxxx
@@ -37,7 +37,7 @@ const RC_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "";
 const RC_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? "";
 
 /** The entitlement identifier configured in the RevenueCat dashboard. */
-export const PREMIUM_ENTITLEMENT_ID = "premium";
+export const PREMIUM_ENTITLEMENT_ID = "VelvetLadle Premium";
 
 class PurchaseServiceClass {
   private _configured = false;

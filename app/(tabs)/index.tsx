@@ -70,7 +70,12 @@ function RecentRecipesList({
               opacity: pressed ? 0.8 : 1,
             },
           ]}
-          onPress={() => router.push("/(tabs)/recipes")}
+          onPress={() =>
+            router.push({
+              pathname: "/(tabs)/recipes",
+              params: { recipeId: String(recipe.id) },
+            })
+          }
         >
           {recipe.image_url ? (
             <Image
@@ -379,293 +384,306 @@ export default function Index() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView
-        contentContainerStyle={styles.mainContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* App Bar */}
-        <View style={styles.appBar}>
-          <Text style={[styles.appBarTitle, { color: colors.primary }]}>
-            Velvet Ladle
-          </Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView
+          contentContainerStyle={styles.mainContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* App Bar */}
+          <View style={styles.appBar}>
+            <Text style={[styles.appBarTitle, { color: colors.primary }]}>
+              Velvet Ladle
+            </Text>
+            <Pressable
+              style={[
+                styles.profileButton,
+                { backgroundColor: colors.primaryLight },
+              ]}
+              onPress={() => router.push("/account")}
+            >
+              <FontAwesomeIcon icon={faUser} size={24} color={colors.primary} />
+            </Pressable>
+          </View>
+
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <Text style={[styles.welcomeText, { color: colors.textPrimary }]}>
+              Welcome back, {user?.name || "Chef"}! 👨‍🍳
+            </Text>
+            <Text style={[styles.welcomeSubtext, { color: colors.textLight }]}>
+              Ready to explore and create amazing recipes today
+            </Text>
+          </View>
+
+          {/* Search Bar */}
           <Pressable
             style={[
-              styles.profileButton,
-              { backgroundColor: colors.primaryLight },
+              styles.searchBar,
+              { backgroundColor: colors.surface, borderRadius: radius.lg },
             ]}
-            onPress={() => router.push("/account")}
+            onPress={() => router.push("/(tabs)/recipes")}
           >
-            <FontAwesomeIcon icon={faUser} size={24} color={colors.primary} />
-          </Pressable>
-        </View>
-
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <Text style={[styles.welcomeText, { color: colors.textPrimary }]}>
-            Welcome back, {user?.name || "Chef"}! 👨‍🍳
-          </Text>
-          <Text style={[styles.welcomeSubtext, { color: colors.textLight }]}>
-            Ready to explore and create amazing recipes today
-          </Text>
-        </View>
-
-        {/* Search Bar */}
-        <Pressable
-          style={[
-            styles.searchBar,
-            { backgroundColor: colors.surface, borderRadius: radius.lg },
-          ]}
-          onPress={() => router.push("/(tabs)/recipes")}
-        >
-          <FontAwesomeIcon
-            icon={faMagnifyingGlass}
-            size={20}
-            color={colors.textLight}
-          />
-          <Text style={[styles.searchPlaceholder, { color: colors.textLight }]}>
-            Search recipes, ingredients, cuisines...
-          </Text>
-        </Pressable>
-
-        {/* Navigation Chips */}
-        <View style={styles.chipsContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.chip,
-              {
-                backgroundColor: colors.surface,
-                borderRadius: radius.full,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-            onPress={handleNavigateToRecipes}
-          >
-            <FontAwesomeIcon icon={faBook} size={20} color={colors.primary} />
-            <Text style={[styles.chipText, { color: colors.primary }]}>
-              Recipes ({recipeCount}
-              {isGuest ? "/10" : ""})
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              size={20}
+              color={colors.textLight}
+            />
+            <Text
+              style={[styles.searchPlaceholder, { color: colors.textLight }]}
+            >
+              Search recipes, ingredients, cuisines...
             </Text>
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.chip,
-              {
-                backgroundColor: colors.surface,
-                borderRadius: radius.full,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-            onPress={handleNavigateToFavorites}
-          >
-            <FontAwesomeIcon icon={faStar} size={24} color={colors.primary} />
-            <Text style={[styles.chipText, { color: colors.primary }]}>
-              Favorites ({favoriteCount})
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.chip,
-              {
-                backgroundColor: colors.surface,
-                borderRadius: radius.full,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-            onPress={handleNavigateToRecents}
-          >
-            <FontAwesomeIcon icon={faClock} size={20} color={colors.primary} />
-            <Text style={[styles.chipText, { color: colors.primary }]}>
-              Recents ({recentCount})
-            </Text>
-          </Pressable>
-        </View>
 
-        {/* Featured Card */}
-        <View style={styles.featuredSection}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.featuredCard,
-              {
-                backgroundColor: colors.accent,
-                borderRadius: radius.lg,
-                opacity: pressed ? 0.9 : 1,
-                transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
-              },
-            ]}
-            onPress={() => router.push("/(tabs)/add")}
-          >
-            <View style={styles.featuredContent}>
-              <Text
-                style={[styles.featuredTitle, { color: colors.textInverse }]}
-              >
-                {recipeCount > 0 && lastRecipeTime
-                  ? "Continue where you left off"
-                  : "Start your culinary journey"}
+          {/* Navigation Chips */}
+          <View style={styles.chipsContainer}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.chip,
+                {
+                  backgroundColor: colors.surface,
+                  borderRadius: radius.full,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+              onPress={handleNavigateToRecipes}
+            >
+              <FontAwesomeIcon icon={faBook} size={20} color={colors.primary} />
+              <Text style={[styles.chipText, { color: colors.primary }]}>
+                Recipes ({recipeCount}
+                {isGuest ? "/10" : ""})
               </Text>
-              <Text
-                style={[styles.featuredSubtitle, { color: colors.textInverse }]}
-              >
-                {recipeCount > 0 && lastRecipeTime
-                  ? `Last recipe added ${lastRecipeTime}`
-                  : "Add your first recipe from web or image"}
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.chip,
+                {
+                  backgroundColor: colors.surface,
+                  borderRadius: radius.full,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+              onPress={handleNavigateToFavorites}
+            >
+              <FontAwesomeIcon icon={faStar} size={24} color={colors.primary} />
+              <Text style={[styles.chipText, { color: colors.primary }]}>
+                Favorites ({favoriteCount})
               </Text>
-              {isGuest && recipeCount > 0 && (
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.chip,
+                {
+                  backgroundColor: colors.surface,
+                  borderRadius: radius.full,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+              onPress={handleNavigateToRecents}
+            >
+              <FontAwesomeIcon
+                icon={faClock}
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={[styles.chipText, { color: colors.primary }]}>
+                Recents ({recentCount})
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Featured Card */}
+          <View style={styles.featuredSection}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.featuredCard,
+                {
+                  backgroundColor: colors.accent,
+                  borderRadius: radius.lg,
+                  opacity: pressed ? 0.9 : 1,
+                  transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                },
+              ]}
+              onPress={() => router.push("/(tabs)/add")}
+            >
+              <View style={styles.featuredContent}>
+                <Text
+                  style={[styles.featuredTitle, { color: colors.textInverse }]}
+                >
+                  {recipeCount > 0 && lastRecipeTime
+                    ? "Continue where you left off"
+                    : "Start your culinary journey"}
+                </Text>
                 <Text
                   style={[
-                    styles.guestLimitText,
-                    { color: colors.textInverse, opacity: 0.8 },
+                    styles.featuredSubtitle,
+                    { color: colors.textInverse },
                   ]}
                 >
-                  Guest: {recipeCount}/10 recipes • Upgrade for unlimited
+                  {recipeCount > 0 && lastRecipeTime
+                    ? `Last recipe added ${lastRecipeTime}`
+                    : "Add your first recipe from web or image"}
                 </Text>
-              )}
-            </View>
-            <FontAwesomeIcon
-              icon={faChevronRight}
-              size={24}
-              color={colors.textInverse}
-            />
-          </Pressable>
-        </View>
+                {isGuest && recipeCount > 0 && (
+                  <Text
+                    style={[
+                      styles.guestLimitText,
+                      { color: colors.textInverse, opacity: 0.8 },
+                    ]}
+                  >
+                    Guest: {recipeCount}/10 recipes • Upgrade for unlimited
+                  </Text>
+                )}
+              </View>
+              <FontAwesomeIcon
+                icon={faChevronRight}
+                size={24}
+                color={colors.textInverse}
+              />
+            </Pressable>
+          </View>
 
-        {/* Quick Categories */}
-        {Object.keys(categoryRecipes).length > 0 && (
-          <View style={styles.categoriesSection}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Quick Categories 🍽️
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoriesScrollContainer}
-            >
-              {categories
-                .map((category) => {
-                  const recipes = categoryRecipes[category.key];
-                  if (!recipes || recipes.length === 0) return null;
+          {/* Quick Categories */}
+          {Object.keys(categoryRecipes).length > 0 && (
+            <View style={styles.categoriesSection}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.textPrimary }]}
+              >
+                Quick Categories 🍽️
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoriesScrollContainer}
+              >
+                {categories
+                  .map((category) => {
+                    const recipes = categoryRecipes[category.key];
+                    if (!recipes || recipes.length === 0) return null;
 
-                  return (
-                    <Pressable
-                      key={category.key}
-                      style={({ pressed }) => [
-                        styles.categoryCard,
-                        {
-                          backgroundColor: colors.surface,
-                          borderRadius: radius.lg,
-                          opacity: pressed ? 0.8 : 1,
-                          transform: pressed
-                            ? [{ scale: 0.95 }]
-                            : [{ scale: 1 }],
-                        },
-                      ]}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/(tabs)/recipes",
-                          params: { category: category.key },
-                        })
-                      }
-                    >
-                      <View style={styles.categoryHeader}>
-                        <Text style={styles.categoryEmoji}>
-                          {category.emoji}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.categoryTitle,
-                            { color: colors.textPrimary },
-                          ]}
-                        >
-                          {category.name}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.categoryCount,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          {recipes.length} recipe
-                          {recipes.length !== 1 ? "s" : ""}
-                        </Text>
-                      </View>
-
-                      <View style={styles.categoryRecipes}>
-                        {recipes.slice(0, 3).map((recipe, index) => (
-                          <View
-                            key={recipe.id || index}
-                            style={styles.categoryRecipeItem}
+                    return (
+                      <Pressable
+                        key={category.key}
+                        style={({ pressed }) => [
+                          styles.categoryCard,
+                          {
+                            backgroundColor: colors.surface,
+                            borderRadius: radius.lg,
+                            opacity: pressed ? 0.8 : 1,
+                            transform: pressed
+                              ? [{ scale: 0.95 }]
+                              : [{ scale: 1 }],
+                          },
+                        ]}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/(tabs)/recipes",
+                            params: { category: category.key },
+                          })
+                        }
+                      >
+                        <View style={styles.categoryHeader}>
+                          <Text style={styles.categoryEmoji}>
+                            {category.emoji}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.categoryTitle,
+                              { color: colors.textPrimary },
+                            ]}
                           >
-                            {recipe.image_url ? (
-                              <Image
-                                source={{ uri: recipe.image_url }}
-                                style={[
-                                  styles.categoryRecipeImage,
-                                  { borderRadius: radius.sm },
-                                ]}
-                              />
-                            ) : (
-                              <View
-                                style={[
-                                  styles.categoryRecipeImagePlaceholder,
-                                  {
-                                    backgroundColor: colors.border,
-                                    borderRadius: radius.sm,
-                                  },
-                                ]}
-                              >
-                                <FontAwesomeIcon
-                                  icon={faUtensils}
-                                  size={12}
-                                  color={colors.textLight}
-                                />
-                              </View>
-                            )}
-                            <Text
-                              style={[
-                                styles.categoryRecipeTitle,
-                                { color: colors.textPrimary },
-                              ]}
-                              numberOfLines={2}
+                            {category.name}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.categoryCount,
+                              { color: colors.textSecondary },
+                            ]}
+                          >
+                            {recipes.length} recipe
+                            {recipes.length !== 1 ? "s" : ""}
+                          </Text>
+                        </View>
+
+                        <View style={styles.categoryRecipes}>
+                          {recipes.slice(0, 3).map((recipe, index) => (
+                            <View
+                              key={recipe.id || index}
+                              style={styles.categoryRecipeItem}
                             >
-                              {recipe.title}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
+                              {recipe.image_url ? (
+                                <Image
+                                  source={{ uri: recipe.image_url }}
+                                  style={[
+                                    styles.categoryRecipeImage,
+                                    { borderRadius: radius.sm },
+                                  ]}
+                                />
+                              ) : (
+                                <View
+                                  style={[
+                                    styles.categoryRecipeImagePlaceholder,
+                                    {
+                                      backgroundColor: colors.border,
+                                      borderRadius: radius.sm,
+                                    },
+                                  ]}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faUtensils}
+                                    size={12}
+                                    color={colors.textLight}
+                                  />
+                                </View>
+                              )}
+                              <Text
+                                style={[
+                                  styles.categoryRecipeTitle,
+                                  { color: colors.textPrimary },
+                                ]}
+                                numberOfLines={2}
+                              >
+                                {recipe.title}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
 
-                      <View style={styles.categoryFooter}>
-                        <Text
-                          style={[
-                            styles.viewMoreText,
-                            { color: colors.primary },
-                          ]}
-                        >
-                          View All →
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })
-                .filter(Boolean)}
-            </ScrollView>
-          </View>
-        )}
+                        <View style={styles.categoryFooter}>
+                          <Text
+                            style={[
+                              styles.viewMoreText,
+                              { color: colors.primary },
+                            ]}
+                          >
+                            View All →
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })
+                  .filter(Boolean)}
+              </ScrollView>
+            </View>
+          )}
 
-        {/* Recent Recipes List */}
-        {recentCount > 0 && (
-          <View style={styles.recentSection}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Recent Recipes 📖
-            </Text>
-            <RecentRecipesList
-              colors={colors}
-              radius={radius}
-              refreshKey={recentCount}
-            />
-          </View>
-        )}
-      </ScrollView>
-    </View>
+          {/* Recent Recipes List */}
+          {recentCount > 0 && (
+            <View style={styles.recentSection}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.textPrimary }]}
+              >
+                Recent Recipes 📖
+              </Text>
+              <RecentRecipesList
+                colors={colors}
+                radius={radius}
+                refreshKey={recentCount}
+              />
+            </View>
+          )}
+        </ScrollView>
+      </View>
   );
 }
 
