@@ -100,32 +100,32 @@ release_candidate_build:
 
 ### **🔍 Code Quality**
 
-- [ ] **TypeScript**: No compilation errors
-- [ ] **ESLint**: No linting errors or warnings
+- [x] **TypeScript**: No compilation errors
+- [x] **ESLint**: No linting errors or warnings
 - [ ] **Tests**: All tests passing with 80%+ coverage
-- [ ] **Security**: No high/moderate vulnerabilities
-- [ ] **Performance**: Bundle size within limits
+- [x] **Security**: No high/moderate vulnerabilities
+- [x] **Performance**: Bundle size within limits
 
 ### **📱 App Configuration**
 
-- [ ] **App Icon**: High-quality icons for all sizes
-- [ ] **Splash Screen**: Proper splash screen assets
-- [ ] **App Name**: Finalized app name and description
-- [ ] **Version**: Incremented version numbers
-- [ ] **Permissions**: Only necessary permissions requested
+- [x] **App Icon**: High-quality icons for all sizes
+- [x] **Splash Screen**: Proper splash screen assets
+- [x] **App Name**: Finalized app name and description
+- [x] **Version**: Incremented version numbers
+- [x] **Permissions**: Only necessary permissions requested
 
 ### **🔐 Credentials & Certificates**
 
-- [ ] **Android**: Google Play Service Account JSON
-- [ ] **iOS**: Apple Developer certificates
-- [ ] **Signing**: Proper code signing configuration
+- [x] **Android**: Google Play Service Account JSON
+- [x] **iOS**: Apple Developer certificates
+- [x] **Signing**: Proper code signing configuration
 - [ ] **Provisioning**: Valid provisioning profiles
 
 ### **🌐 Backend & Services**
 
-- [ ] **Production APIs**: All APIs pointing to production
-- [ ] **Database**: Production database configured
-- [ ] **Analytics**: Production analytics setup
+- [x] **Production APIs**: All APIs pointing to production
+- [x] **Database**: Production database configured
+- [x] **Analytics**: Production analytics setup
 - [ ] **Error Tracking**: Production error reporting
 
 ## 🛠 **Build Commands**
@@ -173,11 +173,13 @@ eas build:cancel [BUILD_ID]
 
 ```json
 "android": {
-  "serviceAccountKeyPath": "./android-service-account.json",
+  "serviceAccountKeyPath": "C:/dev/SAAS/ggl-mimetic-scion-490220-c4-06bb97b1ec55.json",
   "track": "internal",        // internal → alpha → beta → production
   "releaseStatus": "draft"    // draft → inProgress → halted → completed
 }
 ```
+
+VelvetLadle currently uses a shared service-account key stored outside the repo at `C:/dev/SAAS/ggl-mimetic-scion-490220-c4-06bb97b1ec55.json`.
 
 #### **Google Play Tracks**
 
@@ -217,6 +219,14 @@ eas build:cancel [BUILD_ID]
 # Set as EAS secret
 eas secret:create --scope project --name GOOGLE_SERVICE_ACCOUNT_KEY --value "$(cat android-service-account.json)"
 ```
+
+Local submit path used by this project:
+
+```bash
+eas submit --profile production --platform android
+```
+
+This command reads `serviceAccountKeyPath` from `eas.json`, currently set to `C:/dev/SAAS/ggl-mimetic-scion-490220-c4-06bb97b1ec55.json`.
 
 #### **iOS (Apple App Store)**
 
@@ -395,6 +405,11 @@ eas submit --profile production --platform [android|ios] --verbose
 # Manual submission
 # Download .aab/.ipa and upload manually to stores
 ```
+
+Common Android submit error and fix:
+
+- Error: `Google Api Error: Invalid request - The caller does not have permission`
+- Fix: In Google Play Console, grant the service account app access for package `com.qtea.VelvetLadle` with release-management permissions (internal track at minimum), then retry after permission propagation.
 
 #### **Certificate Issues**
 

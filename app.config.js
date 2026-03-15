@@ -1,3 +1,4 @@
+const { version } = require("os");
 const path = require("path");
 
 // Set Expo Router environment variables early
@@ -11,6 +12,7 @@ module.exports = ({ config }) => {
     name: "Velvet Ladle",
     slug: "VelvetLadle",
     version: "2.1.0",
+    versionCode: 2,
     orientation: "default",
     icon: "./assets/images/favicon_velvetLadle_large_128x128.png",
     scheme: "velvetladle",

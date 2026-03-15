@@ -131,7 +131,7 @@ In the RevenueCat dashboard for each app:
 ### 4b. Create the Entitlement
 
 1. **Entitlements** → **+ New Entitlement**.
-2. Identifier: **`premium`** ← must be exactly this string.
+2. Identifier: **`VelvetLadle Premium`** ← must be exactly this string.
 3. Attach all products (both iOS and Android, monthly and annual) to this entitlement.
 
 ### 4c. Create an Offering

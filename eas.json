@@ -54,7 +54,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./android-service-account.json",
+        "serviceAccountKeyPath": "C:/dev/SAAS/mimetic-scion-490220-c4-b4340a32d5aa.json",
         "track": "internal",
         "releaseStatus": "draft"
       },
