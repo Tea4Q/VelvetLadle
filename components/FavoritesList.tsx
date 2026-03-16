@@ -364,6 +364,17 @@ export default function FavoritesList({
   }
 
   const displayData = getDisplayData();
+  const tabItems: Array<{ key: "all" | "recipes" | "urls"; label: string }> = [
+    { key: "all", label: `All (${favorites.length})` },
+    {
+      key: "recipes",
+      label: `Recipes (${favorites.filter((f) => f.type === "recipe").length})`,
+    },
+    {
+      key: "urls",
+      label: `URLs (${favorites.filter((f) => f.type === "url").length})`,
+    },
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -394,26 +405,41 @@ export default function FavoritesList({
         </Text>
 
         <View style={styles.tabButtons}>
-          {[
-            { key: "all", label: `All (${favorites.length})`, icon: "📋" },
-            {
-              key: "recipes",
-              label: `Recipes (${favorites.filter((f) => f.type === "recipe").length})`,
-              icon: "🍽️",
-            },
-            {
-              key: "urls",
-              label: `URLs (${favorites.filter((f) => f.type === "url").length})`,
-              icon: "🔗",
-            },
-          ].map((tab) => (
-            <Button
-              key={tab.key}
-              label={`${tab.icon} ${tab.label}`}
-              theme={activeTab === tab.key ? "primary" : "outline"}
-              onPress={() => setActiveTab(tab.key as any)}
-            />
-          ))}
+          {tabItems.map((tab) => {
+            const isActive = activeTab === tab.key;
+
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[
+                  styles.tabButton,
+                  {
+                    borderColor: colors.primary,
+                    borderRadius: radius.full,
+                    backgroundColor: isActive ? colors.primary : "transparent",
+                    paddingHorizontal: spacing.md,
+                    paddingVertical: spacing.sm,
+                  },
+                ]}
+                onPress={() => setActiveTab(tab.key)}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    {
+                      color: isActive ? colors.textInverse : colors.primary,
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.semibold,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
@@ -488,7 +514,17 @@ const styles = StyleSheet.create({
   },
   tabButtons: {
     flexDirection: "row",
-    gap: 4,
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  tabButton: {
+    borderWidth: 1,
+    minHeight: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabButtonText: {
+    textAlign: "center",
   },
   centerContainer: {
     flex: 1,

@@ -1,6 +1,5 @@
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import { PostHogProvider } from "posthog-react-native";
 import React, { Component, useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { AuthProvider } from "../contexts/AuthContext";
@@ -96,28 +95,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <PostHogProvider
-      apiKey="phc_m8EjrNKBB48SJowOLM4JLctQPlrHglzs63fqvCWkz2m"
-      options={{
-        host: "https://us.i.posthog.com",
-        enableSessionReplay: !__DEV__,
-        sessionReplayConfig: {
-          maskAllTextInputs: true,
-          maskAllImages: true,
-          captureLog: true,
-          captureNetworkTelemetry: true,
-          sampleRate: undefined,
-          throttleDelayMs: 1000,
-        },
-      }}
-    >
-      <ErrorBoundary>
-        <ThemeProvider>
-          <AuthProvider>
-            <RootLayoutNav />
-          </AuthProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
-    </PostHogProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

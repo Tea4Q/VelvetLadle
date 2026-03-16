@@ -24,6 +24,10 @@ export default function RecipesScreen() {
   const { category, filterType, recipeId } = useLocalSearchParams();
   const stableCategory = useMemo(() => category as string, [category]);
   const stableFilterType = useMemo(() => filterType as string, [filterType]);
+  const hasListFilter = useMemo(
+    () => Boolean(stableCategory || stableFilterType),
+    [stableCategory, stableFilterType],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -44,21 +48,31 @@ export default function RecipesScreen() {
     }, [user?.id /* keep existing deps used by fetch logic */]),
   );
 
-  // When recipeId is passed via router params, load and display that recipe
+  // Category/recent filters should always show the list, not a previously viewed recipe.
+  // Only open RecipeViewer from route params when no list filters are active.
   useEffect(() => {
-    if (recipeId) {
-      const loadRecipe = async () => {
-        const id = parseInt(recipeId as string, 10);
-        if (!isNaN(id)) {
-          const { success, data } = await RecipeDatabase.getRecipeById(id);
-          if (success && data) {
-            setSelectedRecipe(data);
-          }
-        }
-      };
-      loadRecipe();
+    if (hasListFilter) {
+      setSelectedRecipe(null);
+      return;
     }
-  }, [recipeId, user?.id]);
+
+    if (!recipeId) {
+      setSelectedRecipe(null);
+      return;
+    }
+
+    const loadRecipe = async () => {
+      const id = parseInt(recipeId as string, 10);
+      if (!isNaN(id)) {
+        const { success, data } = await RecipeDatabase.getRecipeById(id);
+        if (success && data) {
+          setSelectedRecipe(data);
+        }
+      }
+    };
+
+    loadRecipe();
+  }, [recipeId, hasListFilter, user?.id]);
 
   const handleRecipeSelect = (recipe: Recipe) => {
     setSelectedRecipe(recipe);

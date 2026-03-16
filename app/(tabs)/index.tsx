@@ -368,7 +368,7 @@ export default function Index() {
     // Clear any existing category filter by explicitly setting params to undefined
     router.push({
       pathname: "/(tabs)/recipes",
-      params: { category: undefined },
+      params: { category: undefined, filterType: undefined, recipeId: undefined },
     });
   };
 
@@ -379,7 +379,7 @@ export default function Index() {
   const handleNavigateToRecents = () => {
     router.push({
       pathname: "/(tabs)/recipes",
-      params: { filterType: "recent" },
+      params: { filterType: "recent", category: undefined, recipeId: undefined },
     });
   };
 
@@ -578,7 +578,11 @@ export default function Index() {
                         onPress={() =>
                           router.push({
                             pathname: "/(tabs)/recipes",
-                            params: { category: category.key },
+                            params: {
+                              category: category.key,
+                              filterType: undefined,
+                              recipeId: undefined,
+                            },
                           })
                         }
                       >

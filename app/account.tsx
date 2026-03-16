@@ -255,23 +255,7 @@ export default function AccountScreen() {
               <Button
                 label="Upgrade to Premium"
                 theme="primary"
-                onPress={() =>
-                  Alert.alert(
-                    "Upgrade to Premium",
-                    "Premium subscriptions unlock unlimited recipe uploads. Sign in with your premium account to continue.",
-                    [
-                      {
-                        text: "Sign In",
-                        onPress: () =>
-                          router.push({
-                            pathname: "/account",
-                            params: { mode: "signin" },
-                          }),
-                      },
-                      { text: "Cancel", style: "cancel" },
-                    ],
-                  )
-                }
+                onPress={() => router.push("/upgrade")}
               />
             )}
             <Button
@@ -449,6 +433,13 @@ export default function AccountScreen() {
             }
             theme="primary"
             onPress={mode === "signin" ? handleSignIn : handleCreateAccount}
+            disabled={isLoading}
+          />
+
+          <Button
+            label="View Premium Plans"
+            theme="outline"
+            onPress={() => router.push("/upgrade")}
             disabled={isLoading}
           />
 

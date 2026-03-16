@@ -39,6 +39,7 @@
     },
     "production": {
       "channel": "production",
+      "autoIncrement": true,
       "env": {
         "NODE_ENV": "production"
       },
@@ -60,7 +61,6 @@
       },
       "ios": {
         "appleId": "chandra@chandrasessentials.com",
-        "ascAppId": "6759670875",
         "appleTeamId": "55885H9NLV"
       }
     }
