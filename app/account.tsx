@@ -16,6 +16,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Button from "../components/buttons";
 import { GlobalProfileImagePicker } from "../components/globalProfileImagePicker";
 import { useAuth } from "../contexts/AuthContext";
@@ -192,8 +193,97 @@ export default function AccountScreen() {
   // If user is logged in, show account info
   if (showUserInfo && user) {
     return (
-      <KeyboardAvoidingView
+      <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
+        edges={["top", "bottom", "left", "right"]}
+      >
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={[styles.content, { padding: spacing.lg }]}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <GlobalProfileImagePicker
+                userId={user.id}
+                displayName={user.name || "Chef"}
+                size={96}
+                editable
+              />
+              <Text style={[styles.title, { color: colors.primary }]}>
+                Account
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                Welcome, {user.name || "Chef"}!
+              </Text>
+            </View>
+
+            {/* Account Info */}
+            <View
+              style={[
+                styles.infoContainer,
+                { backgroundColor: colors.surface, borderRadius: radius.md },
+              ]}
+            >
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: colors.textLight }]}>
+                  Email:
+                </Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+                  {user.email || "Not set"}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: colors.textLight }]}>
+                  Account Type:
+                </Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+                  {user.subscription_tier === "premium" ? "Premium" : "Free"}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: colors.textLight }]}>
+                  Member Since:
+                </Text>
+                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
+                  {new Date().toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+
+            {/* Actions */}
+            <View style={styles.actions}>
+              {user.subscription_tier !== "premium" && (
+                <Button
+                  label="Upgrade to Premium"
+                  theme="primary"
+                  onPress={() => router.push("/upgrade")}
+                />
+              )}
+              <Button
+                label="Sign Out"
+                theme="secondary"
+                onPress={handleSignOut}
+              />
+              <Button label="Back to Dashboard" onPress={handleGoBack} />
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  // Show auth form if no user or after sign out
+  return (
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top", "bottom", "left", "right"]}
+    >
+      <KeyboardAvoidingView
+        style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
@@ -202,107 +292,51 @@ export default function AccountScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <GlobalProfileImagePicker
-              userId={user.id}
-              displayName={user.name || "Chef"}
-              size={96}
-              editable
-            />
+            <View
+              style={[styles.profileIcon, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="person" size={48} color={colors.secondary} />
+            </View>
             <Text style={[styles.title, { color: colors.primary }]}>
-              Account
+              {mode === "signin" ? "Sign In" : "Create Your Account"}
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Welcome, {user.name || "Chef"}!
+              {mode === "signin"
+                ? "Welcome back to Velvet Ladle"
+                : "Unlock cloud sync and more features"}
             </Text>
           </View>
 
-          {/* Account Info */}
-          <View
-            style={[
-              styles.infoContainer,
-              { backgroundColor: colors.surface, borderRadius: radius.md },
-            ]}
-          >
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textLight }]}>
-                Email:
-              </Text>
-              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                {user.email || "Not set"}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textLight }]}>
-                Account Type:
-              </Text>
-              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                {user.subscription_tier === "premium" ? "Premium" : "Free"}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textLight }]}>
-                Member Since:
-              </Text>
-              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                {new Date().toLocaleDateString()}
-              </Text>
-            </View>
-          </View>
-
-          {/* Actions */}
-          <View style={styles.actions}>
-            {user.subscription_tier !== "premium" && (
-              <Button
-                label="Upgrade to Premium"
-                theme="primary"
-                onPress={() => router.push("/upgrade")}
-              />
+          {/* Auth Form */}
+          <View style={styles.form}>
+            {mode === "signup" && (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>
+                  Name
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                      borderRadius: radius.md,
+                    },
+                  ]}
+                  placeholder="Enter your name"
+                  placeholderTextColor={colors.textLight}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                />
+              </View>
             )}
-            <Button
-              label="Sign Out"
-              theme="secondary"
-              onPress={handleSignOut}
-            />
-            <Button label="Back to Dashboard" onPress={handleGoBack} />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    );
-  }
 
-  // Show auth form if no user or after sign out
-  return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={[styles.content, { padding: spacing.lg }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View
-            style={[styles.profileIcon, { backgroundColor: colors.primary }]}
-          >
-            <Ionicons name="person" size={48} color={colors.secondary} />
-          </View>
-          <Text style={[styles.title, { color: colors.primary }]}>
-            {mode === "signin" ? "Sign In" : "Create Your Account"}
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {mode === "signin"
-              ? "Welcome back to Velvet Ladle"
-              : "Unlock cloud sync and more features"}
-          </Text>
-        </View>
-
-        {/* Auth Form */}
-        <View style={styles.form}>
-          {mode === "signup" && (
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textPrimary }]}>
-                Name
+                Email
               </Text>
               <TextInput
                 style={[
@@ -314,146 +348,126 @@ export default function AccountScreen() {
                     borderRadius: radius.md,
                   },
                 ]}
-                placeholder="Enter your name"
+                placeholder="Enter your email"
                 placeholderTextColor={colors.textLight}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-            </View>
-          )}
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Email
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                  borderRadius: radius.md,
-                },
-              ]}
-              placeholder="Enter your email"
-              placeholderTextColor={colors.textLight}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Password
-            </Text>
-            <View
-              style={[
-                styles.passwordInputContainer,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  borderRadius: radius.md,
-                },
-              ]}
-            >
-              <TextInput
-                style={[styles.passwordInput, { color: colors.textPrimary }]}
-                placeholder="At least 6 characters"
-                placeholderTextColor={colors.textLight}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <Pressable
-                style={styles.passwordToggle}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off" : "eye"}
-                  size={20}
-                  color={colors.textLight}
-                />
-              </Pressable>
             </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>
+                Password
+              </Text>
+              <View
+                style={[
+                  styles.passwordInputContainer,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    borderRadius: radius.md,
+                  },
+                ]}
+              >
+                <TextInput
+                  style={[styles.passwordInput, { color: colors.textPrimary }]}
+                  placeholder="At least 6 characters"
+                  placeholderTextColor={colors.textLight}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Pressable
+                  style={styles.passwordToggle}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color={colors.textLight}
+                  />
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Forgot Password Link - Only show in sign-in mode */}
+            {mode === "signin" && (
+              <View style={styles.forgotPasswordContainer}>
+                <Pressable
+                  onPress={() => router.push("/forgot-password" as any)}
+                  disabled={isLoading}
+                >
+                  <Text
+                    style={[
+                      styles.forgotPasswordText,
+                      { color: colors.primary },
+                    ]}
+                  >
+                    Forgot Password?
+                  </Text>
+                </Pressable>
+              </View>
+            )}
           </View>
 
-          {/* Forgot Password Link - Only show in sign-in mode */}
-          {mode === "signin" && (
-            <View style={styles.forgotPasswordContainer}>
-              <Pressable
-                onPress={() => router.push("/forgot-password" as any)}
-                disabled={isLoading}
-              >
-                <Text
-                  style={[styles.forgotPasswordText, { color: colors.primary }]}
-                >
-                  Forgot Password?
-                </Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
+          {/* Mode Toggle */}
+          <View style={styles.modeToggle}>
+            <Text
+              style={[styles.modeToggleText, { color: colors.textSecondary }]}
+            >
+              {mode === "signin"
+                ? "Don't have an account?"
+                : "Already have an account?"}
+            </Text>
+            <Button
+              label={mode === "signin" ? "Create Account" : "Sign In"}
+              theme="link"
+              size="sm"
+              onPress={() => setMode(mode === "signin" ? "signup" : "signin")}
+            />
+          </View>
 
-        {/* Mode Toggle */}
-        <View style={styles.modeToggle}>
-          <Text
-            style={[styles.modeToggleText, { color: colors.textSecondary }]}
-          >
-            {mode === "signin"
-              ? "Don't have an account?"
-              : "Already have an account?"}
-          </Text>
-          <Button
-            label={mode === "signin" ? "Create Account" : "Sign In"}
-            theme="link"
-            size="sm"
-            onPress={() => setMode(mode === "signin" ? "signup" : "signin")}
-          />
-        </View>
+          {/* Actions */}
+          <View style={styles.actions}>
+            <Button
+              label={
+                isLoading
+                  ? mode === "signin"
+                    ? "Signing In..."
+                    : "Creating Account..."
+                  : mode === "signin"
+                    ? "Sign In"
+                    : "Create Free Account"
+              }
+              theme="primary"
+              onPress={mode === "signin" ? handleSignIn : handleCreateAccount}
+              disabled={isLoading}
+            />
 
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Button
-            label={
-              isLoading
-                ? mode === "signin"
-                  ? "Signing In..."
-                  : "Creating Account..."
-                : mode === "signin"
-                  ? "Sign In"
-                  : "Create Free Account"
-            }
-            theme="primary"
-            onPress={mode === "signin" ? handleSignIn : handleCreateAccount}
-            disabled={isLoading}
-          />
+            <Button
+              label="View Premium Plans"
+              theme="outline"
+              onPress={() => router.push("/upgrade")}
+              disabled={isLoading}
+            />
 
-          <Button
-            label="View Premium Plans"
-            theme="outline"
-            onPress={() => router.push("/upgrade")}
-            disabled={isLoading}
-          />
-
-          <Button
-            label="Continue as Guest"
-            theme="link"
-            onPress={() => {
-              signInAsGuest();
-              safeReplace("/");
-            }}
-          />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Button
+              label="Continue as Guest"
+              theme="link"
+              onPress={() => {
+                signInAsGuest();
+                safeReplace("/");
+              }}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

@@ -28,6 +28,7 @@ type Props = {
 };
 
 export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }: Props) {
+	const isVisible = visible === true;
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [processingStatus, setProcessingStatus] = useState<string>('Starting extraction...');
 	const [showManualEntry, setShowManualEntry] = useState(false);
@@ -61,7 +62,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 	// Initialize URL input mode based on whether URL is provided
 	React.useEffect(() => {
-		if (visible) {
+		if (isVisible) {
 			if (!url || url.trim() === '') {
 				setIsUrlInputMode(true);
 				setInputUrl('');
@@ -70,7 +71,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 				setInputUrl(url);
 			}
 		}
-	}, [visible, url]);
+	}, [isVisible, url]);
 
 	const handleUrlSubmit = () => {
 		if (!inputUrl.trim()) {
@@ -390,7 +391,7 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 
 	return (
 		<Modal
-			visible={visible}
+			visible={isVisible}
 			transparent={true}
 			animationType='slide'
 			onRequestClose={onClose}

@@ -1,16 +1,13 @@
-import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
 
 type Props = {
-	imgSource: string;
+	imgSource: ImageSourcePropType;
 };
 
 export default function ImageViewer({ imgSource }: Props) {
 	return (
 		<View style={styles.imageContainer}>
-			<View style={styles.imageContainer}>
-				<Image source={imgSource} style={styles.image} />
-			</View>
+			<Image source={imgSource} style={styles.image} resizeMode='cover' />
 		</View>
 	);
 }

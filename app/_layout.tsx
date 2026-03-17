@@ -2,6 +2,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import React, { Component, useEffect, useState } from "react";
 import { Text, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../contexts/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 
@@ -24,11 +25,25 @@ class ErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
         >
-          <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 8 }}>Something went wrong</Text>
+          <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 8 }}>
+            Something went wrong
+          </Text>
           {__DEV__ && this.state.error ? (
-            <Text style={{ fontSize: 12, color: "#c00", textAlign: "center", marginBottom: 8 }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#c00",
+                textAlign: "center",
+                marginBottom: 8,
+              }}
+            >
               {this.state.error.message}
             </Text>
           ) : null}
@@ -37,7 +52,9 @@ class ErrorBoundary extends Component<
               {this.state.error.stack.slice(0, 500)}
             </Text>
           ) : null}
-          <Text style={{ fontSize: 11, color: "#aaa", marginTop: 12 }}>Please restart the app</Text>
+          <Text style={{ fontSize: 11, color: "#aaa", marginTop: 12 }}>
+            Please restart the app
+          </Text>
         </View>
       );
     }
@@ -96,11 +113,13 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <RootLayoutNav />
+          </AuthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }

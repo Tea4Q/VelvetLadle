@@ -5,16 +5,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-	Alert,
-	KeyboardAvoidingView,
-	Platform,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	TextInput,
-	View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
   const colors = useColors();
@@ -66,125 +67,133 @@ export default function SignInScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
+    <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      edges={["top", "bottom", "left", "right"]}
     >
-      <ScrollView
-        contentContainerStyle={[styles.content, { padding: spacing.lg }]}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View
-            style={[styles.iconContainer, { backgroundColor: colors.primary }]}
-          >
-            <Ionicons name="log-in" size={48} color={colors.secondary} />
-          </View>
-          <Text style={[styles.title, { color: colors.primary }]}>
-            Welcome Back!
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Sign in to access your recipes
-          </Text>
-        </View>
-
-        {/* Sign In Form */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Email
-            </Text>
-            <TextInput
+        <ScrollView
+          contentContainerStyle={[styles.content, { padding: spacing.lg }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View
               style={[
-                styles.input,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                  borderRadius: radius.md,
-                },
+                styles.iconContainer,
+                { backgroundColor: colors.primary },
               ]}
-              placeholder="your.email@example.com"
-              placeholderTextColor={colors.textLight}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="email"
-              editable={!isSigningIn}
+            >
+              <Ionicons name="log-in" size={48} color={colors.secondary} />
+            </View>
+            <Text style={[styles.title, { color: colors.primary }]}>
+              Welcome Back!
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Sign in to access your recipes
+            </Text>
+          </View>
+
+          {/* Sign In Form */}
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>
+                Email
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                    borderRadius: radius.md,
+                  },
+                ]}
+                placeholder="your.email@example.com"
+                placeholderTextColor={colors.textLight}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                editable={!isSigningIn}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>
+                Password
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                    borderRadius: radius.md,
+                  },
+                ]}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.textLight}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="password"
+                editable={!isSigningIn}
+                onSubmitEditing={handleSignIn}
+              />
+            </View>
+
+            {/* Forgot Password Link */}
+            <View style={styles.forgotPasswordContainer}>
+              <Pressable onPress={handleForgotPassword} disabled={isSigningIn}>
+                <Text
+                  style={[styles.forgotPasswordText, { color: colors.primary }]}
+                >
+                  Forgot Password?
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actions}>
+            <Button
+              label={isSigningIn ? "Signing In..." : "Sign In"}
+              theme="primary"
+              onPress={handleSignIn}
+              disabled={isSigningIn}
+            />
+            <Button
+              label="Back"
+              theme="secondary"
+              onPress={handleGoBack}
+              disabled={isSigningIn}
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Password
+          {/* Create Account Link */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: colors.textLight }]}>
+              Don't have an account?{" "}
             </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                  borderRadius: radius.md,
-                },
-              ]}
-              placeholder="Enter your password"
-              placeholderTextColor={colors.textLight}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="password"
-              editable={!isSigningIn}
-              onSubmitEditing={handleSignIn}
-            />
-          </View>
-
-          {/* Forgot Password Link */}
-          <View style={styles.forgotPasswordContainer}>
-            <Pressable onPress={handleForgotPassword} disabled={isSigningIn}>
-              <Text
-                style={[styles.forgotPasswordText, { color: colors.primary }]}
-              >
-                Forgot Password?
+            <Pressable onPress={handleGoToCreateAccount} disabled={isSigningIn}>
+              <Text style={[styles.footerLink, { color: colors.primary }]}>
+                Create Account
               </Text>
             </Pressable>
           </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Button
-            label={isSigningIn ? "Signing In..." : "Sign In"}
-            theme="primary"
-            onPress={handleSignIn}
-            disabled={isSigningIn}
-          />
-          <Button
-            label="Back"
-            theme="secondary"
-            onPress={handleGoBack}
-            disabled={isSigningIn}
-          />
-        </View>
-
-        {/* Create Account Link */}
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: colors.textLight }]}>
-            Don't have an account?{" "}
-          </Text>
-          <Pressable onPress={handleGoToCreateAccount} disabled={isSigningIn}>
-            <Text style={[styles.footerLink, { color: colors.primary }]}>
-              Create Account
-            </Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

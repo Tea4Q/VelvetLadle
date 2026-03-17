@@ -32,6 +32,7 @@ export default function ManualRecipeModal({
   onRecipeUpdated,
   onRecipeSelect,
 }: Props) {
+  const isVisible = visible === true;
   const [title, setTitle] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [directions, setDirections] = useState("");
@@ -59,7 +60,7 @@ export default function ManualRecipeModal({
 
   // Populate form when editing
   React.useEffect(() => {
-    if (visible) {
+    if (isVisible) {
       // Initialize demo sources for first-time users
       RecipeSourceDemo.initializeDemoSources();
     }
@@ -86,7 +87,7 @@ export default function ManualRecipeModal({
       setRecipeSource("");
       setImageUrl("");
     }
-  }, [editingRecipe, visible, initialUrl]);
+  }, [editingRecipe, isVisible, initialUrl]);
 
   const resetForm = () => {
     setTitle("");
@@ -305,7 +306,7 @@ export default function ManualRecipeModal({
 
   return (
     <Modal
-      visible={visible}
+      visible={isVisible}
       transparent={true}
       animationType="slide"
       onRequestClose={onClose}

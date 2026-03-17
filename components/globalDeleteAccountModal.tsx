@@ -80,6 +80,7 @@ export function GlobalDeleteAccountModal({
   onClose,
   onDeletionComplete,
 }: GlobalDeleteAccountModalProps) {
+  const isVisible = visible === true;
   const colors = useColors();
   const spacing = useSpacing();
   const radius = useRadius();
@@ -101,7 +102,7 @@ export function GlobalDeleteAccountModal({
 
   // Reset whenever modal opens
   useEffect(() => {
-    if (visible) {
+    if (isVisible) {
       setStep(1);
       setPassword("");
       setPasswordError(null);
@@ -110,7 +111,7 @@ export function GlobalDeleteAccountModal({
       setScheduledDate(null);
       loadSubscriptionStatus();
     }
-  }, [visible]);
+  }, [isVisible]);
 
   const loadSubscriptionStatus = async () => {
     setLoadingStatus(true);
@@ -920,7 +921,7 @@ export function GlobalDeleteAccountModal({
 
   return (
     <Modal
-      visible={visible}
+      visible={isVisible}
       transparent
       animationType="slide"
       onRequestClose={isDismissable ? onClose : undefined}

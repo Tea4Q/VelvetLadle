@@ -5,16 +5,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-	Alert,
-	KeyboardAvoidingView,
-	Platform,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	TextInput,
-	View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ResetPasswordScreen() {
   const colors = useColors();
@@ -93,128 +94,138 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
+    <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      edges={["top", "bottom", "left", "right"]}
     >
-      <ScrollView
-        contentContainerStyle={[styles.content, { padding: spacing.lg }]}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View
-            style={[styles.iconContainer, { backgroundColor: colors.primary }]}
-          >
-            <Ionicons
-              name="lock-closed-outline"
-              size={48}
-              color={colors.secondary}
+        <ScrollView
+          contentContainerStyle={[styles.content, { padding: spacing.lg }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: colors.primary },
+              ]}
+            >
+              <Ionicons
+                name="lock-closed-outline"
+                size={48}
+                color={colors.secondary}
+              />
+            </View>
+            <Text style={[styles.title, { color: colors.primary }]}>
+              Reset Password
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Enter your new password below
+            </Text>
+          </View>
+
+          {/* Password Form */}
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>
+                New Password
+              </Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                      borderRadius: radius.md,
+                    },
+                  ]}
+                  placeholder="Enter new password (min. 6 characters)"
+                  placeholderTextColor={colors.textLight}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="password-new"
+                  editable={!isResetting}
+                />
+                <Pressable
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                  disabled={isResetting}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={24}
+                    color={colors.textLight}
+                  />
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>
+                Confirm Password
+              </Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                      borderRadius: radius.md,
+                    },
+                  ]}
+                  placeholder="Re-enter new password"
+                  placeholderTextColor={colors.textLight}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="password-new"
+                  editable={!isResetting}
+                  onSubmitEditing={handleResetPassword}
+                />
+                <Pressable
+                  style={styles.eyeIcon}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isResetting}
+                >
+                  <Ionicons
+                    name={
+                      showConfirmPassword ? "eye-off-outline" : "eye-outline"
+                    }
+                    size={24}
+                    color={colors.textLight}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actions}>
+            <Button
+              label={isResetting ? "Resetting..." : "Reset Password"}
+              theme="primary"
+              onPress={handleResetPassword}
+              disabled={isResetting}
             />
           </View>
-          <Text style={[styles.title, { color: colors.primary }]}>
-            Reset Password
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Enter your new password below
-          </Text>
-        </View>
-
-        {/* Password Form */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              New Password
-            </Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.passwordInput,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    color: colors.textPrimary,
-                    borderRadius: radius.md,
-                  },
-                ]}
-                placeholder="Enter new password (min. 6 characters)"
-                placeholderTextColor={colors.textLight}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="password-new"
-                editable={!isResetting}
-              />
-              <Pressable
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-                disabled={isResetting}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={24}
-                  color={colors.textLight}
-                />
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Confirm Password
-            </Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.passwordInput,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    color: colors.textPrimary,
-                    borderRadius: radius.md,
-                  },
-                ]}
-                placeholder="Re-enter new password"
-                placeholderTextColor={colors.textLight}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="password-new"
-                editable={!isResetting}
-                onSubmitEditing={handleResetPassword}
-              />
-              <Pressable
-                style={styles.eyeIcon}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                disabled={isResetting}
-              >
-                <Ionicons
-                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                  size={24}
-                  color={colors.textLight}
-                />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Button
-            label={isResetting ? "Resetting..." : "Reset Password"}
-            theme="primary"
-            onPress={handleResetPassword}
-            disabled={isResetting}
-          />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

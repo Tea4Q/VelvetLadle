@@ -34,6 +34,7 @@ module.exports = ({ config }) => {
     },
     android: {
       package: "com.qtea.VelvetLadle",
+      edgeToEdgeEnabled: true,
       adaptiveIcon: {
         foregroundImage: "./assets/images/social_icon_velvetLadle_400x400.png",
         backgroundColor: "#ffffff",
@@ -55,6 +56,8 @@ module.exports = ({ config }) => {
         {
           photosPermission:
             "Allow VelvetLadle to access your photos for recipe images",
+          cameraPermission:
+            "Allow VelvetLadle to use your camera for profile photos",
         },
       ],
       [

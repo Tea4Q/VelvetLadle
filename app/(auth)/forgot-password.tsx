@@ -5,15 +5,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-	Alert,
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	StyleSheet,
-	Text,
-	TextInput,
-	View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ForgotPasswordScreen() {
   const colors = useColors();
@@ -71,77 +72,85 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
+    <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      edges={["top", "bottom", "left", "right"]}
     >
-      <ScrollView
-        contentContainerStyle={[styles.content, { padding: spacing.lg }]}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View
-            style={[styles.iconContainer, { backgroundColor: colors.primary }]}
-          >
-            <Ionicons name="key-outline" size={48} color={colors.secondary} />
-          </View>
-          <Text style={[styles.title, { color: colors.primary }]}>
-            Forgot Password?
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Enter your email address and we'll send you a link to reset your
-            password.
-          </Text>
-        </View>
-
-        {/* Email Input */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Email
-            </Text>
-            <TextInput
+        <ScrollView
+          contentContainerStyle={[styles.content, { padding: spacing.lg }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View
               style={[
-                styles.input,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                  borderRadius: radius.md,
-                },
+                styles.iconContainer,
+                { backgroundColor: colors.primary },
               ]}
-              placeholder="your.email@example.com"
-              placeholderTextColor={colors.textLight}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="email"
-              editable={!isSending}
-              onSubmitEditing={handleResetPassword}
+            >
+              <Ionicons name="key-outline" size={48} color={colors.secondary} />
+            </View>
+            <Text style={[styles.title, { color: colors.primary }]}>
+              Forgot Password?
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Enter your email address and we'll send you a link to reset your
+              password.
+            </Text>
+          </View>
+
+          {/* Email Input */}
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>
+                Email
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                    borderRadius: radius.md,
+                  },
+                ]}
+                placeholder="your.email@example.com"
+                placeholderTextColor={colors.textLight}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                editable={!isSending}
+                onSubmitEditing={handleResetPassword}
+              />
+            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actions}>
+            <Button
+              label={isSending ? "Sending..." : "Send Reset Link"}
+              theme="primary"
+              onPress={handleResetPassword}
+              disabled={isSending}
+            />
+            <Button
+              label="Back to Sign In"
+              theme="secondary"
+              onPress={handleGoBack}
+              disabled={isSending}
             />
           </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Button
-            label={isSending ? "Sending..." : "Send Reset Link"}
-            theme="primary"
-            onPress={handleResetPassword}
-            disabled={isSending}
-          />
-          <Button
-            label="Back to Sign In"
-            theme="secondary"
-            onPress={handleGoBack}
-            disabled={isSending}
-          />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

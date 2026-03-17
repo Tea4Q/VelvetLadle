@@ -7,20 +7,17 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { useColors, useRadius } from "../contexts/ThemeContext";
-import {
-  GlobalProfileImageService,
-} from "../services/globalProfileImageService";
+import { GlobalProfileImageService } from "../services/globalProfileImageService";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -118,7 +115,7 @@ export function GlobalProfileImagePicker({
     if (!perms.camera) {
       Alert.alert(
         "Permission Required",
-        "Camera access is needed to take a photo. Please enable it in Settings.",
+        "Camera access is needed to add profile image to app.",
       );
       return;
     }
@@ -131,7 +128,7 @@ export function GlobalProfileImagePicker({
     if (!perms.library) {
       Alert.alert(
         "Permission Required",
-        "Photo library access is needed. Please enable it in Settings.",
+        "Velvet Ladle uses the camera to capture photos for updating your chef profile.",
       );
       return;
     }

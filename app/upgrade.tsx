@@ -15,6 +15,7 @@ import type {
   PurchasesOffering,
   PurchasesPackage,
 } from "react-native-purchases";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Button from "../components/buttons";
 import { useColors, useSpacing } from "../contexts/ThemeContext";
 import { PurchaseService } from "../services/purchaseService";
@@ -96,226 +97,278 @@ export default function UpgradeScreen() {
   const rcAvailable = PurchaseService.isAvailable();
 
   return (
-    <ScrollView
+    <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top", "bottom", "left", "right"]}
     >
-      <View style={[styles.content, { padding: spacing.lg }]}>
-        {/* Icon */}
-        <View
-          style={[styles.iconContainer, { backgroundColor: colors.primary }]}
-        >
-          <Ionicons name="rocket" size={64} color={colors.secondary} />
-        </View>
+      <ScrollView style={styles.container}>
+        <View style={[styles.content, { padding: spacing.lg }]}>
+          {/* Icon */}
+          <View
+            style={[styles.iconContainer, { backgroundColor: colors.primary }]}
+          >
+            <Ionicons name="rocket" size={64} color={colors.secondary} />
+          </View>
 
-        {/* Title */}
-        <Text style={[styles.title, { color: colors.primary }]}>
-          Recipe Limit Reached
-        </Text>
-
-        {/* Subtitle */}
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Free accounts can save up to {FREE_ACCOUNT_RECIPE_LIMIT} recipes
-        </Text>
-
-        {/* Features List */}
-        <View
-          style={[
-            styles.featuresContainer,
-            { backgroundColor: colors.surface ?? "#f8f9fa" },
-          ]}
-        >
-          <Text style={[styles.featuresTitle, { color: colors.primary }]}>
-            Premium includes:
+          {/* Title */}
+          <Text style={[styles.title, { color: colors.primary }]}>
+            Recipe Limit Reached
           </Text>
 
-          {[
-            { icon: "infinite" as const, text: "Unlimited recipe storage" },
-            {
-              icon: "cloud-upload" as const,
-              text: "Cloud sync across devices",
-            },
-            {
-              icon: "shield-checkmark" as const,
-              text: "Secure backup of all your recipes",
-            },
-            {
-              icon: "people" as const,
-              text: "Share recipes with friends (coming soon)",
-            },
-            {
-              icon: "star" as const,
-              text: "Premium features & recipe collections",
-            },
-          ].map(({ icon, text }) => (
-            <View key={text} style={styles.feature}>
-              <Ionicons name={icon} size={24} color={colors.primary} />
-              <Text
-                style={[styles.featureText, { color: colors.textSecondary }]}
-              >
-                {text}
-              </Text>
-            </View>
-          ))}
-        </View>
+          {/* Subtitle */}
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Free accounts can save up to {FREE_ACCOUNT_RECIPE_LIMIT} recipes
+          </Text>
 
-        {/* Pricing / Purchase */}
-        <View style={styles.ctaContainer}>
-          {!rcAvailable ? (
-            // RevenueCat API keys not yet configured
-            <View
-              style={[
-                styles.infoBox,
-                {
-                  borderColor: colors.primary,
-                  backgroundColor: colors.surface ?? "#f8f9fa",
-                },
-              ]}
-            >
-              <Ionicons
-                name="time-outline"
-                size={32}
-                color={colors.primary}
-                style={{ marginBottom: 8 }}
-              />
-              <Text style={[styles.infoBoxTitle, { color: colors.primary }]}>
-                Coming Soon
-              </Text>
-              <Text
-                style={[styles.infoBoxText, { color: colors.textSecondary }]}
-              >
-                In-app subscriptions are being set up. Check back for updates!
-              </Text>
-              <View style={styles.pricingPreview}>
-                <View style={styles.pricingRow}>
-                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
-                    Monthly
-                  </Text>
-                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
-                    $4.99 / month
-                  </Text>
-                </View>
-                <View style={[styles.pricingDivider, { backgroundColor: colors.border ?? "#e0e0e0" }]} />
-                <View style={styles.pricingRow}>
-                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
-                    Annual
-                  </Text>
-                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
-                    $39.99 / year
-                  </Text>
-                </View>
-                <Text style={[styles.pricingSavings, { color: colors.primary }]}>
-                  Save 33% with annual billing
+          {/* Features List */}
+          <View
+            style={[
+              styles.featuresContainer,
+              { backgroundColor: colors.surface ?? "#f8f9fa" },
+            ]}
+          >
+            <Text style={[styles.featuresTitle, { color: colors.primary }]}>
+              Premium includes:
+            </Text>
+
+            {[
+              { icon: "infinite" as const, text: "Unlimited recipe storage" },
+              {
+                icon: "cloud-upload" as const,
+                text: "Cloud sync across devices",
+              },
+              {
+                icon: "shield-checkmark" as const,
+                text: "Secure backup of all your recipes",
+              },
+              {
+                icon: "people" as const,
+                text: "Share recipes with friends (coming soon)",
+              },
+              {
+                icon: "star" as const,
+                text: "Premium features & recipe collections",
+              },
+            ].map(({ icon, text }) => (
+              <View key={text} style={styles.feature}>
+                <Ionicons name={icon} size={24} color={colors.primary} />
+                <Text
+                  style={[styles.featureText, { color: colors.textSecondary }]}
+                >
+                  {text}
                 </Text>
               </View>
-            </View>
-          ) : loadingOffering ? (
-            <ActivityIndicator
-              size="large"
-              color={colors.primary}
-              style={{ marginVertical: 16 }}
-            />
-          ) : offering && offering.availablePackages.length > 0 ? (
-            offering.availablePackages.map((pkg) => (
-              <TouchableOpacity
-                key={pkg.identifier}
+            ))}
+          </View>
+
+          {/* Pricing / Purchase */}
+          <View style={styles.ctaContainer}>
+            {!rcAvailable ? (
+              // RevenueCat API keys not yet configured
+              <View
                 style={[
-                  styles.packageButton,
+                  styles.infoBox,
                   {
                     borderColor: colors.primary,
                     backgroundColor: colors.surface ?? "#f8f9fa",
                   },
                 ]}
-                onPress={() => handlePurchase(pkg)}
-                disabled={purchasing || restoring}
               >
-                <Text style={[styles.packageTitle, { color: colors.primary }]}>
-                  {pkg.product.title}
+                <Ionicons
+                  name="time-outline"
+                  size={32}
+                  color={colors.primary}
+                  style={{ marginBottom: 8 }}
+                />
+                <Text style={[styles.infoBoxTitle, { color: colors.primary }]}>
+                  Coming Soon
                 </Text>
                 <Text
-                  style={[styles.packagePrice, { color: colors.textSecondary }]}
+                  style={[styles.infoBoxText, { color: colors.textSecondary }]}
                 >
-                  {pkg.product.priceString}
-                  {pkg.packageType === "ANNUAL" && " / year"}
-                  {pkg.packageType === "MONTHLY" && " / month"}
+                  In-app subscriptions are being set up. Check back for updates!
                 </Text>
-                {pkg.product.introPrice && (
-                  <Text
-                    style={[styles.packageTrial, { color: colors.primary }]}
-                  >
-                    {pkg.product.introPrice.periodNumberOfUnits}{" "}
-                    {pkg.product.introPrice.periodUnit.toLowerCase()} free trial
-                  </Text>
-                )}
-                {purchasing && (
-                  <ActivityIndicator
-                    size="small"
-                    color={colors.primary}
-                    style={{ marginTop: 6 }}
+                <View style={styles.pricingPreview}>
+                  <View style={styles.pricingRow}>
+                    <Text
+                      style={[
+                        styles.pricingLabel,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Monthly
+                    </Text>
+                    <Text
+                      style={[styles.pricingAmount, { color: colors.primary }]}
+                    >
+                      $4.99 / month
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.pricingDivider,
+                      { backgroundColor: colors.border ?? "#e0e0e0" },
+                    ]}
                   />
-                )}
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View
-              style={[
-                styles.infoBox,
-                {
-                  borderColor: colors.primary,
-                  backgroundColor: colors.surface ?? "#f8f9fa",
-                },
-              ]}
-            >
-              <Text style={[styles.infoBoxTitle, { color: colors.primary }]}>
-                No Plans Available
-              </Text>
-              <Text
-                style={[styles.infoBoxText, { color: colors.textSecondary }]}
-              >
-                Subscription plans are being configured. Please check back soon.
-              </Text>
-              <View style={styles.pricingPreview}>
-                <View style={styles.pricingRow}>
-                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
-                    Monthly
-                  </Text>
-                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
-                    $4.99 / month
+                  <View style={styles.pricingRow}>
+                    <Text
+                      style={[
+                        styles.pricingLabel,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Annual
+                    </Text>
+                    <Text
+                      style={[styles.pricingAmount, { color: colors.primary }]}
+                    >
+                      $39.99 / year
+                    </Text>
+                  </View>
+                  <Text
+                    style={[styles.pricingSavings, { color: colors.primary }]}
+                  >
+                    Save 33% with annual billing
                   </Text>
                 </View>
-                <View style={[styles.pricingDivider, { backgroundColor: colors.border ?? "#e0e0e0" }]} />
-                <View style={styles.pricingRow}>
-                  <Text style={[styles.pricingLabel, { color: colors.textSecondary }]}>
-                    Annual
-                  </Text>
-                  <Text style={[styles.pricingAmount, { color: colors.primary }]}>
-                    $39.99 / year
-                  </Text>
-                </View>
-                <Text style={[styles.pricingSavings, { color: colors.primary }]}>
-                  Save 33% with annual billing
-                </Text>
               </View>
-            </View>
-          )}
+            ) : loadingOffering ? (
+              <ActivityIndicator
+                size="large"
+                color={colors.primary}
+                style={{ marginVertical: 16 }}
+              />
+            ) : offering && offering.availablePackages.length > 0 ? (
+              offering.availablePackages.map((pkg) => (
+                <TouchableOpacity
+                  key={pkg.identifier}
+                  style={[
+                    styles.packageButton,
+                    {
+                      borderColor: colors.primary,
+                      backgroundColor: colors.surface ?? "#f8f9fa",
+                    },
+                  ]}
+                  onPress={() => handlePurchase(pkg)}
+                  disabled={purchasing || restoring}
+                >
+                  <Text
+                    style={[styles.packageTitle, { color: colors.primary }]}
+                  >
+                    {pkg.product.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.packagePrice,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {pkg.product.priceString}
+                    {pkg.packageType === "ANNUAL" && " / year"}
+                    {pkg.packageType === "MONTHLY" && " / month"}
+                  </Text>
+                  {pkg.product.introPrice && (
+                    <Text
+                      style={[styles.packageTrial, { color: colors.primary }]}
+                    >
+                      {pkg.product.introPrice.periodNumberOfUnits}{" "}
+                      {pkg.product.introPrice.periodUnit.toLowerCase()} free
+                      trial
+                    </Text>
+                  )}
+                  {purchasing && (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.primary}
+                      style={{ marginTop: 6 }}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View
+                style={[
+                  styles.infoBox,
+                  {
+                    borderColor: colors.primary,
+                    backgroundColor: colors.surface ?? "#f8f9fa",
+                  },
+                ]}
+              >
+                <Text style={[styles.infoBoxTitle, { color: colors.primary }]}>
+                  No Plans Available
+                </Text>
+                <Text
+                  style={[styles.infoBoxText, { color: colors.textSecondary }]}
+                >
+                  Subscription plans are being configured. Please check back
+                  soon.
+                </Text>
+                <View style={styles.pricingPreview}>
+                  <View style={styles.pricingRow}>
+                    <Text
+                      style={[
+                        styles.pricingLabel,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Monthly
+                    </Text>
+                    <Text
+                      style={[styles.pricingAmount, { color: colors.primary }]}
+                    >
+                      $4.99 / month
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.pricingDivider,
+                      { backgroundColor: colors.border ?? "#e0e0e0" },
+                    ]}
+                  />
+                  <View style={styles.pricingRow}>
+                    <Text
+                      style={[
+                        styles.pricingLabel,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Annual
+                    </Text>
+                    <Text
+                      style={[styles.pricingAmount, { color: colors.primary }]}
+                    >
+                      $39.99 / year
+                    </Text>
+                  </View>
+                  <Text
+                    style={[styles.pricingSavings, { color: colors.primary }]}
+                  >
+                    Save 33% with annual billing
+                  </Text>
+                </View>
+              </View>
+            )}
 
-          {rcAvailable && !loadingOffering && (
-            <Button
-              label={restoring ? "Restoring…" : "Restore Purchases"}
-              onPress={handleRestore}
-            />
-          )}
+            {rcAvailable && !loadingOffering && (
+              <Button
+                label={restoring ? "Restoring…" : "Restore Purchases"}
+                onPress={handleRestore}
+              />
+            )}
 
-          <Button label="Go Back" onPress={handleGoBack} />
+            <Button label="Go Back" onPress={handleGoBack} />
+          </View>
+
+          {/* Legal */}
+          <Text style={[styles.infoText, { color: colors.textLight }]}>
+            Your existing recipes are safe and will remain accessible.{"\n"}
+            Subscriptions auto-renew unless cancelled at least 24 hours before
+            the renewal date.
+          </Text>
         </View>
-
-        {/* Legal */}
-        <Text style={[styles.infoText, { color: colors.textLight }]}>
-          Your existing recipes are safe and will remain accessible.{"\n"}
-          Subscriptions auto-renew unless cancelled at least 24 hours before the
-          renewal date.
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

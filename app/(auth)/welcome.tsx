@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const placeHolderImage = require("../../assets/images/veveltLifeSplashImage.png");
 
@@ -19,7 +20,10 @@ export default function WelcomeScreen() {
   const { signInAsGuest } = useAuth();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top", "bottom", "left", "right"]}
+    >
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         {/* Main Content */}
 
@@ -89,7 +93,7 @@ export default function WelcomeScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
