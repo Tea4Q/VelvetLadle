@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
 	Alert,
 	Modal,
@@ -33,6 +33,7 @@ export default function ManualRecipeModal({
   onRecipeSelect,
 }: Props) {
   const isVisible = visible === true;
+  const isInputFocusedRef = useRef(false);
   const [title, setTitle] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [directions, setDirections] = useState("");
@@ -304,12 +305,18 @@ export default function ManualRecipeModal({
     onClose();
   };
 
+  const handleRequestClose = () => {
+    // Ignore system dismiss while user is interacting with text input/context menu.
+    if (isInputFocusedRef.current) return;
+    onClose();
+  };
+
   return (
     <Modal
       visible={isVisible}
       transparent={true}
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleRequestClose}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
@@ -333,6 +340,14 @@ export default function ManualRecipeModal({
               placeholder="e.g., Classic Chicken Gizzards"
               value={title}
               onChangeText={setTitle}
+              onFocus={() => {
+                isInputFocusedRef.current = true;
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  isInputFocusedRef.current = false;
+                }, 150);
+              }}
               multiline={false}
               spellCheck={true}
               autoCorrect={true}
@@ -379,6 +394,14 @@ export default function ManualRecipeModal({
               placeholder="https://example.com/image.jpg (optional)"
               value={imageUrl}
               onChangeText={setImageUrl}
+              onFocus={() => {
+                isInputFocusedRef.current = true;
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  isInputFocusedRef.current = false;
+                }, 150);
+              }}
               multiline={false}
               keyboardType="url"
               autoCapitalize="none"
@@ -408,6 +431,14 @@ export default function ManualRecipeModal({
               placeholder={`2 1/4 cups all-purpose flour\n1 teaspoon baking soda\n1/2 cup butter, softened\n2 large eggs\nSalt and pepper to taste`}
               value={ingredients}
               onChangeText={setIngredients}
+              onFocus={() => {
+                isInputFocusedRef.current = true;
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  isInputFocusedRef.current = false;
+                }, 150);
+              }}
               multiline={true}
               numberOfLines={6}
               textAlignVertical="top"
@@ -421,6 +452,14 @@ export default function ManualRecipeModal({
               placeholder={`Clean and trim gizzards\nHeat oil in large skillet\nSauté onions until golden\nAdd gizzards and cook until tender`}
               value={directions}
               onChangeText={setDirections}
+              onFocus={() => {
+                isInputFocusedRef.current = true;
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  isInputFocusedRef.current = false;
+                }, 150);
+              }}
               multiline={true}
               numberOfLines={6}
               textAlignVertical="top"
@@ -434,6 +473,14 @@ export default function ManualRecipeModal({
               placeholder="e.g., 4"
               value={servings}
               onChangeText={setServings}
+              onFocus={() => {
+                isInputFocusedRef.current = true;
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  isInputFocusedRef.current = false;
+                }, 150);
+              }}
               keyboardType="numeric"
               multiline={false}
               spellCheck={false}

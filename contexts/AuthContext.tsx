@@ -427,6 +427,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        const userData = await AsyncStorage.getItem("user");
+        const parsedUser = userData ? JSON.parse(userData) : null;
+        const isLocalOnlyUser =
+          parsedUser?.id === GUEST_USER_ID || parsedUser?.id === "demo_user";
+
+        // Guest/demo users should not depend on Supabase session fetches.
+        if (isLocalOnlyUser && parsedUser) {
+          setUser(parsedUser);
+          return;
+        }
+
+        let hadSessionNetworkError = false;
+
         if (isSupabaseConfigured && supabase) {
           const {
             data: { session },
@@ -434,7 +447,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } = await supabase.auth.getSession();
 
           if (error) {
-            console.error("Error loading Supabase session:", error);
+            if (isNetworkFetchError(error)) {
+              hadSessionNetworkError = true;
+              console.warn(
+                "Supabase session unavailable, using cached auth state:",
+                error,
+              );
+            } else {
+              console.error("Error loading Supabase session:", error);
+            }
           }
 
           if (session?.user) {
@@ -460,16 +481,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        const userData = await AsyncStorage.getItem("user");
-        if (!userData) {
+        if (!parsedUser) {
           return;
         }
 
-        const parsedUser = JSON.parse(userData);
-        const isLocalOnlyUser =
-          parsedUser?.id === GUEST_USER_ID || parsedUser?.id === "demo_user";
-
-        if (isSupabaseConfigured && supabase && !isLocalOnlyUser) {
+        if (isSupabaseConfigured && supabase && !hadSessionNetworkError) {
           // Avoid local/Supabase auth mismatch when no valid Supabase session exists.
           setUser(null);
           await AsyncStorage.removeItem("user");

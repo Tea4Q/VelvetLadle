@@ -21,7 +21,6 @@
         "foregroundImage": "./assets/images/social_icon_velvetLadle_400x400.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.qtea.VelvetLadle",
       "permissions": ["android.permission.RECORD_AUDIO"],
       "versionCode": 2

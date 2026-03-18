@@ -1,6 +1,6 @@
 import { RecipeDatabase } from '@/services/recipeDatabase';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
 	ActivityIndicator,
 	Alert,
@@ -29,6 +29,7 @@ type Props = {
 
 export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }: Props) {
 	const isVisible = visible === true;
+	const isUrlInputFocusedRef = useRef(false);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [processingStatus, setProcessingStatus] = useState<string>('Starting extraction...');
 	const [showManualEntry, setShowManualEntry] = useState(false);
@@ -389,12 +390,18 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 		}
 	};
 
+	const handleRequestClose = () => {
+		// Ignore system dismiss while user is interacting with text input/context menu.
+		if (isUrlInputFocusedRef.current) return;
+		onClose();
+	};
+
 	return (
 		<Modal
 			visible={isVisible}
 			transparent={true}
 			animationType='slide'
-			onRequestClose={onClose}
+			onRequestClose={handleRequestClose}
 		>
 			<View style={styles.modalOverlay}>
 				<View style={styles.modalContent}>
@@ -410,6 +417,14 @@ export default function UrlActionModal({ visible, url, onClose, onRecipeSelect }
 								placeholderTextColor="#666"
 								value={inputUrl}
 								onChangeText={setInputUrl}
+								onFocus={() => {
+									isUrlInputFocusedRef.current = true;
+								}}
+								onBlur={() => {
+									setTimeout(() => {
+										isUrlInputFocusedRef.current = false;
+									}, 150);
+								}}
 								autoCapitalize="none"
 								keyboardType="url"
 								autoCorrect={false}

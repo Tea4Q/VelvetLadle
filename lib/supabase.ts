@@ -92,6 +92,29 @@ if (isSupabaseConfigured) {
         persistSession: true,
         detectSessionInUrl: false,
       },
+      global: {
+        // Fail fast (10 s) so the demo-storage fallback kicks in quickly
+        // instead of waiting for the OS-level network timeout (60 s+).
+        fetch: async (url: RequestInfo | URL, options?: RequestInit) => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 10_000);
+          try {
+            return await fetch(url, {
+              ...options,
+              signal: controller.signal,
+            });
+          } catch (error: any) {
+            // Normalize platform-specific abort exceptions to a simple timeout error
+            // so auth/session fallback paths can handle it cleanly without noisy stacks.
+            if (String(error?.name ?? "").toLowerCase() === "aborterror") {
+              throw new Error("Network request timed out");
+            }
+            throw error;
+          } finally {
+            clearTimeout(timer);
+          }
+        },
+      },
     });
   } catch {
     console.error("Invalid Supabase URL format:", supabaseUrl);

@@ -3,6 +3,17 @@ import { isNetworkFetchError } from "../utils/networkUtils";
 import { DemoStorage } from "./demoStorage";
 
 export class RecipeDatabase {
+  static isDemoSampleRecipe(recipe: Recipe): boolean {
+    const source = (recipe.recipe_source || "").toLowerCase();
+    const webAddress = (recipe.web_address || "").toLowerCase();
+
+    return source === "demo_sample" || webAddress.startsWith("https://example.com/");
+  }
+
+  static countUserAddedRecipes(recipes: Recipe[]): number {
+    return recipes.filter((recipe) => !this.isDemoSampleRecipe(recipe)).length;
+  }
+
   static async saveRecipe(
     recipe: Recipe,
   ): Promise<{ success: boolean; data?: Recipe; error?: string }> {

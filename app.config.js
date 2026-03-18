@@ -12,7 +12,6 @@ module.exports = ({ config }) => {
     name: "Velvet Ladle",
     slug: "VelvetLadle",
     version: "2.1.0",
-    versionCode: 2,
     orientation: "default",
     icon: "./assets/images/favicon_velvetLadle_large_128x128.png",
     scheme: "velvetladle",
@@ -33,8 +32,9 @@ module.exports = ({ config }) => {
       bundleIdentifier: "com.tea4q.velvetladle",
     },
     android: {
+      ...(config.android ?? {}),
       package: "com.qtea.VelvetLadle",
-      edgeToEdgeEnabled: true,
+      versionCode: 2,
       adaptiveIcon: {
         foregroundImage: "./assets/images/social_icon_velvetLadle_400x400.png",
         backgroundColor: "#ffffff",
@@ -49,6 +49,7 @@ module.exports = ({ config }) => {
 
     plugins: [
       ["expo-router"],
+      ["expo-web-browser"],
       ["expo-localization"],
       ["./scripts/withJitpackFilter"],
       [

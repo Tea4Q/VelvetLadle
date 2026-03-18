@@ -16,7 +16,7 @@ import {
   faPenToSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -36,63 +36,85 @@ export default function AddScreen() {
   const colors = useColors();
   const radius = useRadius();
   const { user } = useAuth();
+  const accessCheckInFlightRef = useRef(false);
 
   // Check if guest and redirect to account creation
   useFocusEffect(
     useCallback(() => {
-      async function checkAccess() {
-        const isGuest = user?.id === GUEST_USER_ID;
-        if (isGuest) {
-          // Redirect guests to account creation
-          Alert.alert(
-            "Account Required",
-            "Please create an account or sign in to add recipes.",
-            [
-              {
-                text: "Create Account",
-                onPress: () =>
-                  router.replace({
-                    pathname: "/account",
-                    params: { mode: "signup" },
-                  }),
-              },
-              {
-                text: "Go Back",
-                style: "cancel",
-                onPress: () => router.replace("/"),
-              },
-            ],
-          );
-          return;
-        }
+      // Avoid interrupting form/modal interactions (e.g., paste context menu focus changes).
+      if (showUrlModal || showRecipeForm) {
+        return undefined;
+      }
 
-        // Check recipe limit for free accounts (authenticated users)
-        const allRecipes = await RecipeDatabase.getAllRecipes();
-        // RevenueCat is source-of-truth for premium; fall back to user metadata
-        const isPremiumUser =
-          (await PurchaseService.isPremium()) ||
-          user?.subscription_tier === "premium";
-        if (!isPremiumUser && allRecipes.length >= FREE_ACCOUNT_RECIPE_LIMIT) {
-          // Redirect to upgrade screen - they've hit the free account limit
-          Alert.alert(
-            "Recipe Limit Reached",
-            `Free accounts can save up to ${FREE_ACCOUNT_RECIPE_LIMIT} recipes. Upgrade to a paid subscription for unlimited recipes!`,
-            [
-              {
-                text: "Upgrade",
-                onPress: () => router.replace("/upgrade"),
-              },
-              {
-                text: "Go Back",
-                style: "cancel",
-                onPress: () => router.replace("/"),
-              },
-            ],
-          );
+      async function checkAccess() {
+        if (accessCheckInFlightRef.current) return;
+        accessCheckInFlightRef.current = true;
+        try {
+          const isGuest = user?.id === GUEST_USER_ID;
+          if (isGuest) {
+            // Redirect guests to account creation
+            Alert.alert(
+              "Account Required",
+              "Please create an account or sign in to add recipes.",
+              [
+                {
+                  text: "Create Account",
+                  onPress: () =>
+                    router.replace({
+                      pathname: "/account",
+                      params: { mode: "signup" },
+                    }),
+                },
+                {
+                  text: "Go Back",
+                  style: "cancel",
+                  onPress: () => router.replace("/"),
+                },
+              ],
+            );
+            return;
+          }
+
+          // Check recipe limit for free accounts (authenticated users)
+          const allRecipes = await RecipeDatabase.getAllRecipes();
+          const userAddedRecipeCount =
+            RecipeDatabase.countUserAddedRecipes(allRecipes);
+          // RevenueCat is source-of-truth for premium; fall back to user metadata
+          const isPremiumUser =
+            (await PurchaseService.isPremium()) ||
+            user?.subscription_tier === "premium";
+          if (
+            !isPremiumUser &&
+            userAddedRecipeCount >= FREE_ACCOUNT_RECIPE_LIMIT
+          ) {
+            // Redirect to upgrade screen - they've hit the free account limit
+            Alert.alert(
+              "Recipe Limit Reached",
+              `Free accounts can save up to ${FREE_ACCOUNT_RECIPE_LIMIT} recipes. Upgrade to a paid subscription for unlimited recipes!`,
+              [
+                {
+                  text: "Upgrade",
+                  onPress: () => router.replace("/upgrade"),
+                },
+                {
+                  text: "Go Back",
+                  style: "cancel",
+                  onPress: () => router.replace("/"),
+                },
+              ],
+            );
+          }
+        } finally {
+          accessCheckInFlightRef.current = false;
         }
       }
+
       checkAccess();
-    }, [user]),
+
+      return () => {
+        accessCheckInFlightRef.current = false;
+      };
+    }, [user, showUrlModal, showRecipeForm]),
   );
 
   const handleTestRecipeSourceChange = (text: string) => {
