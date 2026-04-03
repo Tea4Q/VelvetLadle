@@ -94,7 +94,7 @@ export default function AddScreen() {
               [
                 {
                   text: "Upgrade",
-                  onPress: () => router.replace("/upgrade"),
+                  onPress: () => router.push("/upgrade"),
                 },
                 {
                   text: "Go Back",
@@ -152,11 +152,14 @@ export default function AddScreen() {
     setEditingRecipe(null);
   };
 
-  const handleRecipeFormSave = (recipe: Recipe) => {
-    // Save logic here (call your DB/service)
+  const handleRecipeFormSave = async (recipe: Recipe) => {
+    const result = await RecipeDatabase.saveRecipe(recipe);
+    if (!result.success) {
+      Alert.alert("Error", result.error ?? "Failed to save recipe. Please try again.");
+      return;
+    }
     setRecipeForm(false);
     setEditingRecipe(null);
-    // Navigate to recipes tab
     router.push("/(tabs)/recipes");
   };
 
@@ -246,19 +249,19 @@ export default function AddScreen() {
               theme="primary"
             />
             <QuickActionCard
+              icon={faPenToSquare}
+              title="Manual Entry"
+              subtitle="Type recipe details"
+              onPress={handleManualOption}
+              theme="primary"
+            />
+            <QuickActionCard
               icon={faCarrot}
               title="Scan Recipe"
               subtitle="OCR from image"
               onPress={handleOCROption}
               theme="secondary"
               comingSoon
-            />
-            <QuickActionCard
-              icon={faPenToSquare}
-              title="Manual Entry"
-              subtitle="Type recipe details"
-              onPress={handleManualOption}
-              theme="primary"
             />
           </View>
         </View>

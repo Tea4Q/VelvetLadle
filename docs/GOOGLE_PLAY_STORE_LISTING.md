@@ -2,6 +2,10 @@
 
 > **Store Listing Content for Google Play Console**
 
+> iOS equivalents:
+> [iOS App Store Listing](./IOS_APP_STORE_LISTING.md)
+> [iOS Release Guide](./IOS_RELEASE_GUIDE.md)
+
 ---
 
 ## 📱 App Identity
@@ -100,7 +104,7 @@ Guest Mode (Try Before You Sign Up)
 
 🌟 WHY VELVET LADLE?
 
-Unlike other recipe apps, Velvet Ladle focuses on what matters: helping you save and organize recipes from anywhere. No social features, no subscriptions for basic use, no cluttered interface - just a simple, powerful tool for managing your personal recipe collection.
+Unlike other recipe apps, Velvet Ladle focuses on what matters: helping you save and organize recipes from anywhere. No social features,, no cluttered interface - just a simple, powerful tool for managing your personal recipe collection.
 
 🔐 PRIVACY & SECURITY
 
@@ -278,10 +282,10 @@ Since the app collects user data (email, recipes), you need a privacy policy. In
 
 **Free to Install:** Yes
 
-**In-App Purchases:** Future (Premium tier)
+**In-App Purchases:** Yes (Premium subscription)
 
-- Current: All features free
-- Future: Premium tier for unlimited recipes
+- Free account: Save up to 10 recipes
+- Premium subscription: Unlimited recipe storage and premium features
 
 **Ads:** No
 
@@ -341,5 +345,5 @@ Since the app collects user data (email, recipes), you need a privacy policy. In
 
 ---
 
-**Current Version:** 1.0.1  
-**Last Updated:** January 2026
+**Current Version:** 2.x  
+**Last Updated:** April 2026

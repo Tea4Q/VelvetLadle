@@ -17,6 +17,12 @@ module.exports = ({ config }) => {
     scheme: "velvetladle",
     userInterfaceStyle: "automatic",
 
+    splash: {
+      image: "./assets/images/splashIllustration.png",
+      resizeMode: "contain",
+      backgroundColor: "#faf4eb",
+    },
+
     // VelvetLadle's platform-specific configuration
     ios: {
       ...(config.ios ?? {}),
@@ -29,7 +35,7 @@ module.exports = ({ config }) => {
         ITSAppUsesNonExemptEncryption: false,
       },
       supportsTablet: true,
-      bundleIdentifier: "com.tea4q.velvetladle",
+      bundleIdentifier: "com.tea4q.velvetladle.free",
     },
     android: {
       ...(config.android ?? {}),

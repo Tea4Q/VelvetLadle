@@ -10,7 +10,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tea4q.velvetladle",
+      "bundleIdentifier": "com.tea4q.velvetladle.free",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },

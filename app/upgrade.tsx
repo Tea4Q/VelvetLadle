@@ -1,4 +1,5 @@
 import { FREE_ACCOUNT_RECIPE_LIMIT } from "@/constants/limits";
+import { PRICING, PRICING_COPY } from "@/constants/pricing";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -91,7 +92,11 @@ export default function UpgradeScreen() {
   }, [router]);
 
   const handleGoBack = () => {
-    router.push("/(tabs)/recipes");
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/add");
+    }
   };
 
   const rcAvailable = PurchaseService.isAvailable();
@@ -118,6 +123,10 @@ export default function UpgradeScreen() {
           {/* Subtitle */}
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Free accounts can save up to {FREE_ACCOUNT_RECIPE_LIMIT} recipes
+          </Text>
+
+          <Text style={[styles.pricingHint, { color: colors.textSecondary }]}>
+            {PRICING_COPY.premiumStartingPrice}
           </Text>
 
           {/* Features List */}
@@ -186,7 +195,7 @@ export default function UpgradeScreen() {
                 <Text
                   style={[styles.infoBoxText, { color: colors.textSecondary }]}
                 >
-                  In-app subscriptions are being set up. Check back for updates!
+                  In-app subscriptions are being set up. Check back for updates.
                 </Text>
                 <View style={styles.pricingPreview}>
                   <View style={styles.pricingRow}>
@@ -201,7 +210,7 @@ export default function UpgradeScreen() {
                     <Text
                       style={[styles.pricingAmount, { color: colors.primary }]}
                     >
-                      $4.99 / month
+                      {PRICING.premium.monthlyDisplay}
                     </Text>
                   </View>
                   <View
@@ -222,13 +231,13 @@ export default function UpgradeScreen() {
                     <Text
                       style={[styles.pricingAmount, { color: colors.primary }]}
                     >
-                      $39.99 / year
+                      {PRICING.premium.yearlyDisplay}
                     </Text>
                   </View>
                   <Text
                     style={[styles.pricingSavings, { color: colors.primary }]}
                   >
-                    Save 33% with annual billing
+                    Save 10% with annual billing
                   </Text>
                 </View>
               </View>
@@ -301,8 +310,7 @@ export default function UpgradeScreen() {
                 <Text
                   style={[styles.infoBoxText, { color: colors.textSecondary }]}
                 >
-                  Subscription plans are being configured. Please check back
-                  soon.
+                  Subscription plans are being configured. Please check back soon.
                 </Text>
                 <View style={styles.pricingPreview}>
                   <View style={styles.pricingRow}>
@@ -317,7 +325,7 @@ export default function UpgradeScreen() {
                     <Text
                       style={[styles.pricingAmount, { color: colors.primary }]}
                     >
-                      $4.99 / month
+                      {PRICING.premium.monthlyDisplay}
                     </Text>
                   </View>
                   <View
@@ -338,13 +346,13 @@ export default function UpgradeScreen() {
                     <Text
                       style={[styles.pricingAmount, { color: colors.primary }]}
                     >
-                      $39.99 / year
+                      {PRICING.premium.yearlyDisplay}
                     </Text>
                   </View>
                   <Text
                     style={[styles.pricingSavings, { color: colors.primary }]}
                   >
-                    Save 33% with annual billing
+                    Save 10% with annual billing
                   </Text>
                 </View>
               </View>
@@ -405,6 +413,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 32,
     opacity: 0.8,
+  },
+  pricingHint: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 20,
+    opacity: 0.85,
   },
   featuresContainer: {
     width: "100%",

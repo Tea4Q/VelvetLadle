@@ -506,6 +506,12 @@ export default function RecipeList({
     [allRecipes],
   );
 
+  const hasDisplayValue = (value: unknown): boolean => {
+    if (value === undefined || value === null) return false;
+    if (typeof value === "string") return value.trim().length > 0;
+    return true;
+  };
+
   const renderRecipe = ({ item: recipe }: { item: Recipe }) => (
     <TouchableOpacity
       style={[
@@ -735,7 +741,7 @@ export default function RecipeList({
                 </Text>
               </View>
             )}
-          {recipe.nutritional_info.protein && (
+          {hasDisplayValue(recipe.nutritional_info?.protein) ? (
             <View
               style={[
                 styles.nutritionBadge,
@@ -754,8 +760,8 @@ export default function RecipeList({
                 🥩 {recipe.nutritional_info.protein}
               </Text>
             </View>
-          )}
-          {recipe.nutritional_info.carbs && (
+          ) : null}
+          {hasDisplayValue(recipe.nutritional_info.carbs) ? (
             <View
               style={[
                 styles.nutritionBadge,
@@ -771,7 +777,7 @@ export default function RecipeList({
                 🍞 {recipe.nutritional_info.carbs}
               </Text>
             </View>
-          )}
+          ) : null}
         </View>
       )}
     </TouchableOpacity>

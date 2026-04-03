@@ -450,8 +450,13 @@ export class RecipeExtractor {
           const content = match[1].trim();
           const data = JSON.parse(content);
 
-          // Handle array of structured data
-          const recipes = Array.isArray(data) ? data : [data];
+          // Handle array, @graph wrapper, or single object
+          const flatten = (d: any): any[] => {
+            if (Array.isArray(d)) return d;
+            if (d && Array.isArray(d["@graph"])) return d["@graph"];
+            return [d];
+          };
+          const recipes = flatten(data);
 
           for (const item of recipes) {
             if (item["@type"] === "Recipe" || item.type === "Recipe") {
@@ -948,9 +953,20 @@ export class RecipeExtractor {
       recipe.directions = (
         Array.isArray(instructionsData) ? instructionsData : [instructionsData]
       )
-        .map((instruction: any) => {
-          if (typeof instruction === "string") return instruction;
-          return instruction.text || instruction.name || "";
+        .flatMap((instruction: any) => {
+          if (typeof instruction === "string") return [instruction];
+          // HowToSection: expand nested itemListElement steps
+          const type = instruction["@type"] || "";
+          if (
+            type === "HowToSection" &&
+            Array.isArray(instruction.itemListElement)
+          ) {
+            return instruction.itemListElement.map(
+              (step: any) =>
+                typeof step === "string" ? step : step.text || step.name || "",
+            );
+          }
+          return [instruction.text || instruction.name || ""];
         })
         .filter((dir: string) => dir.length > 0);
 

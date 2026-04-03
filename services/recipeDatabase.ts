@@ -79,7 +79,8 @@ export class RecipeDatabase {
           );
           return await DemoStorage.saveRecipe(recipe);
         }
-        return { success: false, error: error.message };
+        const errorMsg = error.message ?? error.details ?? error.code ?? JSON.stringify(error) ?? 'Unknown database error';
+        return { success: false, error: errorMsg };
       }
 
       // Production build: console.log removed

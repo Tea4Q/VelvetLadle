@@ -222,6 +222,91 @@ export default function RecipeViewer({
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   };
 
+  const formatNutrientValue = (
+    value: number | string | null | undefined,
+    unit: string,
+  ) => {
+    if (value === undefined || value === null || value === "") return null;
+
+    if (typeof value === "number") {
+      return `${Math.round(value)}${unit}`;
+    }
+
+    const normalized = String(value).trim();
+    if (!normalized) return null;
+
+    const lower = normalized.toLowerCase();
+    if (lower.includes(unit.toLowerCase())) {
+      return normalized;
+    }
+
+    return `${normalized}${unit}`;
+  };
+
+  const nutritionMetrics = [
+    {
+      key: "calories",
+      label: "Calories",
+      icon: "🔥",
+      value: currentRecipe.nutritional_info?.calories,
+      primary: true,
+      formatted: formatNutrientValue(currentRecipe.nutritional_info?.calories, " kcal"),
+    },
+    {
+      key: "protein",
+      label: "Protein",
+      icon: "🥩",
+      value: currentRecipe.nutritional_info?.protein,
+      primary: true,
+      formatted: formatNutrientValue(currentRecipe.nutritional_info?.protein, "g"),
+    },
+    {
+      key: "carbs",
+      label: "Carbs",
+      icon: "🍞",
+      value: currentRecipe.nutritional_info?.carbs,
+      primary: true,
+      formatted: formatNutrientValue(currentRecipe.nutritional_info?.carbs, "g"),
+    },
+    {
+      key: "fat",
+      label: "Fat",
+      icon: "🥑",
+      value: currentRecipe.nutritional_info?.fat,
+      primary: true,
+      formatted: formatNutrientValue(currentRecipe.nutritional_info?.fat, "g"),
+    },
+    {
+      key: "fiber",
+      label: "Fiber",
+      icon: "🌾",
+      value: currentRecipe.nutritional_info?.fiber,
+      primary: false,
+      formatted: formatNutrientValue(currentRecipe.nutritional_info?.fiber, "g"),
+    },
+    {
+      key: "sugar",
+      label: "Sugar",
+      icon: "🍯",
+      value: currentRecipe.nutritional_info?.sugar,
+      primary: false,
+      formatted: formatNutrientValue(currentRecipe.nutritional_info?.sugar, "g"),
+    },
+    {
+      key: "sodium",
+      label: "Sodium",
+      icon: "🧂",
+      value: currentRecipe.nutritional_info?.sodium,
+      primary: false,
+      formatted: formatNutrientValue(currentRecipe.nutritional_info?.sodium, "mg"),
+    },
+  ];
+
+  const visibleNutritionMetrics = nutritionMetrics.filter(
+    (metric) => metric.formatted !== null,
+  );
+  const hasNutritionData = visibleNutritionMetrics.length > 0;
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -450,13 +535,23 @@ export default function RecipeViewer({
               </Text>
             )}
 
+            <Text
+              style={[styles.infoSectionTitle, { color: colors.textSecondary }]}
+            >
+              Recipe timing & details
+            </Text>
+
             <View style={styles.infoGrid}>
               <View
                 style={[
                   styles.infoItem,
-                  { backgroundColor: colors.background },
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
+                <Text style={styles.infoIcon}>🍽️</Text>
                 <Text
                   style={[styles.infoLabel, { color: colors.textSecondary }]}
                 >
@@ -469,9 +564,13 @@ export default function RecipeViewer({
               <View
                 style={[
                   styles.infoItem,
-                  { backgroundColor: colors.background },
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
+                <Text style={styles.infoIcon}>⏱️</Text>
                 <Text
                   style={[styles.infoLabel, { color: colors.textSecondary }]}
                 >
@@ -484,9 +583,13 @@ export default function RecipeViewer({
               <View
                 style={[
                   styles.infoItem,
-                  { backgroundColor: colors.background },
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
+                <Text style={styles.infoIcon}>🍳</Text>
                 <Text
                   style={[styles.infoLabel, { color: colors.textSecondary }]}
                 >
@@ -499,9 +602,13 @@ export default function RecipeViewer({
               <View
                 style={[
                   styles.infoItem,
-                  { backgroundColor: colors.background },
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
+                <Text style={styles.infoIcon}>🕒</Text>
                 <Text
                   style={[styles.infoLabel, { color: colors.textSecondary }]}
                 >
@@ -515,9 +622,13 @@ export default function RecipeViewer({
                 <View
                   style={[
                     styles.infoItem,
-                    { backgroundColor: colors.background },
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                    },
                   ]}
                 >
+                  <Text style={styles.infoIcon}>🎯</Text>
                   <Text
                     style={[styles.infoLabel, { color: colors.textSecondary }]}
                   >
@@ -534,9 +645,13 @@ export default function RecipeViewer({
                 <View
                   style={[
                     styles.infoItem,
-                    { backgroundColor: colors.background },
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                    },
                   ]}
                 >
+                  <Text style={styles.infoIcon}>🌍</Text>
                   <Text
                     style={[styles.infoLabel, { color: colors.textSecondary }]}
                   >
@@ -735,11 +850,7 @@ export default function RecipeViewer({
       {activeTab === "overview" && (
         <>
           {/* Nutritional Information - Only show if data exists */}
-          {currentRecipe.nutritional_info &&
-            (currentRecipe.nutritional_info.calories ||
-              currentRecipe.nutritional_info.protein ||
-              currentRecipe.nutritional_info.carbs ||
-              currentRecipe.nutritional_info.fat) && (
+          {currentRecipe.nutritional_info && hasNutritionData && (
               <View
                 style={[
                   styles.section,
@@ -764,183 +875,44 @@ export default function RecipeViewer({
                 </Text>
 
                 <View style={styles.nutritionGrid}>
-                  {currentRecipe.nutritional_info?.calories !== undefined &&
-                    currentRecipe.nutritional_info?.calories !== null && (
-                      <View style={[styles.nutritionItem, styles.caloriesItem]}>
-                        <Text style={styles.nutritionIcon}>🔥</Text>
-                        <Text
-                          style={[
-                            styles.nutritionLabel,
-                            { color: colors.textPrimary },
-                          ]}
-                        >
-                          Calories
-                        </Text>
-                        <Text
-                          style={[styles.nutritionValue, styles.caloriesValue]}
-                        >
-                          {Math.round(currentRecipe.nutritional_info.calories)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.nutritionUnit,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          kcal
-                        </Text>
-                      </View>
-                    )}
-
-                  {currentRecipe.nutritional_info?.protein && (
+                  {visibleNutritionMetrics.map((metric) => (
                     <View
+                      key={metric.key}
                       style={[
                         styles.nutritionItem,
+                        metric.primary
+                          ? styles.nutritionPrimaryItem
+                          : styles.nutritionSecondaryItem,
                         {
                           backgroundColor: colors.background,
                           borderColor: colors.border,
                         },
                       ]}
                     >
-                      <Text style={styles.nutritionIcon}>🥩</Text>
+                      <Text style={styles.nutritionIcon}>{metric.icon}</Text>
                       <Text
                         style={[
                           styles.nutritionLabel,
-                          { color: colors.textPrimary },
+                          { color: colors.textSecondary },
                         ]}
                       >
-                        Protein
+                        {metric.label}
                       </Text>
                       <Text
                         style={[
                           styles.nutritionValue,
-                          { color: colors.textPrimary },
+                          {
+                            color:
+                              metric.key === "calories"
+                                ? colors.accent
+                                : colors.textPrimary,
+                          },
                         ]}
                       >
-                        {currentRecipe.nutritional_info.protein}
+                        {metric.formatted}
                       </Text>
                     </View>
-                  )}
-
-                  {currentRecipe.nutritional_info?.carbs && (
-                    <View
-                      style={[
-                        styles.nutritionItem,
-                        {
-                          backgroundColor: colors.background,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.nutritionIcon}>🍞</Text>
-                      <Text
-                        style={[
-                          styles.nutritionLabel,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        Carbs
-                      </Text>
-                      <Text
-                        style={[
-                          styles.nutritionValue,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        {currentRecipe.nutritional_info.carbs}
-                      </Text>
-                    </View>
-                  )}
-
-                  {currentRecipe.nutritional_info?.fat && (
-                    <View
-                      style={[
-                        styles.nutritionItem,
-                        {
-                          backgroundColor: colors.background,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.nutritionIcon}>🥑</Text>
-                      <Text
-                        style={[
-                          styles.nutritionLabel,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        Fat
-                      </Text>
-                      <Text
-                        style={[
-                          styles.nutritionValue,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        {currentRecipe.nutritional_info.fat}
-                      </Text>
-                    </View>
-                  )}
-
-                  {currentRecipe.nutritional_info?.fiber && (
-                    <View
-                      style={[
-                        styles.nutritionItem,
-                        {
-                          backgroundColor: colors.background,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.nutritionIcon}>🌾</Text>
-                      <Text
-                        style={[
-                          styles.nutritionLabel,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        Fiber
-                      </Text>
-                      <Text
-                        style={[
-                          styles.nutritionValue,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        {currentRecipe.nutritional_info.fiber}
-                      </Text>
-                    </View>
-                  )}
-
-                  {currentRecipe.nutritional_info?.sugar && (
-                    <View
-                      style={[
-                        styles.nutritionItem,
-                        {
-                          backgroundColor: colors.background,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.nutritionIcon}>🍯</Text>
-                      <Text
-                        style={[
-                          styles.nutritionLabel,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        Sugar
-                      </Text>
-                      <Text
-                        style={[
-                          styles.nutritionValue,
-                          { color: colors.textPrimary },
-                        ]}
-                      >
-                        {currentRecipe.nutritional_info.sugar}
-                      </Text>
-                    </View>
-                  )}
+                  ))}
                 </View>
 
                 {/* Nutritional Notes */}
@@ -1132,10 +1104,17 @@ const styles = StyleSheet.create({
   infoSection: {
     backgroundColor: "#fff",
     borderRadius: 10,
-    padding: 15,
+    padding: 18,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: "#00205B",
+  },
+  infoSectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 12,
   },
   description: {
     fontSize: 16,
@@ -1147,27 +1126,34 @@ const styles = StyleSheet.create({
   infoGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    justifyContent: "center",
+    gap: 12,
+    justifyContent: "space-between",
   },
 
   infoItem: {
     backgroundColor: "#faf4eb",
-    borderRadius: 8,
-    padding: 10,
-    minWidth: "45%",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    minWidth: "47%",
+    borderWidth: 1,
     alignItems: "center",
   },
+  infoIcon: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
   infoLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#00205B",
-    opacity: 0.7,
-    marginBottom: 5,
+    opacity: 0.75,
+    marginBottom: 4,
     textTransform: "uppercase",
-    fontWeight: "bold",
+    fontWeight: "700",
+    letterSpacing: 0.6,
   },
   infoValue: {
-    fontSize: 16,
+    fontSize: 17,
     color: "#00205B",
     fontWeight: "bold",
   },
@@ -1240,14 +1226,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
   nutritionItem: {
     backgroundColor: "#faf4eb",
     borderRadius: 12,
-    padding: 15,
-    minWidth: "30%",
-    maxWidth: "100%",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    minWidth: "47%",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#e8dcc0",
@@ -1257,40 +1243,30 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  caloriesItem: {
-    backgroundColor: "#fff5f5",
-    borderColor: "#fed7d7",
-    minWidth: "48%",
+  nutritionPrimaryItem: {
+    minWidth: "47%",
+  },
+  nutritionSecondaryItem: {
+    minWidth: "30%",
   },
   nutritionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 20,
+    marginBottom: 6,
   },
   nutritionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#00205B",
-    opacity: 0.8,
-    marginBottom: 5,
+    opacity: 0.78,
+    marginBottom: 6,
     textAlign: "center",
-    fontWeight: "600",
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   nutritionValue: {
-    fontSize: 18,
+    fontSize: 19,
     color: "#00205B",
     fontWeight: "bold",
-    textAlign: "center",
-  },
-  caloriesValue: {
-    fontSize: 22,
-    color: "#d53f8c",
-  },
-  nutritionUnit: {
-    fontSize: 10,
-    color: "#00205B",
-    opacity: 0.6,
-    marginTop: 2,
     textAlign: "center",
   },
   nutritionDisclaimer: {
@@ -1298,28 +1274,28 @@ const styles = StyleSheet.create({
     color: "#00205B",
     opacity: 0.6,
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 14,
     fontStyle: "italic",
   },
   nutritionNotes: {
     backgroundColor: "#f0f8ff",
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 15,
-    marginTop: 15,
+    marginTop: 14,
     borderWidth: 1,
     borderColor: "#bee3f8",
   },
   notesTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "bold",
     color: "#00205B",
     marginBottom: 8,
   },
   noteText: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#00205B",
     opacity: 0.8,
-    lineHeight: 16,
+    lineHeight: 18,
     marginBottom: 4,
   },
   sourceText: {

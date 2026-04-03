@@ -65,7 +65,7 @@ Add a second product for annual billing if desired:
 | **Reference Name** | VelvetLadle Premium Annual            |
 | **Product ID**     | `com.qtea.velvetladle.premium.annual` |
 | **Duration**       | 1 Year                                |
-| **Price**          | e.g. $49.99 / year (~33% savings)     |
+| **Price**          | e.g. $49.99 / year (~10% savings)     |
 
 ### 2c. Localisation & Review Screenshot
 
@@ -97,18 +97,18 @@ Add a second product for annual billing if desired:
 | ------------------- | ----------------------------- |
 | **Subscription ID** | `velvetladle_premium_monthly` |
 | **Name**            | VelvetLadle Premium           |
-| **Base plan ID**    | `monthly`                     |
+| **Base plan ID**    | `essentials-monthly`          |
 | **Billing period**  | 1 month                       |
 | **Price**           | e.g. $4.99 / month            |
 | **Grace period**    | 7 days (recommended)          |
 
 Add a second base plan for annual billing if desired:
 
-| Field              | Value              |
-| ------------------ | ------------------ |
-| **Base plan ID**   | `annual`           |
-| **Billing period** | 1 year             |
-| **Price**          | e.g. $39.99 / year |
+| Field              | Value               |
+| ------------------ | ------------------- |
+| **Base plan ID**   | `essentials-annual` |
+| **Billing period** | 1 year              |
+| **Price**          | e.g. $49.99 / year  |
 
 ### 3c. Real-Time Developer Notifications (Recommended)
 
@@ -131,7 +131,7 @@ In the RevenueCat dashboard for each app:
 ### 4b. Create the Entitlement
 
 1. **Entitlements** → **+ New Entitlement**.
-2. Identifier: **`VelvetLadle Premium`** ← must be exactly this string.
+2. Identifier: **`premium`** ← must be exactly this string (matches `PREMIUM_ENTITLEMENT_ID` in `purchaseService.ts`).
 3. Attach all products (both iOS and Android, monthly and annual) to this entitlement.
 
 ### 4c. Create an Offering
