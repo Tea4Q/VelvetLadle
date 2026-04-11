@@ -5,7 +5,7 @@ Store listing content for App Store Connect.
 ## App Identity
 
 App Name: Velvet Ladle
-Subtitle: Smart recipe collection and organizer
+Subtitle: Smart recipe collection
 Category: Food and Drink
 Age Rating: 4+
 Bundle ID (free app): com.tea4q.velvetladle.free
@@ -69,6 +69,7 @@ recipe manager,meal planner,cooking,recipes,food organizer,recipe saver,nutritio
 Use 6 to 10 screenshots per size class.
 
 Recommended flow:
+
 1. Dashboard overview and search
 2. Add Recipe options (URL, manual entry)
 3. URL import flow
@@ -79,6 +80,7 @@ Recommended flow:
 8. Manual recipe form
 
 Suggested caption style:
+
 - Keep captions short (3 to 6 words)
 - Use clear benefit language
 - Maintain consistent color and typography
@@ -86,6 +88,7 @@ Suggested caption style:
 ## App Privacy and Data
 
 You must provide App Privacy answers in App Store Connect for:
+
 - Account email/auth data
 - User-created recipe content
 - Diagnostic and crash data (if enabled)
@@ -100,6 +103,7 @@ Premium is delivered through in-app subscriptions via RevenueCat.
 ## App Review Notes (Suggested)
 
 Reviewer test flow:
+
 1. Open app and continue as guest or create account.
 2. Add recipe from URL or manual entry.
 3. Navigate recipes and favorites.

@@ -70,7 +70,7 @@ module.exports = ({ config }) => {
       [
         "expo-build-properties",
         {
-          ios: { newArchEnabled: false },
+          ios: { newArchEnabled: true },
           android: { newArchEnabled: false },
         },
       ],
