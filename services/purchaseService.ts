@@ -250,6 +250,17 @@ class PurchaseServiceClass {
       if (e?.userCancelled) {
         return { success: false, error: "cancelled" };
       }
+      // The App Store may return a receipt error when the user is already
+      // subscribed (e.g. sandbox "receipt not valid" or StoreKit 2 duplicate).
+      // In that case the entitlement is already active — treat it as success.
+      try {
+        const existing = await Purchases.getCustomerInfo();
+        if (this.hasPremiumEntitlement(existing)) {
+          return { success: true };
+        }
+      } catch {
+        // ignore secondary check failure
+      }
       return { success: false, error: e?.message ?? "Purchase failed" };
     }
   }

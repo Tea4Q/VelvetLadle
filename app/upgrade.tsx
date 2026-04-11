@@ -56,7 +56,7 @@ export default function UpgradeScreen() {
       } else if (result.error !== "cancelled") {
         Alert.alert(
           "Purchase Failed",
-          result.error ?? "Something went wrong. Please try again.",
+          "If you're already subscribed, tap Restore Purchases below to recover your access.",
           [{ text: "OK" }],
         );
       }
