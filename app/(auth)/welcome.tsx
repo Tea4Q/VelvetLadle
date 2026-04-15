@@ -61,7 +61,10 @@ export default function WelcomeScreen() {
             />
             <Pressable
               style={styles.guestButton}
-              onPress={() => signInAsGuest()}
+              onPress={async () => {
+                await signInAsGuest();
+                router.replace("/(tabs)");
+              }}
             >
               <Text
                 style={[styles.guestButtonText, { color: colors.textLight }]}

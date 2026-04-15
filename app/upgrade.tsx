@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -248,7 +249,21 @@ export default function UpgradeScreen() {
                 style={{ marginVertical: 16 }}
               />
             ) : offering && offering.availablePackages.length > 0 ? (
-              offering.availablePackages.map((pkg) => (
+              offering.availablePackages.map((pkg) => {
+                const displayTitle =
+                  pkg.packageType === "ANNUAL"
+                    ? "VelvetLadle Premium — Annual"
+                    : pkg.packageType === "MONTHLY"
+                      ? "VelvetLadle Premium — Monthly"
+                      : pkg.product.title;
+                const periodSuffix =
+                  pkg.packageType === "ANNUAL"
+                    ? " / year"
+                    : pkg.packageType === "MONTHLY"
+                      ? " / month"
+                      : "";
+
+                return (
                 <TouchableOpacity
                   key={pkg.identifier}
                   style={[
@@ -264,7 +279,7 @@ export default function UpgradeScreen() {
                   <Text
                     style={[styles.packageTitle, { color: colors.primary }]}
                   >
-                    {pkg.product.title}
+                    {displayTitle}
                   </Text>
                   <Text
                     style={[
@@ -272,9 +287,7 @@ export default function UpgradeScreen() {
                       { color: colors.textSecondary },
                     ]}
                   >
-                    {pkg.product.priceString}
-                    {pkg.packageType === "ANNUAL" && " / year"}
-                    {pkg.packageType === "MONTHLY" && " / month"}
+                    {pkg.product.priceString}{periodSuffix}
                   </Text>
                   {pkg.product.introPrice && (
                     <Text
@@ -293,7 +306,8 @@ export default function UpgradeScreen() {
                     />
                   )}
                 </TouchableOpacity>
-              ))
+                );
+              })
             ) : (
               <View
                 style={[
@@ -374,6 +388,33 @@ export default function UpgradeScreen() {
             Subscriptions auto-renew unless cancelled at least 24 hours before
             the renewal date.
           </Text>
+          <View style={styles.legalLinks}>
+            <TouchableOpacity
+              onPress={() =>
+                Linking.openURL(
+                  "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+                )
+              }
+            >
+              <Text style={[styles.legalLink, { color: colors.primary }]}>
+                Terms of Use
+              </Text>
+            </TouchableOpacity>
+            <Text style={[styles.legalSeparator, { color: colors.textLight }]}>
+              {" · "}
+            </Text>
+            <TouchableOpacity
+              onPress={() =>
+                Linking.openURL(
+                  "https://sites.google.com/view/chandraskinner/home/privacy",
+                )
+              }
+            >
+              <Text style={[styles.legalLink, { color: colors.primary }]}>
+                Privacy Policy
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -489,6 +530,21 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     paddingHorizontal: 20,
     lineHeight: 18,
+  },
+  legalLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  legalLink: {
+    fontSize: 13,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  legalSeparator: {
+    fontSize: 13,
   },
   pricingPreview: {
     width: "100%",
