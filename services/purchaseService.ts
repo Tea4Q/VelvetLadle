@@ -234,7 +234,7 @@ class PurchaseServiceClass {
 
   /**
    * Purchase a package from the current offering.
-   * Returns `{ success: true }` when the premium entitlement becomes active.
+   * Returns `{ success: true }` when the App Store transaction completes.
    */
   async purchasePackage(
     pkg: PurchasesPackage,
@@ -243,9 +243,13 @@ class PurchaseServiceClass {
       return { success: false, error: "Purchases not configured" };
     }
     try {
-      const { customerInfo } = await Purchases.purchasePackage(pkg);
-      const active = this.hasPremiumEntitlement(customerInfo);
-      return { success: active };
+      await Purchases.purchasePackage(pkg);
+      // If purchasePackage resolves without throwing, the App Store transaction
+      // completed and the user was charged. Entitlement propagation can lag on
+      // StoreKit 2 (iOS 17+ / iPadOS 26) due to asynchronous receipt
+      // validation — do NOT gate success on the immediate entitlement check,
+      // as that produces "Purchase Failed" alerts for users who successfully paid.
+      return { success: true };
     } catch (e: any) {
       if (e?.userCancelled) {
         return { success: false, error: "cancelled" };
